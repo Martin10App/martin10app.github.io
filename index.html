@@ -625,7 +625,7 @@ const DEFAULT_CATS=[
   {id:'auto',n:'CUOTA AUTO',c:'#FFB347',base:5600},
   {id:'patente',n:'PATENTE',c:'#E879F9',base:2500},
   {id:'seguro',n:'SEGURO',c:'#38BDF8',base:1400},
-  {id:'ahorro',n:'AHORRO SUELDO',c:'#A78BFA',base:1500},
+  {id:'ahorro',n:'AHORRO SUELDO',c:'#A78BFA',base:1500,ahorro:true},
   {id:'matricula',n:'MATRÍCULA ALMA',c:'#F472B6',base:0},
   {id:'imprev',n:'IMPREVISTOS',c:'#FB923C',base:0},
 ];
@@ -666,7 +666,27 @@ function ring(id,pct,color,label,size=46){
 function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2)}
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
 function fmt(n){const v=Math.round(n||0);if(Math.abs(v)>=10000)return '$'+(v/1000).toFixed(v%1000?1:0)+'k';return '$'+v.toLocaleString('es-UY')}
-function fmtFull(n){return '$'+Math.round(n||0).toLocaleString('es-UY')}
+    function fmtFull(n){return '$'+Math.round(n||0).toLocaleString('es-UY')}
+    function money(n){return Math.round(((+n||0)+Number.EPSILON)*100)/100;}
+    function sumMoney(arr,sel){let c=0;for(const x of arr){const v=sel?sel(x):x;c+=Math.round(((+v||0)+Number.EPSILON)*100);}return c/100;}
+    function parseMoney(v){
+      if(typeof v==='number')return isFinite(v)?v:0;
+      if(v==null)return 0;
+      let s=String(v).trim().replace(/[^0-9.,-]/g,'');
+      if(s.indexOf(',')>=0&&s.indexOf('.')>=0){
+        if(s.lastIndexOf(',')>s.lastIndexOf('.'))s=s.replace(/\./g,'').replace(',','.');
+        else s=s.replace(/,/g,'');
+      }else if(s.indexOf(',')>=0){
+        s=(/,\d{1,2}$/.test(s))?s.replace(',','.'):s.replace(/,/g,'');
+      }else if(s.indexOf('.')>=0){
+        const parts=s.split('.');
+        const last=parts[parts.length-1];
+        if(parts.length>2){s=(last.length===3)?parts.join(''):parts.slice(0,-1).join('')+'.'+last;}
+        else if(/^\d+\.\d{3}$/.test(s)){s=s.replace('.','');}
+      }
+      const n=parseFloat(s);
+      return isFinite(n)?n:0;
+    }
 const DC=['#FF3B4E','#3B7FFF','#00C48C','#FFB347','#A855F7','#22D3EE','#F97316','#84CC16'];
 const MC={Pecho:'#FF3B4E',Espalda:'#3B7FFF',Hombros:'#A855F7',Bíceps:'#22D3EE',Tríceps:'#F97316',Cuádriceps:'#00C48C',Femoral:'#84CC16',Gemelos:'#14B8A6',Abdomen:'#FFB347'};
 
@@ -1445,51 +1465,74 @@ function togPaid(catId,m,y){pagosEstado[k(catId,m,y)]=!pagosEstado[k(catId,m,y)]
 function getSueldo(m,y){return sueldos[km(m,y)]||0;}
 function setSueldo(m,y,v){sueldos[km(m,y)]=v;S.s('sld4',sueldos);}
 
-function totalCatMes(catId,m,y){return gastos.filter(g=>g.c===catId&&g.m===m&&g.y===y).reduce((s,g)=>s+g.v,0);}
+function totalCatMes(catId,m,y){return sumMoney(gastos.filter(g=>g.c===catId&&g.m===m&&g.y===y),g=>g.v);}
 function montoCat(c,m,y){
   const ky=k(c.id,m,y);
-  if(!c.cardRef)return pagosFijos[ky]!==undefined?pagosFijos[ky]:c.base;
-  return pagosFijos[ky]!==undefined?pagosFijos[ky]:getCardMonthAmt(c.cardRef);
+  if(!c.cardRef)return pagosFijos[ky]!==undefined?money(pagosFijos[ky]):money(c.base);
+  return pagosFijos[ky]!==undefined?money(pagosFijos[ky]):getCardMonthAmt(c.cardRef);
 }
 function totalCompromisosMes(m,y){
   let t=0;
   cats.forEach(c=>{
+    if(c.cardRef)return; // tarjetas aparte
+    if(c.ahorro)return;  // el ahorro no es gasto
     const monto=montoCat(c,m,y);
-    if(monto>0)t+=monto;
+    if(monto>0)t=money(t+monto);
+  });
+  return t;
+}
+function totalAhorroMes(m,y){
+  let t=0;
+  cats.forEach(c=>{
+    if(!c.ahorro)return;
+    const monto=montoCat(c,m,y);
+    if(monto>0)t=money(t+monto);
   });
   return t;
 }
 function totalPagadoMes(m,y){
   let t=0;
   cats.forEach(c=>{
+    if(c.cardRef)return;
+    if(c.ahorro)return;
     const ky=k(c.id,m,y);
     if(!pagosEstado[ky])return;
     const monto=montoCat(c,m,y);
-    if(monto>0)t+=monto;
+    if(monto>0)t=money(t+monto);
   });
   return t;
 }
+// Ahorro acumulado de una categoría-meta: suma de todos los montos fijos registrados
+function ahorroAcumCat(catId){
+  let t=0;
+  Object.keys(pagosFijos).forEach(key=>{if(key.indexOf(catId+'_')===0)t=money(t+pagosFijos[key]);});
+  return t;
+}
+// Ahorro acumulado total (todas las categorías de ahorro)
+function ahorroAcumTotal(){
+  let t=0;
+  cats.forEach(c=>{if(c.ahorro)t=money(t+ahorroAcumCat(c.id));});
+  return t;
+}
 function gastosVariablesMes(m,y){return gastos.filter(g=>g.m===m&&g.y===y);}
-function totalVariablesMes(m,y){return gastosVariablesMes(m,y).reduce((s,g)=>s+g.v,0);}
+function totalVariablesMes(m,y){return sumMoney(gastosVariablesMes(m,y),g=>g.v);}
 function totalCardMonth(){
-  return cards.reduce((s,card)=>s+getCardMonthAmt(card.id),0);
+  return sumMoney(cards,card=>getCardMonthAmt(card.id));
 }
 function getCardMonthAmtAll(){
   const r={};
   cards.forEach(card=>{const a=getCardMonthAmt(card.id);if(a>0)r[card.id]={name:card.name,type:card.type,color:card.color,amt:a};});
   return r;
 }
-function totalGastosMes(m,y){return totalCompromisosMes(m,y)+totalVariablesMes(m,y)+totalCardMonth();}
+function totalGastosMes(m,y){return money(totalCompromisosMes(m,y)+totalVariablesMes(m,y)+totalCardMonth());}
 function totalCatAnio(catId,y){
   const cat=cats.find(x=>x.id===catId);
   if(cat&&cat.cardRef){
-    // Sumar cuota mensual de todos los meses del año (estimación con datos actuales)
-    const amt=getCardMonthAmt(cat.cardRef);
-    return amt*12;
+    return sumMoney(getCardPurchs(cat.cardRef),p=>pInstAmt(p)*pRemaining(p));
   }
   let t=0;
-  for(let m=0;m<12;m++){const ky=k(catId,m,y);if(pagosFijos[ky]!==undefined)t+=pagosFijos[ky];}
-  for(const g of gastos)if(g.y===y&&g.c===catId)t+=g.v;
+  for(let m=0;m<12;m++){const ky=k(catId,m,y);if(pagosFijos[ky]!==undefined)t=money(t+pagosFijos[ky]);}
+  t=money(t+sumMoney(gastos.filter(g=>g.y===y&&g.c===catId),g=>g.v));
   return t;
 }
 
@@ -1509,9 +1552,10 @@ function rMes(){
   const compromisos=totalCompromisosMes(m,y);
   const variables=totalVariablesMes(m,y);
   const cardTotal=totalCardMonth();
-  const totalMes=compromisos+variables;
-  const total=totalMes+cardTotal;
-  const ahorro=sueldo-total;
+  const ahorroMes=totalAhorroMes(m,y);
+  const totalMes=money(compromisos+variables);
+  const total=money(totalMes+cardTotal); // gasto real (sin ahorro)
+  const disponible=money(sueldo-total-ahorroMes); // lo que te queda libre
   const pctGasto=sueldo>0?Math.round((total/sueldo)*100):0;
   const color=pctGasto>100?'var(--red)':pctGasto>85?'var(--gold)':'var(--green)';
 
@@ -1532,14 +1576,52 @@ function rMes(){
 
   h+=`<div class="stats s2" style="margin-bottom:10px">
     <div class="st"><div class="sv" style="color:${color}">${fmt(total)}</div><div class="sl">Gasto total</div></div>
-    <div class="st"><div class="sv" style="color:${ahorro>=0?'var(--green)':'var(--red)'}">${fmt(Math.abs(ahorro))}</div><div class="sl">${ahorro>=0?'💚 Ahorro':'🔴 Déficit'}</div></div>
+    <div class="st"><div class="sv" style="color:${disponible>=0?'var(--green)':'var(--red)'}">${fmt(Math.abs(disponible))}</div><div class="sl">${disponible>=0?'💚 Disponible':'🔴 Déficit'}</div></div>
   </div>
   <div class="stats s4" style="margin-bottom:14px">
     <div class="st"><div class="sv" style="font-size:14px;color:var(--text1)">${fmt(compromisos)}</div><div class="sl">Fijos</div></div>
     <div class="st"><div class="sv" style="font-size:14px;color:var(--text1)">${fmt(variables)}</div><div class="sl">Variables</div></div>
     <div class="st"><div class="sv" style="font-size:14px;color:var(--purple)">${fmt(cardTotal)}</div><div class="sl">${cardTotal>0?'💳 Tarjetas':'Tarjetas'}</div></div>
-    <div class="st"><div class="sv" style="font-size:14px;color:${color}">${pctGasto}%</div><div class="sl">del sueldo</div></div>
+    <div class="st"><div class="sv" style="font-size:14px;color:#A78BFA">${fmt(ahorroMes)}</div><div class="sl">🐷 Ahorro</div></div>
   </div>`;
+
+  // ── Metas de ahorro ──
+  const catsAhorro=cats.filter(c=>c.ahorro);
+  if(catsAhorro.length){
+    h+=`<div class="card" style="margin-bottom:14px;border-color:#A78BFA40">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <div style="font-size:10px;color:#A78BFA;letter-spacing:1.5px;font-weight:700;text-transform:uppercase">🐷 Mis metas de ahorro</div>
+        <div style="font-size:13px;font-weight:800;color:#A78BFA">${fmtFull(ahorroAcumTotal())}</div>
+      </div>`;
+    catsAhorro.forEach(c=>{
+      const acum=ahorroAcumCat(c.id);
+      const obj=money(c.objetivo||0);
+      const mesAporta=montoCat(c,m,y);
+      if(obj>0){
+        const pct=Math.min(Math.round((acum/obj)*100),100);
+        const falta=money(Math.max(0,obj-acum));
+        h+=`<div style="margin-bottom:14px" onclick="editMetaModal('${c.id}')">
+          <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:5px">
+            <div style="font-size:13px;font-weight:700">${esc(c.n)}</div>
+            <div style="font-size:11px;color:var(--text2)">${fmtFull(acum)} / ${fmtFull(obj)}</div>
+          </div>
+          <div style="height:9px;background:rgba(255,255,255,.06);border-radius:5px;overflow:hidden;margin-bottom:4px">
+            <div style="width:${pct}%;height:100%;background:linear-gradient(90deg,#A78BFA,#7C5CFF);transition:width .6s;border-radius:5px"></div>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--text3)">
+            <span>${pct}% ${pct>=100?'🎉 ¡Meta cumplida!':''}</span>
+            <span>${pct>=100?'':'Faltan '+fmtFull(falta)}${mesAporta>0?' · '+fmtFull(mesAporta)+'/mes':''}</span>
+          </div>
+        </div>`;
+      } else {
+        h+=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;cursor:pointer" onclick="editMetaModal('${c.id}')">
+          <div><div style="font-size:13px;font-weight:700">${esc(c.n)}</div><div style="font-size:10px;color:var(--text3)">Tocá para ponerle un objetivo</div></div>
+          <div style="font-size:13px;font-weight:800;color:#A78BFA">${fmtFull(acum)}</div>
+        </div>`;
+      }
+    });
+    h+=`</div>`;
+  }
 
   if(dlt&&prevTotal>0){
     const dCls=dlt.d===0?'delta-eq':dlt.up?'delta-up':'delta-dn';
@@ -2109,6 +2191,27 @@ function addCatModal(){const colors=['#FF3B4E','#3B7FFF','#00C48C','#FFB347','#A
   <button class="btn b-lg b-p" onclick="confNC()">Crear categoría</button>`);}
 function selNC(col){window._ncc=col;document.querySelectorAll('[id^="nc-c-"]').forEach(el=>el.style.borderColor='transparent');document.getElementById('nc-c-'+col.slice(1))?.style.setProperty('border-color','white');}
 function confNC(){const n=document.getElementById('nc-n')?.value.trim();const p=parseFloat(document.getElementById('nc-p')?.value)||0;if(!n){tst('Escribí el nombre');return;}cats.push({id:uid(),n,c:window._ncc||'#aaa',base:p});S.s('cats4',cats);cOv1();tst('✓ Categoría creada');renderGastos();}
+function editMetaModal(catId){
+  const c=cats.find(x=>x.id===catId);if(!c)return;
+  const acum=ahorroAcumCat(c.id);
+  oOv1(`<div class="mt">🐷 Meta de ahorro</div>
+  <div style="font-size:13px;font-weight:700;margin-bottom:4px">${esc(c.n)}</div>
+  <div style="font-size:11px;color:var(--text2);margin-bottom:14px">Llevás ahorrado <b style="color:#A78BFA">${fmtFull(acum)}</b></div>
+  <div class="fld"><label>Aporte mensual</label><input class="inp" id="meta-base" type="number" inputmode="numeric" placeholder="0" value="${c.base||''}"></div>
+  <div class="fld"><label>Objetivo total (ej: auto $500000) — dejalo en 0 si no tenés meta fija</label><input class="inp" id="meta-obj" type="number" inputmode="numeric" placeholder="0" value="${c.objetivo||''}"></div>
+  <button class="btn b-lg b-p" onclick="saveMeta('${c.id}')">Guardar meta</button>`);
+}
+function saveMeta(catId){
+  const c=cats.find(x=>x.id===catId);if(!c)return;
+  c.base=parseMoney(document.getElementById('meta-base')?.value);
+  c.objetivo=parseMoney(document.getElementById('meta-obj')?.value);
+  S.s('cats4',cats);cOv1();tst('✓ Meta actualizada');renderGastos();
+}
+// Convertir una categoría normal en meta de ahorro (o viceversa)
+function toggleAhorro(catId){
+  const c=cats.find(x=>x.id===catId);if(!c)return;
+  c.ahorro=!c.ahorro;S.s('cats4',cats);tst(c.ahorro?'🐷 Ahora es meta de ahorro':'Volvió a ser gasto');renderGastos();
+}
 function resetVar(){if(!confirm('¿Eliminar TODOS los gastos variables?'))return;gastos=[];S.s('gst4',[]);tst('Gastos variables eliminados');renderGastos();}
 function resetPagos(){if(!confirm('¿Limpiar TODOS los pagos marcados (incluyendo historial)?'))return;pagosEstado={};S.s('pe4',{});tst('Pagos limpiados');renderGastos();}
 function resetMontos(){if(!confirm('¿Resetear TODOS los montos editados al valor base? Esto borra el historial.'))return;pagosFijos={};S.s('pf4',{});tst('Montos reseteados');renderGastos();}
@@ -2424,7 +2527,8 @@ async function sendChat(){
     const f=totalCatMes(c.id,m,y);
     const cardRef=c.cardRef||'';
     const pagado=isPaid(c.id,m,y);
-    return '{id:"'+c.id+'",n:"'+c.n+'",base:'+c.base+',fijo:'+montoCat(c,m,y)+',totalMes:'+f+(cardRef?',tarjeta:"'+cardRef+'"':'')+',pagado:'+pagado+',color:"'+c.c+'"}';
+    const ah=c.ahorro?',esAhorro:true,acumulado:'+ahorroAcumCat(c.id)+(c.objetivo?',objetivo:'+c.objetivo:''):'';
+    return '{id:"'+c.id+'",n:"'+c.n+'",base:'+c.base+',fijo:'+montoCat(c,m,y)+',totalMes:'+f+(cardRef?',tarjeta:"'+cardRef+'"':'')+',pagado:'+pagado+ah+',color:"'+c.c+'"}';
   }).join(',\n');
   const cards=(S.g('cards1',[])||[]).map(c=>'{id:"'+c.id+'",n:"'+c.n+'",cuota:'+(getCardMonthAmt(c.id)||0)+'}').join(',');
   const ultimosGastos=gastos.filter(g=>g.y>=y-1).slice(-30).map(g=>'{c:"'+g.c+'",v:'+g.v+',d:"'+(g.desc||'')+'",m:'+g.m+',y:'+g.y+',f:"'+g.f+'"}').join(',');
@@ -2456,7 +2560,7 @@ async function sendChat(){
   const memCtx=_mem.length?('\n\nMEMORIA — lo que ya sé de la persona (usalo para personalizar y NO vuelvas a preguntar lo que ya está acá):\n- '+_mem.map(x=>x.t).join('\n- ')):'';
   const memInstr='\n\nMEMORIA / APRENDIZAJE:\n- Si en el mensaje hay info DURADERA de la persona (preferencias, hábitos, restricciones de dieta, objetivos, días/horarios de entrenamiento, ingresos, fechas fijas, etc.), guardala vos mismo con [ACCION]{"op":"recordar","dato":"frase corta en 3ra persona","tag":"dieta|gym|finanzas|agenda|general"}[/ACCION].\n- Si te piden olvidar algo: [ACCION]{"op":"olvidar","dato":"texto a borrar"}[/ACCION].\n- NO guardes datos puntuales del día (un gasto suelto, un peso de hoy) como memoria; eso ya va a las acciones normales. Guardá solo lo que define a la persona a largo plazo.\n- No repitas en memoria algo que ya figura arriba.';
   const ctxHist=chatHist.slice(-20).map(msg=>'['+msg.role+']: '+msg.text).join('\n');
-  const prompt='Sos MARTIN·APP AI: asistente personal con control total de los datos.\n\n'+_hoy+dataCtx+memCtx+memInstr+'\n\nREGLAS:\n- Respondé en español uruguayo, natural, amigable y con confianza.\n- Revisá los datos con cuidado. Si te preguntan por pesos o registros, verificá exactamente lo que dice el registro antes de responder. No inventes números.\n- Si el usuario pide agregar/modificar datos, usá [ACCION] al final.\n- ACCIONES DISPONIBLES:\n  * [ACCION]{"op":"gasto","cat":"id","v":monto,"desc":"...","f":"d/m"}[/ACCION]\n  * [ACCION]{"op":"pago","cat":"id","m":mes,"y":año}[/ACCION]\n  * [ACCION]{"op":"fijo","cat":"id","m":mes,"y":año,"v":monto}[/ACCION]\n  * [ACCION]{"op":"compra","cardId":"id","v":monto,"desc":"...","cuotas":1}[/ACCION]\n  * [ACCION]{"op":"crear_rutina","name":"Nombre","days":[{"label":"Día1","exercises":[{"name":"Ej1","muscle":"Pecho","series":4,"reps":"10"}]}]}[/ACCION]\n  * [ACCION]{"op":"evento","titulo":"...","fecha":"YYYY-MM-DD","hora":"HH:MM","recordatorio":15}[/ACCION]\n- muscle debe ser uno de: Pecho, Espalda, Hombros, Bíceps, Tríceps, Cuádriceps, Femoral, Gemelos, Abdomen\n- IDs son los que ves arriba. NO inventes IDs.\n- Podés ANALIZAR entrenamientos: revisá el historial gym, los pesos, y recomendá ajustes.\n- Podés dar consejos de DIETA y NUTRICIÓN según el perfil y objetivo del usuario. Recomendá comidas, horarios, colaciones.\n- Podés recomendar cuánta AGUA tomar según su peso y actividad.\n- Si te preguntan por GASTOS relacionado a comida, usá los datos de categorías para sugerir donde ahorrar.\n- Si te piden hacer algo que no sea una acción, respondé normal pero útil.\n- Siempre respondé optimista y motivador como un entrenador personal.\n\nConversación:\n'+ctxHist+'\n\n['+txt+']:';
+  const prompt='Sos MARTIN·APP AI: asistente personal con control total de los datos.\n\n'+_hoy+dataCtx+memCtx+memInstr+'\n\nREGLAS:\n- Respondé en español uruguayo, natural, amigable y con confianza.\n- Revisá los datos con cuidado. Si te preguntan por pesos o registros, verificá exactamente lo que dice el registro antes de responder. No inventes números.\n- Si el usuario pide agregar/modificar datos, usá [ACCION] al final.\n- ACCIONES DISPONIBLES:\n  * [ACCION]{"op":"gasto","cat":"id","v":monto,"desc":"...","f":"d/m"}[/ACCION]\n  * [ACCION]{"op":"pago","cat":"id","m":mes,"y":año}[/ACCION]\n  * [ACCION]{"op":"fijo","cat":"id","m":mes,"y":año,"v":monto}[/ACCION]\n  * [ACCION]{"op":"compra","cardId":"id","v":monto,"desc":"...","cuotas":1}[/ACCION]\n  * [ACCION]{"op":"crear_rutina","name":"Nombre","days":[{"label":"Día1","exercises":[{"name":"Ej1","muscle":"Pecho","series":4,"reps":"10"}]}]}[/ACCION]\n  * [ACCION]{"op":"evento","titulo":"...","fecha":"YYYY-MM-DD","hora":"HH:MM","recordatorio":15}[/ACCION]\n- El AHORRO no es gasto: es plata que la persona aparta en una meta. Para guardar plata usá [ACCION]{"op":"ahorro","cat":"id_meta","v":monto}[/ACCION]; para crear una meta nueva (auto, casa, viaje) usá [ACCION]{"op":"crear_meta","nombre":"Auto","objetivo":500000,"aporte":1500}[/ACCION].\n- muscle debe ser uno de: Pecho, Espalda, Hombros, Bíceps, Tríceps, Cuádriceps, Femoral, Gemelos, Abdomen\n- IDs son los que ves arriba. NO inventes IDs.\n- Podés ANALIZAR entrenamientos: revisá el historial gym, los pesos, y recomendá ajustes.\n- Podés dar consejos de DIETA y NUTRICIÓN según el perfil y objetivo del usuario. Recomendá comidas, horarios, colaciones.\n- Podés recomendar cuánta AGUA tomar según su peso y actividad.\n- Si te preguntan por GASTOS relacionado a comida, usá los datos de categorías para sugerir donde ahorrar.\n- Si te piden hacer algo que no sea una acción, respondé normal pero útil.\n- Siempre respondé optimista y motivador como un entrenador personal.\n\nConversación:\n'+ctxHist+'\n\n['+txt+']:';
 
   // ---- Burbuja del asistente que se va llenando en vivo ----
   chatHist.push({role:'assistant',text:'',streaming:true});
@@ -2516,7 +2620,7 @@ function ejecutarAccion(acc){
     const m=acc.m!==undefined?acc.m:now.getMonth();
     const y=acc.y!==undefined?acc.y:now.getFullYear();
     const f=acc.f||(String(now.getDate())+'/'+String(now.getMonth()+1));
-    gastos.push({_id:maxId+1,c:acc.cat,v:acc.v||0,desc:acc.desc||'',m,y,f});
+    gastos.push({_id:maxId+1,c:acc.cat,v:parseMoney(acc.v),desc:acc.desc||'',m,y,f});
     S.s('gst4',gastos);
     return '$'+fmt((acc.v||0))+' agregado a "'+cat.n+'" ('+f+')';
   }
@@ -2538,9 +2642,30 @@ function ejecutarAccion(acc){
     const now=new Date();
     const m=acc.m!==undefined?acc.m:now.getMonth();
     const y=acc.y!==undefined?acc.y:now.getFullYear();
-    pf[acc.cat+'_'+m+'_'+y]=acc.v||0;
+    pf[acc.cat+'_'+m+'_'+y]=parseMoney(acc.v);
     S.s('pf4',pf);
-    return cat.n+' actualizado a $'+fmt(acc.v||0);
+    pagosFijos=pf;
+    return cat.n+' actualizado a $'+fmt(parseMoney(acc.v));
+  }
+  if(acc.op==='ahorro'){
+    // registrar un aporte de ahorro este mes (suma al acumulado)
+    const cat=cats.find(c=>c.id===acc.cat&&c.ahorro)||cats.find(c=>c.ahorro);
+    if(!cat)return 'No hay ninguna meta de ahorro. Creá una primero.';
+    const pf=S.g('pf4',{});
+    const now=new Date();
+    const m=acc.m!==undefined?acc.m:now.getMonth();
+    const y=acc.y!==undefined?acc.y:now.getFullYear();
+    const key=cat.id+'_'+m+'_'+y;
+    pf[key]=money((pf[key]||0)+parseMoney(acc.v));
+    S.s('pf4',pf);
+    pagosFijos=pf;
+    return '🐷 $'+fmt(parseMoney(acc.v))+' guardado en "'+cat.n+'". Llevás $'+fmt(ahorroAcumCat(cat.id));
+  }
+  if(acc.op==='crear_meta'){
+    const nombre=acc.nombre||acc.name||'Meta de ahorro';
+    const nueva={id:uid(),n:nombre,c:'#A78BFA',base:parseMoney(acc.aporte),objetivo:parseMoney(acc.objetivo),ahorro:true};
+    cats.push(nueva);S.s('cats4',cats);
+    return '🎯 Meta "'+nombre+'" creada'+(nueva.objetivo>0?' (objetivo $'+fmt(nueva.objetivo)+')':'');
   }
   if(acc.op==='crear_rutina'){
     if(!acc.name||!acc.days||!acc.days.length)return 'Faltan datos para crear la rutina';
@@ -2561,7 +2686,7 @@ function ejecutarAccion(acc){
     if(!card)return 'Tarjeta no encontrada. IDs disponibles: '+cards.map(c=>c.id+'('+c.n+')').join(', ');
     const cpurch=S.g('cpurch1',[])||[];
     const now=new Date();
-    const v=acc.v||0;
+    const v=parseMoney(acc.v);
     const installments=acc.cuotas||1;
     cpurch.push({id:uid(),cardId:card.id,commerce:acc.desc||'Gasto',total:v,installments,paidInstallments:(acc.pagadas||0),category:'otro',date:now.toISOString().slice(0,10),addedM:now.getMonth(),addedY:now.getFullYear()});
     S.s('cpurch1',cpurch);
@@ -3075,7 +3200,7 @@ function confirmExcelImport(){
       } else {
         const newId='cat_'+Date.now().toString(36)+i;
         catMap[c.id]=newId;
-        newCats.push({id:newId,n:c.n,c:c.c,base:c.base||0});
+        newCats.push({id:newId,n:c.n,c:c.c,base:parseMoney(c.base)});
       }
     });
     if(newCats.length)existingCats.push(...newCats);
@@ -3089,7 +3214,7 @@ function confirmExcelImport(){
       const m=parts[parts.length-2];
       const y=parts[parts.length-1];
       const nk=newId+'_'+m+'_'+y;
-      if(pf[nk]===undefined)pf[nk]=v;
+      if(pf[nk]===undefined)pf[nk]=parseMoney(v);
     });
     S.s('pagosFijos4',pf);
     // merge pagosEstado
@@ -3110,7 +3235,7 @@ function confirmExcelImport(){
     (obj.gastos||[]).forEach((g,i)=>{
       const newId=maxId+1+i;
       const newCatId=catMap[g.c]||g.c;
-      existingGastos.push({_id:newId,c:newCatId,v:g.v,desc:g.desc||'',m:g.m,y:g.y,f:g.f||''});
+      existingGastos.push({_id:newId,c:newCatId,v:parseMoney(g.v),desc:g.desc||'',m:Math.min(11,Math.max(0,parseInt(g.m,10)||0)),y:parseInt(g.y,10)||(new Date().getFullYear()),f:g.f||''});
     });
     S.s('gst4',existingGastos);
     // reload local vars
@@ -3378,6 +3503,7 @@ async function interpretVoice(txt){
     '  * [ACCION]{"op":"evento","titulo":"...","fecha":"YYYY-MM-DD","hora":"HH:MM","recordatorio":15}[/ACCION]\n'+
     '  * [ACCION]{"op":"crear_rutina","name":"...","days":[...]}[/ACCION]\n'+
     '  * [ACCION]{"op":"responder","texto":"texto a decir en voz alta"}[/ACCION]\n'+
+    '- El AHORRO no es gasto: es plata apartada. Para guardar usá [ACCION]{"op":"ahorro","cat":"id","v":monto}[/ACCION]; para meta nueva [ACCION]{"op":"crear_meta","nombre":"Auto","objetivo":500000,"aporte":1500}[/ACCION].\n'+
     '- muscle debe ser: Pecho, Espalda, Hombros, Bíceps, Tríceps, Cuádriceps, Femoral, Gemelos, Abdomen\n'+
     '- IDs son los que ves arriba. NO inventes IDs.\n'+
     '- Siempre optimista y motivador como un entrenador personal.\n\n'+
@@ -3792,10 +3918,10 @@ const CARD_COLORS=['#3B7FFF','#FF3B4E','#00C48C','#FFB347','#A855F7','#22D3EE','
 
 // ── Helpers ──
 function getCardPurchs(cardId){return cpurch.filter(p=>p.cardId===cardId);}
-function pInstAmt(p){return p.installments>0?p.total/p.installments:p.total;}
+function pInstAmt(p){return p.installments>0?money(p.total/p.installments):money(p.total);}
 function pRemaining(p){return Math.max(0,(p.installments||1)-(p.paidInstallments||0));}
-function getCardDebt(cardId){return getCardPurchs(cardId).reduce((s,p)=>s+pInstAmt(p)*pRemaining(p),0);}
-function getCardMonthAmt(cardId){return getCardPurchs(cardId).filter(p=>pRemaining(p)>0).reduce((s,p)=>s+pInstAmt(p),0);}
+function getCardDebt(cardId){return sumMoney(getCardPurchs(cardId),p=>pInstAmt(p)*pRemaining(p));}
+function getCardMonthAmt(cardId){return sumMoney(getCardPurchs(cardId).filter(p=>pRemaining(p)>0),p=>pInstAmt(p));}
 
 // ── TAB TARJETAS ──
 function rTarjetas(){
