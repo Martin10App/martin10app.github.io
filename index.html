@@ -1683,7 +1683,12 @@ function totalAhorroMes(m,y){
 }
 function ahorroAcumCat(catId){
   let t=0;
-  Object.keys(pagosFijos).forEach(key=>{if(key.indexOf(catId+'_')===0)t=money(t+pagosFijos[key]);});
+  const prefix=catId+'_';
+  Object.keys(pagosFijos).forEach(key=>{
+    if(!key.startsWith(prefix))return;
+    const rest=key.slice(prefix.length);
+    if(/^\d+_\d+$/.test(rest))t=money(t+pagosFijos[key]);
+  });
   return t;
 }
 function ahorroAcumTotal(){
@@ -1716,13 +1721,15 @@ function getCardMonthAmtAll(){
 function totalGastosMes(m,y){return money(totalCompromisosMes(m,y)+totalVariablesMes(m,y)+totalCardMonth());}
 function totalCatAnio(catId,y){
   const cat=cats.find(x=>x.id===catId);
-  if(cat&&cat.cardRef){
+  if(!cat)return 0;
+  if(cat.cardRef){
     return sumMoney(getCardPurchs(cat.cardRef),p=>pInstAmt(p)*pRemaining(p));
   }
   let t=0;
-  for(let m=0;m<12;m++){const ky=k(catId,m,y);if(pagosFijos[ky]!==undefined)t=money(t+pagosFijos[ky]);}
+  for(let m=0;m<12;m++){t=money(t+montoCat(cat,m,y));}
   t=money(t+sumMoney(gastos.filter(g=>g.y===y&&g.c===catId),g=>g.v));
   return t;
+
 }
 
 function delta(actual,anterior){if(!anterior)return null;const d=actual-anterior;const pct=Math.round((d/anterior)*100);return{d,pct,up:d>0};}
@@ -1760,7 +1767,7 @@ function rMes(){
       <div style="font-size:10px;color:var(--blue);font-weight:700;letter-spacing:2px;text-transform:uppercase">💰 Cobré este mes</div>
       <div style="font-size:10px;color:var(--text2)">Tocá para editar</div>
     </div>
-    <input class="sueldo-inp" id="sld-inp" type="number" inputmode="decimal" placeholder="0" value="${sueldo||''}" oninput="onSueldoChange(this.value)">
+    <input class="sueldo-inp" id="sld-inp" type="text" inputmode="decimal" placeholder="0" value="${sueldo||''}" oninput="onSueldoChange(this.value)">
   </div>`;
 
   h+=`<div class="stats s2" style="margin-bottom:10px">
@@ -1877,7 +1884,7 @@ function rMes(){
           ${isCard?`<span style="font-size:10px;color:var(--purple)">💳 ${tieneMonto?'Editado':'Cuota del mes'}</span>`:(tieneMonto?`<span style="font-size:10px;color:var(--text2)">Editado</span>`:`<span style="font-size:10px;color:var(--text2)">Base: ${fmt(cat.base)}</span>`)}
         </div>
       </div>
-      <input class="amt-inp${tieneMonto?' edited':''}" type="number" inputmode="decimal" value="${monto}"
+      <input class="amt-inp${tieneMonto?' edited':''}" type="text" inputmode="decimal" value="${monto}"
         ${isCard?`style="color:var(--purple);font-weight:700"`:`style=""`}
         onfocus="this.select()" onchange="event.stopPropagation();onMontoChange('${cat.id}',${m},${y},this.value)">
       <button class="paid-btn ${paid?'yes':'no'}" onclick="event.stopPropagation();onTogglePaid('${cat.id}',${m},${y})">${paid?'✓':'○'}</button>
@@ -1897,7 +1904,7 @@ function rMes(){
           <div style="font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(g.desc||cat.n)}</div>
           <div style="font-size:10px;color:var(--text2)">${esc(cat.n)} · ${g.f||''}</div>
         </div>
-        <input class="amt-inp" type="number" inputmode="decimal" value="${g.v}"
+        <input class="amt-inp" type="text" inputmode="decimal" value="${g.v}"
           onfocus="this.select()" onchange="onVarChange(${g._id},this.value)" style="width:80px;font-size:12px">
         <button onclick="delGasto(${g._id})" style="color:var(--text3);font-size:14px;margin-left:6px;flex-shrink:0">✕</button>
       </div>`;
@@ -1909,10 +1916,10 @@ function rMes(){
   return h+'</div>';
 }
 
-function onSueldoChange(v){const val=parseFloat(v)||0;setSueldo(curM,curY,val);}
-function onMontoChange(catId,m,y,v){const val=parseFloat(v)||0;setMontoPago(catId,m,y,val);tst('Monto actualizado');renderGastos();}
+function onSueldoChange(v){const val=parseMoney(v);setSueldo(curM,curY,val);}
+function onMontoChange(catId,m,y,v){const val=parseMoney(v);setMontoPago(catId,m,y,val);tst('Monto actualizado');renderGastos();}
 function onTogglePaid(catId,m,y){togPaid(catId,m,y);const c=cats.find(x=>x.id===catId);tst(isPaid(catId,m,y)?`✅ ${c?.n}`:`↩ ${c?.n}`);renderGastos();}
-function onVarChange(id,v){const g=gastos.find(x=>x._id===id);if(g){g.v=parseFloat(v)||0;S.s('gst4',gastos);tst('Gasto actualizado');renderGastos();}}
+function onVarChange(id,v){const g=gastos.find(x=>x._id===id);if(g){g.v=parseMoney(v);S.s('gst4',gastos);tst('Gasto actualizado');renderGastos();}}
 
 // ── TAB 1: PAGOS ──
 function rPagos(){
@@ -2279,7 +2286,7 @@ function rNuevoGasto(){
   <div class="mt" style="margin-bottom:8px">Nuevo gasto variable</div>
   <div style="font-size:12px;color:var(--text2);margin-bottom:20px;line-height:1.5">Para registros del día a día (supermercado, nafta, etc). Los compromisos fijos se editan desde "Mes".</div>
   <div class="fld"><label>Categoría</label><select class="inp" id="gc">${cats.map(c=>`<option value="${esc(c.id)}">${esc(c.n)}</option>`).join('')}</select></div>
-  <div class="fld"><label>Monto ($)</label><input class="inp" id="gv" type="number" placeholder="0" inputmode="decimal" style="font-family:var(--fm);font-size:22px;font-weight:700;text-align:right"></div>
+  <div class="fld"><label>Monto ($)</label><input class="inp" id="gv" type="text" inputmode="decimal" placeholder="0" style="font-family:var(--fm);font-size:22px;font-weight:700;text-align:right"></div>
   <div class="fld"><label>Descripción (opcional)</label><input class="inp" id="gd" placeholder="Supermercado, nafta…"></div>
   <div class="inp-r">
     <div class="fld"><label>Mes</label><select class="inp" id="gm">${MONTHS.map((m,i)=>`<option value="${i}" ${i===curM?'selected':''}>${m}</option>`).join('')}</select></div>
@@ -2291,7 +2298,7 @@ function rNuevoGasto(){
 }
 function saveNG(){
   const c=document.getElementById('gc')?.value;
-  const v=parseFloat(document.getElementById('gv')?.value);
+  const v=parseMoney(document.getElementById('gv')?.value);
   const desc=document.getElementById('gd')?.value.trim();
   const m=parseInt(document.getElementById('gm')?.value);
   const y=parseInt(document.getElementById('gy')?.value)||curY;
@@ -2332,7 +2339,7 @@ function rConfig(){
       return`<div style="display:flex;align-items:center;gap:10px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--r-sm);padding:11px 13px;margin-bottom:8px">
       <div class="cdot" style="background:${c.c};width:12px;height:12px;flex-shrink:0"></div>
       <div style="flex:1;font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(c.n)}</div>
-      <input type="number" value="${c.base}" inputmode="numeric" oninput="cats[${realIdx}].base=parseFloat(this.value)||0;S.s('cats4',cats)" style="width:88px;padding:6px 8px;border-radius:8px;background:var(--bg3);border:1px solid var(--border2);color:var(--text0);font-size:12px;text-align:right;outline:none;font-family:var(--fm)">
+      <input type="text" inputmode="decimal" value="${c.base}" oninput="cats[${realIdx}].base=parseMoney(this.value);S.s('cats4',cats)" style="width:88px;padding:6px 8px;border-radius:8px;background:var(--bg3);border:1px solid var(--border2);color:var(--text0);font-size:12px;text-align:right;outline:none;font-family:var(--fm)">
       <button onclick="delCat(${realIdx})" style="color:var(--text3);font-size:16px">✕</button>
     </div>`;}).join('')}
     ${cats.filter(c=>c.cardRef).map(c=>`
@@ -2372,21 +2379,21 @@ function delCat(i){const c=cats[i];if(!c||c.cardRef){tst('Las tarjetas se elimin
 function addCatModal(){const colors=['#FF3B4E','#3B7FFF','#00C48C','#FFB347','#A855F7','#22D3EE','#F97316','#84CC16','#14B8A6','#E879F9','#FB7185','#38BDF8'];window._ncc='#FF3B4E';
   oOv1(`<div class="mt">Nueva categoría</div>
   <div class="fld"><label>Nombre</label><input class="inp" id="nc-n" placeholder="Netflix, Gimnasio…"></div>
-  <div class="fld"><label>Monto base mensual</label><input class="inp" id="nc-p" type="number" placeholder="0" inputmode="numeric"></div>
+  <div class="fld"><label>Monto base mensual</label><input class="inp" id="nc-p" type="text" inputmode="decimal" placeholder="0"></div>
   <div class="fld"><label>Color</label><div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:4px">
     ${colors.map(col=>`<div id="nc-c-${col.slice(1)}" onclick="selNC('${col}')" style="width:34px;height:34px;border-radius:9px;background:${col};cursor:pointer;border:2.5px solid ${col==='#FF3B4E'?'white':'transparent'};transition:all .2s"></div>`).join('')}
   </div></div>
   <button class="btn b-lg b-p" onclick="confNC()">Crear categoría</button>`);}
 function selNC(col){window._ncc=col;document.querySelectorAll('[id^="nc-c-"]').forEach(el=>el.style.borderColor='transparent');document.getElementById('nc-c-'+col.slice(1))?.style.setProperty('border-color','white');}
-function confNC(){const n=document.getElementById('nc-n')?.value.trim();const p=parseFloat(document.getElementById('nc-p')?.value)||0;if(!n){tst('Escribí el nombre');return;}cats.push({id:uid(),n,c:window._ncc||'#aaa',base:p});S.s('cats4',cats);cOv1();tst('✓ Categoría creada');renderGastos();}
+function confNC(){const n=document.getElementById('nc-n')?.value.trim();const p=parseMoney(document.getElementById('nc-p')?.value);if(!n){tst('Escribí el nombre');return;}cats.push({id:uid(),n,c:window._ncc||'#aaa',base:p});S.s('cats4',cats);cOv1();tst('✓ Categoría creada');renderGastos();}
 function editMetaModal(catId){
   const c=cats.find(x=>x.id===catId);if(!c)return;
   const acum=ahorroAcumCat(c.id);
   oOv1(`<div class="mt">🐷 Meta de ahorro</div>
   <div style="font-size:13px;font-weight:700;margin-bottom:4px">${esc(c.n)}</div>
   <div style="font-size:11px;color:var(--text2);margin-bottom:14px">Llevás ahorrado <b style="color:#A78BFA">${fmtFull(acum)}</b></div>
-  <div class="fld"><label>Aporte mensual</label><input class="inp" id="meta-base" type="number" inputmode="numeric" placeholder="0" value="${c.base||''}"></div>
-  <div class="fld"><label>Objetivo total (ej: auto 500000) — 0 si no tenés meta fija</label><input class="inp" id="meta-obj" type="number" inputmode="numeric" placeholder="0" value="${c.objetivo||''}"></div>
+  <div class="fld"><label>Aporte mensual</label><input class="inp" id="meta-base" type="text" inputmode="decimal" placeholder="0" value="${c.base||''}"></div>
+  <div class="fld"><label>Objetivo total (ej: auto 500000) — 0 si no tenés meta fija</label><input class="inp" id="meta-obj" type="text" inputmode="decimal" placeholder="0" value="${c.objetivo||''}"></div>
   <button class="btn b-lg b-p" onclick="saveMeta('${c.id}')">Guardar meta</button>`);
 }
 function saveMeta(catId){
@@ -3960,7 +3967,7 @@ function showVoiceConfirm(textoOriginal,obj){
   <label style="font-size:11px;color:var(--text2);letter-spacing:1px;text-transform:uppercase;display:block;margin-bottom:6px">Descripción</label>
   <input class="inp" id="vc-desc" type="text" value="${esc(obj.descripcion||'')}" style="margin-bottom:16px">
   <label style="font-size:11px;color:var(--text2);letter-spacing:1px;text-transform:uppercase;display:block;margin-bottom:6px">Monto ($)</label>
-  <input class="inp" id="vc-monto" type="number" value="${obj.monto||0}" min="0" style="margin-bottom:16px">
+  <input class="inp" id="vc-monto" type="text" inputmode="decimal" value="${obj.monto||0}" style="margin-bottom:16px">
   <label style="font-size:11px;color:var(--text2);letter-spacing:1px;text-transform:uppercase;display:block;margin-bottom:6px">Categoría</label>
   <select class="inp" id="vc-cat" style="margin-bottom:16px">${catOpts}</select>
   <label style="font-size:11px;color:var(--text2);letter-spacing:1px;text-transform:uppercase;display:block;margin-bottom:6px">Fecha</label>
@@ -3978,7 +3985,7 @@ function showVoiceConfirm(textoOriginal,obj){
 
 function confirmVoice(){
   const desc=(document.getElementById('vc-desc')?.value||'').trim();
-  const monto=parseFloat(document.getElementById('vc-monto')?.value||0);
+  const monto=parseMoney(document.getElementById('vc-monto')?.value);
   const catId=document.getElementById('vc-cat')?.value||'0';
   const fecha=document.getElementById('vc-fecha')?.value||new Date().toISOString().slice(0,10);
   const pfCheck=document.getElementById('vc-pf');
@@ -4180,6 +4187,9 @@ function loadUserData(){
   routines=S.g('rt2',[]);activeRid=S.g('arid',null);sets=S.g('sets2',{});weights=S.g('wts2',{});gymHist=S.g('ghst2',[]);
   gastos=S.g('gst4',[]);pagosFijos=S.g('pf4',{});pagosEstado=S.g('pe4',{});sueldos=S.g('sld4',{});
   cats=S.g('cats4',[]);
+  // Migración: asegurar que la categoría ahorro tenga ahorro:true (datos viejos)
+  const _aCat=cats.find(c=>c.id==='ahorro');
+  if(_aCat&&!_aCat.ahorro){_aCat.ahorro=true;S.s('cats4',cats);}
   cards=S.g('cards1',[]);cpurch=S.g('cpurch1',[]);
   events=S.g('evts1',[]);
   gymProfile=S.g('gymProfile',{height:0,weight:0,experience:0});
@@ -4483,7 +4493,7 @@ function openAddPurch(cardId){
   oOv2(`<div class="mt">Nueva compra</div>
   <input type="hidden" id="pu-cardid" value="${cardId}">
   <div class="fld"><label>Comercio</label><input class="inp" id="pu-com" placeholder="Supermercado, Netflix, YPF…"></div>
-  <div class="fld"><label>Monto total ($)</label><input class="inp" id="pu-total" type="number" inputmode="decimal" placeholder="0" style="font-family:var(--fm);font-size:20px;font-weight:700;text-align:right"></div>
+  <div class="fld"><label>Monto total ($)</label><input class="inp" id="pu-total" type="text" inputmode="decimal" placeholder="0" style="font-family:var(--fm);font-size:20px;font-weight:700;text-align:right"></div>
   <div class="inp-r">
     <div class="fld"><label>Cuotas totales</label><input class="inp" id="pu-inst" type="number" value="1" min="1" inputmode="numeric"></div>
     <div class="fld"><label>Ya pagadas</label><input class="inp" id="pu-paid" type="number" value="0" min="0" inputmode="numeric"></div>
@@ -4495,7 +4505,7 @@ function openAddPurch(cardId){
 function doSavePurch(){
   const cardId=document.getElementById('pu-cardid')?.value;
   const commerce=(document.getElementById('pu-com')?.value||'').trim();
-  const total=parseFloat(document.getElementById('pu-total')?.value)||0;
+  const total=parseMoney(document.getElementById('pu-total')?.value);
   const installments=Math.max(1,parseInt(document.getElementById('pu-inst')?.value)||1);
   const paidInstallments=Math.min(installments,Math.max(0,parseInt(document.getElementById('pu-paid')?.value)||0));
   const category=document.getElementById('pu-cat')?.value||'otro';
