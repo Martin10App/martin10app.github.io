@@ -36,8 +36,8 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
 
 #app{display:flex;flex-direction:column;height:100dvh;max-width:480px;margin:0 auto}
 #scr{flex:1;overflow-y:auto;overflow-x:hidden;overscroll-behavior-y:contain;-webkit-overflow-scrolling:touch}
-#nav{flex-shrink:0;display:grid;grid-template-columns:repeat(4,1fr);background:rgba(8,9,13,.97);backdrop-filter:blur(24px) saturate(180%);border-top:1px solid var(--border);padding:10px 0 max(10px,env(safe-area-inset-bottom));z-index:100}
-.nb{display:flex;flex-direction:column;align-items:center;gap:5px;color:var(--text2);font-size:10px;font-weight:600;letter-spacing:.8px;text-transform:uppercase;padding:6px 20px;transition:color .2s;font-family:var(--fd)}
+#nav{flex-shrink:0;display:grid;grid-template-columns:repeat(5,1fr);background:rgba(8,9,13,.97);backdrop-filter:blur(24px) saturate(180%);border-top:1px solid var(--border);padding:10px 0 max(10px,env(safe-area-inset-bottom));z-index:100}
+.nb{display:flex;flex-direction:column;align-items:center;gap:5px;color:var(--text2);font-size:10px;font-weight:600;letter-spacing:.8px;text-transform:uppercase;padding:6px 6px;transition:color .2s;font-family:var(--fd)}
 .nb svg{width:24px;height:24px;stroke-width:1.8;transition:all .2s}
 .nb.on{color:var(--text0)}.nb.on svg{filter:drop-shadow(0 0 8px currentColor)}
 
@@ -386,6 +386,20 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
   <div id="chat-b" style="display:flex;flex-direction:column;height:calc(100dvh - 180px)"></div>
 </div>
 
+<div class="pg" id="pg-coach">
+  <div class="ph">
+    <div class="ph-r">
+      <div>
+        <div class="ph-t">COACH<span style="color:#34D399">·</span>BIENESTAR</div>
+        <div class="ph-s">Tu coach personal</div>
+      </div>
+      <button class="user-avatar" id="user-avatar-coach" onclick="openUserMgmt()" title="Mi cuenta"></button>
+    </div>
+    <div id="coach-ph-bar" style="padding:10px 20px 0"></div>
+  </div>
+  <div id="coach-b" style="display:flex;flex-direction:column;height:calc(100dvh - 180px)"></div>
+</div>
+
 </div>
 
 <nav id="nav">
@@ -404,6 +418,10 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
   <button class="nb" id="nb-chat" onclick="page('chat')">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" stroke-linecap="round"/><path d="M8 9h8M8 13h6" stroke-linecap="round"/></svg>
     Chat AI
+  </button>
+  <button class="nb" id="nb-coach" onclick="page('coach')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 21c-4.5-2.5-8-6-8-10.5A4.5 4.5 0 0112 7a4.5 4.5 0 018 3.5C20 15 16.5 18.5 12 21z" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    Coach
   </button>
 </nav>
 </div>
@@ -519,7 +537,8 @@ function apiForMuscle(m){
 // ── STATE ──
 let routines=[],activeRid=null,sets={},weights={},gymHist=[];
 let gymProfile=S.g('gymProfile',{height:0,weight:0,experience:0});
-let nutData=S.g('nutData',{waterLog:{},waterTarget:0,mealPlans:[],lastPlanDate:''});
+let nutData=S.g('nutData',{waterLog:{},waterTarget:0,mealPlans:[],lastPlanDate:'',foodLog:{},dietType:'',targetWeight:0,weeklyPlan:null,weeklyPlanDate:''});
+if(!nutData.foodLog)nutData.foodLog={};
 let gymWeekLog=S.g('gymWeekLog',[]);
 let activeWeekId=S.g('activeWeekId',null);
 
@@ -641,9 +660,9 @@ function page(p){
   document.getElementById('pg-'+p).classList.add('on');
   document.getElementById('nb-'+p).classList.add('on');
   document.getElementById('scr').scrollTop=0;
-  if(p==='gym')renderGym();else if(p==='agenda')renderAgenda();else if(p==='chat')renderChat();else renderGastos();
+  if(p==='gym')renderGym();else if(p==='agenda')renderAgenda();else if(p==='chat')renderChat();else if(p==='coach')renderCoach();else renderGastos();
   const mic=document.getElementById('mic-btn');
-  if(mic)mic.style.display='flex';
+  if(mic)mic.style.display=(p==='chat'||p==='coach')?'none':'flex';
 }
 
 function oOv1(h){document.getElementById('m1').innerHTML=h;document.getElementById('ov1').classList.add('on')}
@@ -1066,16 +1085,72 @@ function rGymNutricion(){
   const nd=nutData||{};
   const waterLog=nd.waterLog||{};
   const glasses=waterLog[today]||0;
-  // Auto-calculate water target: 35ml per kg of body weight, each glass = 250ml
   const calcTarget=p.weight?Math.max(6,Math.round(p.weight*35/250)):8;
   const target=nd.waterTarget||calcTarget;
   const waterPct=Math.min(100,Math.round((glasses/target)*100));
   const remaining=Math.max(0,target-glasses);
-  const meals=nd.mealPlans||[];
-  const lastPlan=nd.lastPlanDate||'';
   const key=aiKey();
 
+  // ── Objetivo de calorías diario según perfil + tipo de dieta ──
+  const calGoal=dailyCalorieGoal();
+  const log=(nd.foodLog||{})[today]||[];
+  const consumed=log.reduce((s,f)=>s+(+f.cal||0),0);
+  const protConsumed=log.reduce((s,f)=>s+(+f.prot||0),0);
+  const calPct=calGoal>0?Math.min(100,Math.round((consumed/calGoal)*100)):0;
+  const calLeft=Math.max(0,calGoal-consumed);
+
   let h=`<div class="sec">`;
+
+  // ── Objetivo / tipo de dieta ──
+  const dietLabels={mantener:'Mantener peso',bajar_lento:'Bajar de peso (lento)',bajar_rapido:'Bajar de peso (rápido)',masa:'Aumentar masa muscular',keto:'Cetogénica (keto)',recomp:'Recomposición'};
+  h+=`<div class="card" style="margin-bottom:14px;border-color:#34D39940">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+      <div class="sec-t" style="margin:0">🎯 Mi objetivo</div>
+      <button class="btn b-sm b-g" onclick="openNutGoalModal()" style="font-size:11px">Editar</button>
+    </div>`;
+  if(nd.dietType){
+    h+=`<div style="display:flex;gap:16px;flex-wrap:wrap;font-size:12px">
+      <div><span style="color:var(--text3)">Plan:</span> <b style="color:#34D399">${dietLabels[nd.dietType]||nd.dietType}</b></div>
+      ${p.weight?`<div><span style="color:var(--text3)">Peso:</span> <b>${p.weight}kg</b></div>`:''}
+      ${nd.targetWeight?`<div><span style="color:var(--text3)">Meta:</span> <b style="color:#34D399">${nd.targetWeight}kg</b></div>`:''}
+    </div>`;
+  } else {
+    h+=`<div style="font-size:12px;color:var(--text2);line-height:1.5">Definí tu objetivo (bajar, masa, keto…) y tu peso meta para que la IA arme planes y cuente calorías a tu medida.<br><button class="btn b-md b-p" style="margin-top:10px;background:#10B981" onclick="openNutGoalModal()">Configurar objetivo</button></div>`;
+  }
+  h+=`</div>`;
+
+  // ── Calorías de hoy (registro diario) ──
+  if(calGoal>0){
+    h+=`<div class="card" style="margin-bottom:14px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <div class="sec-t" style="margin:0">🍽️ Comidas de hoy</div>
+        <div style="font-size:11px;color:var(--text2)">Meta: ${calGoal} kcal</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:14px;margin-bottom:12px">
+        <div class="ring-w"><canvas id="cal-ring" width="64" height="64"></canvas><span class="ring-l" id="cal-ring-lbl" style="font-size:10px">${calPct}%</span></div>
+        <div style="flex:1">
+          <div style="font-family:var(--fm);font-size:30px;font-weight:800;color:${consumed>calGoal?'var(--red)':'var(--green)'}">${consumed}</div>
+          <div style="font-size:11px;color:var(--text2)">de ${calGoal} kcal · ${calLeft>0?`quedan ${calLeft}`:'meta alcanzada'} · ${protConsumed}g prot</div>
+        </div>
+      </div>
+      <div class="pbar" style="margin-bottom:12px"><div class="pfill" style="width:${calPct}%;background:${consumed>calGoal?'var(--red)':'var(--green)'}"></div></div>`;
+    if(log.length){
+      h+=`<div style="margin-bottom:10px">`;
+      log.forEach((f,i)=>{
+        h+=`<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border)">
+          <div style="min-width:0;flex:1"><div style="font-size:12px;font-weight:600">${esc(f.name)}</div><div style="font-size:10px;color:var(--text3)">${f.prot?f.prot+'g prot':''}</div></div>
+          <div style="font-size:12px;font-weight:700;color:var(--green);margin:0 10px">${f.cal} kcal</div>
+          <button onclick="delFood(${i})" style="background:none;border:none;color:var(--text3);font-size:16px;cursor:pointer">×</button>
+        </div>`;
+      });
+      h+=`</div>`;
+    }
+    h+=`<div style="display:flex;gap:8px">
+      <button class="btn b-md b-grn" style="flex:1" onclick="openAddFoodModal()">+ Anotar comida</button>
+      ${key?`<button class="btn b-md b-p" onclick="addFoodPhoto()" style="flex-shrink:0">📷 Foto</button>`:''}
+    </div>
+    </div>`;
+  }
 
   // ── Water Tracker ──
   h+=`<div class="card" style="border-color:var(--blue-b);margin-bottom:14px">
@@ -1098,58 +1173,41 @@ function rGymNutricion(){
     </div>
   </div>`;
 
-  // ── Diet / AI Meal Plan ──
+  // ── Plan semanal IA ──
   h+=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-    <div class="sec-t" style="margin:0">🥗 Plan de alimentación</div>
-    ${key?`<button class="btn b-sm b-p" onclick="askAIDiet()">✨ IA</button>`:`<span style="font-size:10px;color:var(--text2)">Configurá Gemini en Gastos</span>`}
+    <div class="sec-t" style="margin:0">📅 Plan semanal</div>
+    ${key?`<button class="btn b-sm b-p" onclick="askWeeklyPlan()">✨ Generar semana</button>`:`<span style="font-size:10px;color:var(--text2)">Configurá IA</span>`}
   </div>`;
-
-  if(meals.length&&lastPlan===today){
-    h+=`<div id="diet-plan-container">${meals[meals.length-1].html}</div>`;
+  if(nd.weeklyPlan){
+    h+=`<div class="card">${nd.weeklyPlan}</div>`;
   } else {
-    h+=`<div id="diet-plan-container"><div class="card" style="text-align:center;padding:24px">
-      <div style="font-size:28px;margin-bottom:8px">🥗</div>
-      <div style="font-size:13px;font-weight:600;margin-bottom:4px">Sin plan del día</div>
-      <div style="font-size:11px;color:var(--text2);line-height:1.5">
-        ${key?`Presioná <strong>✨ IA</strong> para que Gemini te arme un plan de comidas<br>basado en tu perfil, objetivo y lo que entrenás.`:'Configurá tu API Key de Gemini en Gastos → Config'}
-      </div>
-      ${key?`<button class="btn b-md b-p" style="margin-top:14px" onclick="askAIDiet()">✨ Generar plan con IA</button>`:''}
-    </div></div>`;
-  }
-
-  // ── Daily macros (based on profile) ──
-  if(p.weight&&p.goal){
-    const w=p.weight;
-    const protein=Math.round(w*2); // 2g per kg
-    const carbs=Math.round(w*(p.goal==='bajar_peso'?2:4));
-    const fat=Math.round(w*0.8);
-    const cals=protein*4+carbs*4+fat*9;
-    let calAdj='';
-    if(p.goal==='bajar_peso'){calAdj=` (déficit ~${Math.round(cals-500)})`;}
-    else if(p.goal==='fuerza'||p.goal==='hipertrofia'){calAdj=` (superávit ~${Math.round(cals+300)})`;}
-
-    h+=`<div class="card" style="margin-top:14px">
-      <div class="sec-t" style="margin:0">📊 Macros estimados · ${p.goal==='bajar_peso'?'Definición':p.goal==='fuerza'?'Fuerza':p.goal==='hipertrofia'?'Masa muscular':p.goal==='resistencia'?'Resistencia':'Salud'}</div>
-      <div style="font-size:11px;color:var(--text2);margin-bottom:10px">Basado en ${w}kg de peso corporal${p.dietRestrictions?` · ${esc(p.dietRestrictions)}`:''}</div>
-      <div class="stats s4">
-        <div class="st"><div class="sv" style="font-size:13px;color:var(--red)">${cals}</div><div class="sl">Calorías${calAdj}</div></div>
-        <div class="st"><div class="sv" style="font-size:13px;color:var(--blue)">${protein}g</div><div class="sl">Proteína</div></div>
-        <div class="st"><div class="sv" style="font-size:13px;color:var(--gold)">${carbs}g</div><div class="sl">Carbos</div></div>
-        <div class="st"><div class="sv" style="font-size:13px;color:var(--green)">${fat}g</div><div class="sl">Grasas</div></div>
-      </div>
-    </div>`;
-  } else {
-    h+=`<div class="card" style="margin-top:14px;cursor:pointer" onclick="openGymProfile()">
-      <div style="font-size:12px;color:var(--text2);padding:12px;text-align:center;line-height:1.6">
-        Completá tu <strong>perfil físico</strong> 💪 (altura, peso, objetivo) para ver macros personalizados<br>
-        <span style="font-size:10px;color:var(--blue)">Tocá para configurar →</span>
-      </div>
+    h+=`<div class="card" style="text-align:center;padding:20px">
+      <div style="font-size:24px;margin-bottom:6px">📅</div>
+      <div style="font-size:12px;color:var(--text2);line-height:1.5">${key?'La IA arma un plan de 7 días según tu objetivo, tipo de dieta y lo que entrenás.':'Configurá tu IA en el chat'}</div>
+      ${key?`<button class="btn b-md b-p" style="margin-top:12px" onclick="askWeeklyPlan()">✨ Generar plan semanal</button>`:''}
     </div>`;
   }
 
   h+=`</div>`;
-  setTimeout(()=>ring('wtr-ring',waterPct,glasses>=target?'var(--green)':'var(--blue)',waterPct+'%',64),50);
+  setTimeout(()=>{ring('wtr-ring',waterPct,glasses>=target?'var(--green)':'var(--blue)',waterPct+'%',64);if(calGoal>0)ring('cal-ring',calPct,consumed>calGoal?'var(--red)':'var(--green)',calPct+'%',64);},50);
   return h;
+}
+
+// Objetivo calórico diario según peso + tipo de dieta
+function dailyCalorieGoal(){
+  const p=gymProfile||{};const nd=nutData||{};
+  if(!p.weight)return 0;
+  const w=p.weight;
+  // base: mantenimiento aprox = peso × 30 (sedentario-moderado)
+  let base=w*30;
+  switch(nd.dietType){
+    case 'bajar_lento':base-=350;break;
+    case 'bajar_rapido':base-=600;break;
+    case 'masa':base+=400;break;
+    case 'keto':base-=300;break;
+    case 'recomp':base-=100;break;
+  }
+  return Math.max(1000,Math.round(base/10)*10);
 }
 
 function addWater(n){
@@ -1170,6 +1228,139 @@ function subWater(){
   nutData.waterLog[today]=Math.max(0,(nutData.waterLog[today]||0)-1);
   S.s('nutData',nutData);
   renderGym();
+}
+
+// ── Objetivo / tipo de dieta ──
+function openNutGoalModal(){
+  const nd=nutData||{};const p=gymProfile||{};
+  const types=[['mantener','Mantener peso'],['bajar_lento','Bajar lento'],['bajar_rapido','Bajar rápido'],['masa','Masa muscular'],['keto','Cetogénica'],['recomp','Recomposición']];
+  oOv1(`<div class="mt">🎯 Mi objetivo nutricional</div>
+  <div class="fld"><label>Tipo de plan</label>
+    <select class="inp" id="ng-type">${types.map(t=>`<option value="${t[0]}" ${nd.dietType===t[0]?'selected':''}>${t[1]}</option>`).join('')}</select>
+  </div>
+  <div class="fld"><label>Peso actual (kg)</label><input class="inp" id="ng-w" type="number" inputmode="decimal" placeholder="0" value="${p.weight||''}"></div>
+  <div class="fld"><label>Peso meta (kg)</label><input class="inp" id="ng-tw" type="number" inputmode="decimal" placeholder="0" value="${nd.targetWeight||''}"></div>
+  <div class="fld"><label>Restricciones (opcional: vegetariano, sin lactosa…)</label><input class="inp" id="ng-r" type="text" placeholder="ninguna" value="${esc(p.dietRestrictions||'')}"></div>
+  <button class="btn b-lg b-p" style="background:#10B981" onclick="saveNutGoal()">Guardar objetivo</button>`);
+}
+function saveNutGoal(){
+  const type=document.getElementById('ng-type')?.value;
+  const w=parseFloat(document.getElementById('ng-w')?.value)||0;
+  const tw=parseFloat(document.getElementById('ng-tw')?.value)||0;
+  const r=document.getElementById('ng-r')?.value.trim()||'';
+  nutData.dietType=type;nutData.targetWeight=tw;
+  if(w>0)gymProfile.weight=w;
+  gymProfile.dietRestrictions=r;
+  // mapear dietType a goal del perfil para los macros
+  gymProfile.goal=(type==='masa')?'hipertrofia':(type==='bajar_lento'||type==='bajar_rapido'||type==='keto')?'bajar_peso':gymProfile.goal||'salud';
+  S.s('nutData',nutData);S.s('gymProfile',gymProfile);
+  // guardar en memoria para la IA
+  const mem=S.g('userMem1',[]);
+  mem.push({t:'Objetivo nutricional: '+type+(tw?', peso meta '+tw+'kg':'')+(r?', '+r:''),tag:'dieta',ts:Date.now()});
+  S.s('userMem1',mem);
+  cOv1();tst('✓ Objetivo guardado');renderGym();
+}
+
+// ── Registro de comidas ──
+function openAddFoodModal(){
+  const key=aiKey();
+  oOv1(`<div class="mt">🍽️ Anotar comida</div>
+  <div style="font-size:11px;color:var(--text2);margin-bottom:12px">Escribí lo que comiste${key?' y la IA estima las calorías':''}, o cargá los valores a mano.</div>
+  <div class="fld"><label>¿Qué comiste?</label><input class="inp" id="af-name" type="text" placeholder="ej: 2 huevos revueltos con pan"></div>
+  ${key?`<button class="btn b-md b-p" style="width:100%;margin-bottom:12px" onclick="estimateFood()">✨ Estimar calorías con IA</button>`:''}
+  <div style="display:flex;gap:8px">
+    <div class="fld" style="flex:1"><label>Calorías</label><input class="inp" id="af-cal" type="number" inputmode="numeric" placeholder="0"></div>
+    <div class="fld" style="flex:1"><label>Proteína (g)</label><input class="inp" id="af-prot" type="number" inputmode="numeric" placeholder="0"></div>
+  </div>
+  <button class="btn b-lg b-grn" onclick="saveFood()">Agregar</button>`);
+}
+async function estimateFood(){
+  const name=document.getElementById('af-name')?.value.trim();
+  if(!name){tst('Escribí qué comiste');return;}
+  const key=aiKey();if(!key){tst('Configurá la IA');return;}
+  const btn=document.querySelector('[onclick="estimateFood()"]');
+  if(btn){btn.textContent='⏳ Estimando…';btn.disabled=true;}
+  try{
+    const prompt='Estimá las calorías y proteínas de esta comida. Respondé SOLO un JSON sin texto extra: {"cal":número,"prot":número}. Comida: "'+name+'"';
+    const txt=await _aiComplete(prompt);
+    const j=_extractJSON(txt);
+    if(j){const o=JSON.parse(j);
+      const ci=document.getElementById('af-cal');const pi=document.getElementById('af-prot');
+      if(ci)ci.value=Math.round(o.cal||0);if(pi)pi.value=Math.round(o.prot||0);
+      tst('✓ Estimado: '+Math.round(o.cal||0)+' kcal');
+    } else tst('No pude estimar, cargalo a mano');
+  }catch(e){tst('Error: '+e.message,3000);}
+  if(btn){btn.textContent='✨ Estimar calorías con IA';btn.disabled=false;}
+}
+function saveFood(){
+  const name=document.getElementById('af-name')?.value.trim();
+  const cal=parseInt(document.getElementById('af-cal')?.value,10)||0;
+  const prot=parseInt(document.getElementById('af-prot')?.value,10)||0;
+  if(!name){tst('Escribí qué comiste');return;}
+  const today=todayStr();
+  if(!nutData.foodLog)nutData.foodLog={};
+  if(!nutData.foodLog[today])nutData.foodLog[today]=[];
+  nutData.foodLog[today].push({name,cal,prot,t:Date.now()});
+  S.s('nutData',nutData);cOv1();tst('✓ '+cal+' kcal anotadas');renderGym();
+}
+function delFood(i){
+  const today=todayStr();
+  if(nutData.foodLog&&nutData.foodLog[today]){
+    nutData.foodLog[today].splice(i,1);S.s('nutData',nutData);renderGym();
+  }
+}
+// Foto de comida → IA estima
+function addFoodPhoto(){
+  const inp=document.createElement('input');
+  inp.type='file';inp.accept='image/*';inp.capture='environment';
+  inp.onchange=async()=>{
+    const file=inp.files&&inp.files[0];if(!file)return;
+    const gkey=(S.g('gemini_key','')||'').trim();
+    if(!gkey){tst('La foto de comida usa Gemini. Pegá una key de Gemini en Config.',5000);return;}
+    tst('📷 Analizando comida…',2500);
+    try{
+      const b64=await new Promise((res,rej)=>{const r=new FileReader();r.onload=e=>res(e.target.result.split(',')[1]);r.onerror=rej;r.readAsDataURL(file);});
+      const prompt='En la foto hay comida. Identificá qué es y estimá calorías y proteínas totales del plato. Respondé SOLO JSON: {"name":"descripción corta","cal":número,"prot":número}';
+      const resp=await fetch('https://generativelanguage.googleapis.com/v1beta/models/'+GEMINI_MODEL+':generateContent',
+        {method:'POST',headers:{'Content-Type':'application/json','X-goog-api-key':gkey},body:JSON.stringify({contents:[{parts:[{text:prompt},{inline_data:{mime_type:file.type||'image/jpeg',data:b64}}]}]})});
+      if(!resp.ok)throw new Error('Gemini '+resp.status);
+      const data=await resp.json();
+      const txt=data?.candidates?.[0]?.content?.parts?.[0]?.text||'';
+      const j=_extractJSON(txt);
+      if(!j)throw new Error('No pude identificar la comida');
+      const o=JSON.parse(j);
+      const today=todayStr();
+      if(!nutData.foodLog)nutData.foodLog={};
+      if(!nutData.foodLog[today])nutData.foodLog[today]=[];
+      nutData.foodLog[today].push({name:o.name||'Comida',cal:Math.round(o.cal||0),prot:Math.round(o.prot||0),t:Date.now()});
+      S.s('nutData',nutData);tst('✓ '+(o.name||'Comida')+': '+Math.round(o.cal||0)+' kcal');renderGym();
+    }catch(e){tst('⚠️ '+e.message,4000);}
+  };
+  inp.click();
+}
+// Plan semanal con IA
+async function askWeeklyPlan(){
+  const key=aiKey();if(!key){tst('Configurá la IA');return;}
+  const p=gymProfile||{};const nd=nutData||{};
+  const calGoal=dailyCalorieGoal();
+  const dietLabels={mantener:'mantener peso',bajar_lento:'bajar de peso lento',bajar_rapido:'bajar de peso rápido',masa:'aumentar masa muscular',keto:'dieta cetogénica',recomp:'recomposición corporal'};
+  const exNameMap={};routines.forEach(r=>r.days.forEach(d=>d.exercises.forEach(e=>{exNameMap[e.muscle]=true;})));
+  const entrena=routines.length?routines.map(r=>r.name+'('+r.days.length+'d)').join(', '):'no entrena';
+  tst('✨ Armando tu semana…',3000);
+  const btn=document.querySelector('[onclick="askWeeklyPlan()"]');
+  if(btn){btn.textContent='⏳…';btn.disabled=true;}
+  try{
+    const prompt='Sos nutricionista deportivo. Armá un plan de comidas de 7 días (Lunes a Domingo) para esta persona.\n'+
+      'Datos: '+(p.weight?p.weight+'kg, ':'')+'objetivo: '+(dietLabels[nd.dietType]||'salud general')+', '+
+      (nd.targetWeight?'peso meta '+nd.targetWeight+'kg, ':'')+'meta calórica diaria ~'+calGoal+' kcal'+(p.dietRestrictions?', restricciones: '+p.dietRestrictions:'')+'. Entrenamiento: '+entrena+'.\n'+
+      'Para cada día indicá desayuno, almuerzo, merienda y cena, breve y concreto, con calorías aproximadas por comida. Ajustá los días de entrenamiento con más carbohidratos.\n'+
+      'Respondé en HTML simple y compacto: para cada día un bloque con <div style="font-weight:700;color:#34D399;margin:10px 0 4px;font-size:13px">Día</div> y debajo las comidas en <div style="font-size:12px;line-height:1.6;color:var(--text1)">. NO uses markdown ni bloques de código. Español uruguayo.';
+    const html=await _aiComplete(prompt);
+    nutData.weeklyPlan=html.replace(/```html|```/g,'').trim();
+    nutData.weeklyPlanDate=todayStr();
+    S.s('nutData',nutData);tst('✓ Plan semanal listo');renderGym();
+  }catch(e){tst('Error: '+e.message,4000);}
+  if(btn){btn.textContent='✨ Generar plan semanal';btn.disabled=false;}
 }
 
 async function askAIDiet(){
@@ -1474,8 +1665,8 @@ function montoCat(c,m,y){
 function totalCompromisosMes(m,y){
   let t=0;
   cats.forEach(c=>{
-    if(c.cardRef)return; // tarjetas aparte
-    if(c.ahorro)return;  // el ahorro no es gasto
+    if(c.cardRef)return;
+    if(c.ahorro)return;
     const monto=montoCat(c,m,y);
     if(monto>0)t=money(t+monto);
   });
@@ -1490,6 +1681,16 @@ function totalAhorroMes(m,y){
   });
   return t;
 }
+function ahorroAcumCat(catId){
+  let t=0;
+  Object.keys(pagosFijos).forEach(key=>{if(key.indexOf(catId+'_')===0)t=money(t+pagosFijos[key]);});
+  return t;
+}
+function ahorroAcumTotal(){
+  let t=0;
+  cats.forEach(c=>{if(c.ahorro)t=money(t+ahorroAcumCat(c.id));});
+  return t;
+}
 function totalPagadoMes(m,y){
   let t=0;
   cats.forEach(c=>{
@@ -1500,18 +1701,6 @@ function totalPagadoMes(m,y){
     const monto=montoCat(c,m,y);
     if(monto>0)t=money(t+monto);
   });
-  return t;
-}
-// Ahorro acumulado de una categoría-meta: suma de todos los montos fijos registrados
-function ahorroAcumCat(catId){
-  let t=0;
-  Object.keys(pagosFijos).forEach(key=>{if(key.indexOf(catId+'_')===0)t=money(t+pagosFijos[key]);});
-  return t;
-}
-// Ahorro acumulado total (todas las categorías de ahorro)
-function ahorroAcumTotal(){
-  let t=0;
-  cats.forEach(c=>{if(c.ahorro)t=money(t+ahorroAcumCat(c.id));});
   return t;
 }
 function gastosVariablesMes(m,y){return gastos.filter(g=>g.m===m&&g.y===y);}
@@ -1554,8 +1743,8 @@ function rMes(){
   const cardTotal=totalCardMonth();
   const ahorroMes=totalAhorroMes(m,y);
   const totalMes=money(compromisos+variables);
-  const total=money(totalMes+cardTotal); // gasto real (sin ahorro)
-  const disponible=money(sueldo-total-ahorroMes); // lo que te queda libre
+  const total=money(totalMes+cardTotal);
+  const disponible=money(sueldo-total-ahorroMes);
   const pctGasto=sueldo>0?Math.round((total/sueldo)*100):0;
   const color=pctGasto>100?'var(--red)':pctGasto>85?'var(--gold)':'var(--green)';
 
@@ -1585,7 +1774,6 @@ function rMes(){
     <div class="st"><div class="sv" style="font-size:14px;color:#A78BFA">${fmt(ahorroMes)}</div><div class="sl">🐷 Ahorro</div></div>
   </div>`;
 
-  // ── Metas de ahorro ──
   const catsAhorro=cats.filter(c=>c.ahorro);
   if(catsAhorro.length){
     h+=`<div class="card" style="margin-bottom:14px;border-color:#A78BFA40">
@@ -1600,7 +1788,7 @@ function rMes(){
       if(obj>0){
         const pct=Math.min(Math.round((acum/obj)*100),100);
         const falta=money(Math.max(0,obj-acum));
-        h+=`<div style="margin-bottom:14px" onclick="editMetaModal('${c.id}')">
+        h+=`<div style="margin-bottom:14px;cursor:pointer" onclick="editMetaModal('${c.id}')">
           <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:5px">
             <div style="font-size:13px;font-weight:700">${esc(c.n)}</div>
             <div style="font-size:11px;color:var(--text2)">${fmtFull(acum)} / ${fmtFull(obj)}</div>
@@ -2198,7 +2386,7 @@ function editMetaModal(catId){
   <div style="font-size:13px;font-weight:700;margin-bottom:4px">${esc(c.n)}</div>
   <div style="font-size:11px;color:var(--text2);margin-bottom:14px">Llevás ahorrado <b style="color:#A78BFA">${fmtFull(acum)}</b></div>
   <div class="fld"><label>Aporte mensual</label><input class="inp" id="meta-base" type="number" inputmode="numeric" placeholder="0" value="${c.base||''}"></div>
-  <div class="fld"><label>Objetivo total (ej: auto $500000) — dejalo en 0 si no tenés meta fija</label><input class="inp" id="meta-obj" type="number" inputmode="numeric" placeholder="0" value="${c.objetivo||''}"></div>
+  <div class="fld"><label>Objetivo total (ej: auto 500000) — 0 si no tenés meta fija</label><input class="inp" id="meta-obj" type="number" inputmode="numeric" placeholder="0" value="${c.objetivo||''}"></div>
   <button class="btn b-lg b-p" onclick="saveMeta('${c.id}')">Guardar meta</button>`);
 }
 function saveMeta(catId){
@@ -2207,7 +2395,6 @@ function saveMeta(catId){
   c.objetivo=parseMoney(document.getElementById('meta-obj')?.value);
   S.s('cats4',cats);cOv1();tst('✓ Meta actualizada');renderGastos();
 }
-// Convertir una categoría normal en meta de ahorro (o viceversa)
 function toggleAhorro(catId){
   const c=cats.find(x=>x.id===catId);if(!c)return;
   c.ahorro=!c.ahorro;S.s('cats4',cats);tst(c.ahorro?'🐷 Ahora es meta de ahorro':'Volvió a ser gasto');renderGastos();
@@ -2527,8 +2714,7 @@ async function sendChat(){
     const f=totalCatMes(c.id,m,y);
     const cardRef=c.cardRef||'';
     const pagado=isPaid(c.id,m,y);
-    const ah=c.ahorro?',esAhorro:true,acumulado:'+ahorroAcumCat(c.id)+(c.objetivo?',objetivo:'+c.objetivo:''):'';
-    return '{id:"'+c.id+'",n:"'+c.n+'",base:'+c.base+',fijo:'+montoCat(c,m,y)+',totalMes:'+f+(cardRef?',tarjeta:"'+cardRef+'"':'')+',pagado:'+pagado+ah+',color:"'+c.c+'"}';
+    return '{id:"'+c.id+'",n:"'+c.n+'",base:'+c.base+',fijo:'+montoCat(c,m,y)+',totalMes:'+f+(cardRef?',tarjeta:"'+cardRef+'"':'')+',pagado:'+pagado+',color:"'+c.c+'"}';
   }).join(',\n');
   const cards=(S.g('cards1',[])||[]).map(c=>'{id:"'+c.id+'",n:"'+c.n+'",cuota:'+(getCardMonthAmt(c.id)||0)+'}').join(',');
   const ultimosGastos=gastos.filter(g=>g.y>=y-1).slice(-30).map(g=>'{c:"'+g.c+'",v:'+g.v+',d:"'+(g.desc||'')+'",m:'+g.m+',y:'+g.y+',f:"'+g.f+'"}').join(',');
@@ -2538,7 +2724,10 @@ async function sendChat(){
   const today=todayStr();
   const waterGlasses=(nd.waterLog||{})[today]||0;
   const waterTargetScore=nd.waterTarget||(profile.weight?Math.max(6,Math.round(profile.weight*35/250)):8);
-  const nutStr='Nutrición hoy: '+waterGlasses+'/'+waterTargetScore+' vasos de agua'+(nd.lastPlanDate===today?' · Plan de comidas generado hoy por IA':'');
+  const _foodToday=((nd.foodLog||{})[today]||[]);
+  const _calToday=_foodToday.reduce((s,f)=>s+(+f.cal||0),0);
+  const _calMeta=(typeof dailyCalorieGoal==='function')?dailyCalorieGoal():0;
+  const nutStr='Nutrición hoy: '+waterGlasses+'/'+waterTargetScore+' vasos de agua'+(nd.dietType?' · Dieta: '+nd.dietType:'')+(nd.targetWeight?' · Peso meta: '+nd.targetWeight+'kg':'')+(_calMeta?' · Calorías: '+_calToday+'/'+_calMeta+' kcal':'')+(_foodToday.length?' · Comió hoy: '+_foodToday.map(f=>f.name).join(', '):'')+(nd.lastPlanDate===today?' · Plan de comidas generado hoy por IA':'');
   const profileStr='Perfil físico: '+(profile.height?'Altura:'+profile.height+'cm, ':'')+(profile.weight?'Peso:'+profile.weight+'kg, ':'')+'Experiencia:'+(profile.experience||0)+'años'+(profile.goal?', Objetivo:'+profile.goal:'')+(profile.dietRestrictions?', Dieta:'+profile.dietRestrictions:'')+' '+nutStr;
   const exNameMap={};
   routines.forEach(r=>{r.days.forEach(d=>{d.exercises.forEach((ex,ei)=>{exNameMap[r.id+'|'+d.id+'|'+ei]=ex.name;});});});
@@ -2560,7 +2749,7 @@ async function sendChat(){
   const memCtx=_mem.length?('\n\nMEMORIA — lo que ya sé de la persona (usalo para personalizar y NO vuelvas a preguntar lo que ya está acá):\n- '+_mem.map(x=>x.t).join('\n- ')):'';
   const memInstr='\n\nMEMORIA / APRENDIZAJE:\n- Si en el mensaje hay info DURADERA de la persona (preferencias, hábitos, restricciones de dieta, objetivos, días/horarios de entrenamiento, ingresos, fechas fijas, etc.), guardala vos mismo con [ACCION]{"op":"recordar","dato":"frase corta en 3ra persona","tag":"dieta|gym|finanzas|agenda|general"}[/ACCION].\n- Si te piden olvidar algo: [ACCION]{"op":"olvidar","dato":"texto a borrar"}[/ACCION].\n- NO guardes datos puntuales del día (un gasto suelto, un peso de hoy) como memoria; eso ya va a las acciones normales. Guardá solo lo que define a la persona a largo plazo.\n- No repitas en memoria algo que ya figura arriba.';
   const ctxHist=chatHist.slice(-20).map(msg=>'['+msg.role+']: '+msg.text).join('\n');
-  const prompt='Sos MARTIN·APP AI: asistente personal con control total de los datos.\n\n'+_hoy+dataCtx+memCtx+memInstr+'\n\nREGLAS:\n- Respondé en español uruguayo, natural, amigable y con confianza.\n- Revisá los datos con cuidado. Si te preguntan por pesos o registros, verificá exactamente lo que dice el registro antes de responder. No inventes números.\n- Si el usuario pide agregar/modificar datos, usá [ACCION] al final.\n- ACCIONES DISPONIBLES:\n  * [ACCION]{"op":"gasto","cat":"id","v":monto,"desc":"...","f":"d/m"}[/ACCION]\n  * [ACCION]{"op":"pago","cat":"id","m":mes,"y":año}[/ACCION]\n  * [ACCION]{"op":"fijo","cat":"id","m":mes,"y":año,"v":monto}[/ACCION]\n  * [ACCION]{"op":"compra","cardId":"id","v":monto,"desc":"...","cuotas":1}[/ACCION]\n  * [ACCION]{"op":"crear_rutina","name":"Nombre","days":[{"label":"Día1","exercises":[{"name":"Ej1","muscle":"Pecho","series":4,"reps":"10"}]}]}[/ACCION]\n  * [ACCION]{"op":"evento","titulo":"...","fecha":"YYYY-MM-DD","hora":"HH:MM","recordatorio":15}[/ACCION]\n- El AHORRO no es gasto: es plata que la persona aparta en una meta. Para guardar plata usá [ACCION]{"op":"ahorro","cat":"id_meta","v":monto}[/ACCION]; para crear una meta nueva (auto, casa, viaje) usá [ACCION]{"op":"crear_meta","nombre":"Auto","objetivo":500000,"aporte":1500}[/ACCION].\n- muscle debe ser uno de: Pecho, Espalda, Hombros, Bíceps, Tríceps, Cuádriceps, Femoral, Gemelos, Abdomen\n- IDs son los que ves arriba. NO inventes IDs.\n- Podés ANALIZAR entrenamientos: revisá el historial gym, los pesos, y recomendá ajustes.\n- Podés dar consejos de DIETA y NUTRICIÓN según el perfil y objetivo del usuario. Recomendá comidas, horarios, colaciones.\n- Podés recomendar cuánta AGUA tomar según su peso y actividad.\n- Si te preguntan por GASTOS relacionado a comida, usá los datos de categorías para sugerir donde ahorrar.\n- Si te piden hacer algo que no sea una acción, respondé normal pero útil.\n- Siempre respondé optimista y motivador como un entrenador personal.\n\nConversación:\n'+ctxHist+'\n\n['+txt+']:';
+  const prompt='Sos MARTIN·APP AI: asistente personal con control total de los datos.\n\n'+_hoy+dataCtx+memCtx+memInstr+'\n\nREGLAS:\n- Respondé en español uruguayo, natural, amigable y con confianza.\n- Revisá los datos con cuidado. Si te preguntan por pesos o registros, verificá exactamente lo que dice el registro antes de responder. No inventes números.\n- Si el usuario pide agregar/modificar datos, usá [ACCION] al final.\n- ACCIONES DISPONIBLES:\n  * [ACCION]{"op":"gasto","cat":"id","v":monto,"desc":"...","f":"d/m"}[/ACCION]\n  * [ACCION]{"op":"pago","cat":"id","m":mes,"y":año}[/ACCION]\n  * [ACCION]{"op":"fijo","cat":"id","m":mes,"y":año,"v":monto}[/ACCION]\n  * [ACCION]{"op":"compra","cardId":"id","v":monto,"desc":"...","cuotas":1}[/ACCION]\n  * [ACCION]{"op":"crear_rutina","name":"Nombre","days":[{"label":"Día1","exercises":[{"name":"Ej1","muscle":"Pecho","series":4,"reps":"10"}]}]}[/ACCION]\n  * [ACCION]{"op":"evento","titulo":"...","fecha":"YYYY-MM-DD","hora":"HH:MM","recordatorio":15}[/ACCION]\n- NUTRICIÓN: si la persona dice qué comió, registralo con [ACCION]{"op":"comida","nombre":"...","cal":número,"prot":número}[/ACCION] (estimá calorías vos). Podés ver sus comidas y meta calórica en los datos.\n- AHORRO: no es gasto, es plata apartada en una meta. Guardar: [ACCION]{"op":"ahorro","cat":"id_meta","v":monto}[/ACCION]. Crear meta (auto/casa/viaje): [ACCION]{"op":"crear_meta","nombre":"Auto","objetivo":500000,"aporte":1500}[/ACCION].\n- muscle debe ser uno de: Pecho, Espalda, Hombros, Bíceps, Tríceps, Cuádriceps, Femoral, Gemelos, Abdomen\n- IDs son los que ves arriba. NO inventes IDs.\n- Podés ANALIZAR entrenamientos: revisá el historial gym, los pesos, y recomendá ajustes.\n- Podés dar consejos de DIETA y NUTRICIÓN según el perfil y objetivo del usuario. Recomendá comidas, horarios, colaciones.\n- Podés recomendar cuánta AGUA tomar según su peso y actividad.\n- Si te preguntan por GASTOS relacionado a comida, usá los datos de categorías para sugerir donde ahorrar.\n- Si te piden hacer algo que no sea una acción, respondé normal pero útil.\n- Siempre respondé optimista y motivador como un entrenador personal.\n\nConversación:\n'+ctxHist+'\n\n['+txt+']:';
 
   // ---- Burbuja del asistente que se va llenando en vivo ----
   chatHist.push({role:'assistant',text:'',streaming:true});
@@ -2609,6 +2798,196 @@ async function sendChat(){
   renderChat();
 }
 
+// ════════════════════════════════════════════
+//  COACH DE BIENESTAR
+// ════════════════════════════════════════════
+var coachHist=S.g('coachHist1',[]);
+// Preguntas de la entrevista inicial (una sola vez)
+const COACH_Q=[
+  {k:'nombre',q:'¡Hola! Soy tu coach personal 🌱 Voy a acompañarte a organizarte, moverte más y dejar de postergar. Para arrancar, ¿cómo te gusta que te llamen?'},
+  {k:'trabajo',q:'Un gusto. ¿A qué te dedicás? Contame en qué se te va el día.'},
+  {k:'actividad',q:'¿Cuánto te movés en un día normal? (por ejemplo: camino poco, camino bastante, estoy sentado casi todo el día...)'},
+  {k:'objetivo',q:'¿Qué es lo que más te gustaría lograr en los próximos meses? Puede ser de salud, plata, hábitos, lo que sea.'},
+  {k:'obstaculo',q:'¿Y qué sentís que hoy te frena o te hace postergar eso?'},
+  {k:'energia',q:'Última: ¿en qué momento del día tenés más energía para hacer cosas? (mañana / tarde / noche)'}
+];
+function coachProfile(){return S.g('coachProfile1',{});}
+function coachInterviewDone(){const p=coachProfile();return COACH_Q.every(x=>p[x.k]);}
+
+function buildAppContext(){
+  const now=new Date();
+  const m=now.getMonth(),y=now.getFullYear();
+  const sueldo=getSueldo(m,y);
+  const totalGasto=totalGastosMes(m,y);
+  const ahorroMes=(typeof totalAhorroMes==='function')?totalAhorroMes(m,y):0;
+  const disponible=money(sueldo-totalGasto-ahorroMes);
+  const topGastos=cats.filter(c=>!c.cardRef&&!c.ahorro).map(c=>({n:c.n,v:totalCatMes(c.id,m,y)+montoCat(c,m,y)})).filter(x=>x.v>0).sort((a,b)=>b.v-a.v).slice(0,5);
+  const metas=cats.filter(c=>c.ahorro).map(c=>{const ac=(typeof ahorroAcumCat==='function')?ahorroAcumCat(c.id):0;return c.n+': '+fmtFull(ac)+(c.objetivo?'/'+fmtFull(c.objetivo):'');}).join('; ');
+  const profile=gymProfile||{};
+  const nd=nutData||{};
+  const today=todayStr();
+  const waterGlasses=(nd.waterLog||{})[today]||0;
+  const gymRecientes=gymHist.slice(0,7).map(h=>h.rn+'-'+h.dn).join(', ');
+  const diasEntreno=gymHist.length;
+  const proxEventos=events.filter(e=>e.date>=now.toISOString().slice(0,10)).slice(0,5).map(e=>e.title+' ('+e.date+')').join('; ');
+  return 'PANORAMA DE LA PERSONA (mes '+(m+1)+'/'+y+'):\n'+
+    '- Finanzas: sueldo '+fmtFull(sueldo)+', gasto total '+fmtFull(totalGasto)+', ahorro este mes '+fmtFull(ahorroMes)+', disponible '+fmtFull(disponible)+'.\n'+
+    '- Mayores gastos: '+(topGastos.map(x=>x.n+' '+fmtFull(x.v)).join(', ')||'sin datos')+'.\n'+
+    '- Metas de ahorro: '+(metas||'ninguna')+'.\n'+
+    '- Físico: '+(profile.weight?'peso '+profile.weight+'kg, ':'')+(profile.goal?'objetivo '+profile.goal+', ':'')+'entrenamientos registrados: '+diasEntreno+(gymRecientes?' (últimos: '+gymRecientes+')':'')+'.\n'+
+    '- Agua hoy: '+waterGlasses+' vasos.\n'+
+    '- Próximos eventos: '+(proxEventos||'ninguno')+'.';
+}
+
+function coachPrompt(userMsg){
+  const p=coachProfile();
+  const perfilCoach=Object.keys(p).length?('LO QUE SÉ DE LA PERSONA:\n'+COACH_Q.filter(q=>p[q.k]).map(q=>'- '+q.k+': '+p[q.k]).join('\n')):'';
+  const _mem=S.g('userMem1',[]);
+  const memCtx=_mem.length?('\n\nMEMORIA:\n- '+_mem.map(x=>x.t).join('\n- ')):'';
+  const ctxHist=coachHist.slice(-16).map(msg=>'['+msg.role+']: '+msg.text).join('\n');
+  return 'Sos un COACH DE BIENESTAR Y PRODUCTIVIDAD personal, cálido pero directo. NO sos psicólogo ni das terapia clínica: sos un acompañante que motiva, ayuda a organizarse, a moverse más y a dejar de procrastinar.\n\n'+
+    perfilCoach+'\n\n'+buildAppContext()+memCtx+'\n\n'+
+    'CÓMO ACTUÁS:\n'+
+    '- Hablás en español uruguayo, cercano, humano. Tuteo. Ni robótico ni acartonado.\n'+
+    '- Hacés preguntas abiertas para entender antes de aconsejar. Una pregunta por vez, no interrogatorio.\n'+
+    '- Cruzás los datos reales (gastos, gym, agenda, ahorro) para dar consejos concretos y personalizados. Ej: si gastó mucho en delivery y entrena poco, lo señalás con tacto y proponés un paso chico.\n'+
+    '- Combatís la procrastinación: ayudás a partir las metas grandes en pasos mínimos y alcanzables HOY. Celebrás los avances por chicos que sean.\n'+
+    '- Motivás de verdad, sin frases vacías. Reconocés el esfuerzo, no solo el resultado.\n'+
+    '- Sos honesto: si algo no va bien (gasta de más, no entrena, no avanza), se lo decís con respeto y cariño, no le mentís para caer bien.\n'+
+    '- Respuestas breves y conversacionales (2-5 frases). Esto es un chat, no un ensayo.\n'+
+    '- Podés sugerir acciones concretas: agendar algo, recordar un dato. Si querés agendar usá [ACCION]{"op":"evento","titulo":"...","fecha":"YYYY-MM-DD","hora":"HH:MM","recordatorio":15}[/ACCION]. Si la persona te cuenta algo duradero, recordalo con [ACCION]{"op":"recordar","dato":"...","tag":"general"}[/ACCION].\n'+
+    'LÍMITE IMPORTANTE DE SEGURIDAD:\n'+
+    '- Si la persona expresa angustia profunda, desesperanza, o cualquier señal de querer lastimarse, NO intentes hacer de terapeuta. Respondé con calidez, validá lo que siente, y sugerile con suavidad hablar con un profesional de salud mental o alguien de confianza. En Uruguay puede llamar a la Línea Vida 0800 0767 o al 911 si es urgente. Tomátelo siempre en serio.\n\n'+
+    'Conversación hasta ahora:\n'+ctxHist+'\n\n[usuario]: '+userMsg;
+}
+
+function renderCoach(){
+  const el=document.getElementById('coach-b');if(!el)return;
+  const key=aiKey();
+  const bar=document.getElementById('coach-ph-bar');
+  if(bar)bar.innerHTML=`<button class="btn b-xs b-g" onclick="if(confirm('¿Borrar la conversación con tu coach?')){coachHist=[];S.s('coachHist1',[]);renderCoach();}" style="font-size:10px">🗑 Reiniciar charla</button>`;
+  if(!key){
+    el.innerHTML=`<div class="cx-empty"><div style="font-size:32px;margin-bottom:12px">🌱</div><div style="font-size:14px;font-weight:600;margin-bottom:6px">Necesitás una IA configurada</div><div style="font-size:12px;color:var(--text3);margin-bottom:16px">Tu coach usa la misma IA del chat</div><button class="btn b-lg b-p" onclick="page('chat')">Ir a configurar</button></div>`;
+    const gm=document.getElementById('mic-btn');if(gm)gm.style.display='none';
+    return;
+  }
+  const fmtB=t=>esc(t).replace(/\*\*(.+?)\*\*/g,'<b>$1</b>');
+  let h='<div class="cx-msgs" id="coach-msgs">';
+  if(!coachHist.length){
+    h+=`<div class="cx-empty" style="padding:30px 20px"><div style="width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,#34D399,#10B981);display:flex;align-items:center;justify-content:center;margin:0 auto 14px;font-size:26px">🌱</div><div style="font-size:15px;font-weight:700;color:var(--text1)">Tu coach personal</div><div style="font-size:11px;color:var(--text3);margin-top:8px;line-height:1.6">Te ayudo a organizarte, moverte más<br>y dejar de postergar. Empecemos 👇</div><button class="btn b-lg b-p" style="margin-top:18px;background:#10B981" onclick="coachStart()">Empezar</button></div>`;
+  } else {
+    coachHist.forEach((msg,i)=>{
+      const isUser=msg.role==='user';
+      const isLast=i===coachHist.length-1;
+      const liveId=(!isUser&&isLast)?' id="coach-live"':'';
+      h+=`<div class="cx-row ${isUser?'u':'a'}">`;
+      if(!isUser)h+=`<div class="cx-av" style="background:linear-gradient(135deg,#34D399,#10B981)">🌱</div>`;
+      h+=`<div class="cx-bub"${liveId}>${fmtB(msg.text||'')}</div></div>`;
+    });
+  }
+  if(coachHist.length&&coachHist[coachHist.length-1].role==='user'){
+    h+=`<div class="cx-row a"><div class="cx-av" style="background:linear-gradient(135deg,#34D399,#10B981)">🌱</div><div class="typing-dots"><span></span><span></span><span></span></div></div>`;
+  }
+  h+='</div>';
+  h+=`<div class="cx-input">
+    <div class="cx-fieldw"><input id="coach-inp" placeholder="Escribí a tu coach…" onkeydown="if(event.key==='Enter')sendCoach()"></div>
+    <button class="cx-ibtn" id="coach-mic-btn" aria-label="Hablar" onclick="startVoiceCoach()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></button>
+    <button class="cx-send" style="background:#10B981" aria-label="Enviar" onclick="sendCoach()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg></button>
+  </div>`;
+  el.innerHTML=h;
+  const gm=document.getElementById('mic-btn');if(gm)gm.style.display='none';
+  const msgs=document.getElementById('coach-msgs');if(msgs)msgs.scrollTop=msgs.scrollHeight;
+  setTimeout(()=>document.getElementById('coach-inp')?.focus(),100);
+}
+
+// Arranca la entrevista inicial o saluda si ya está hecha
+function coachStart(){
+  if(!coachInterviewDone()){
+    const p=coachProfile();
+    const next=COACH_Q.find(q=>!p[q.k]);
+    coachHist.push({role:'assistant',text:next.q});
+    S.s('coachHist1',coachHist);
+  } else {
+    coachHist.push({role:'assistant',text:'¡Qué bueno verte de nuevo! ¿Cómo venís hoy? ¿En qué andás?'});
+    S.s('coachHist1',coachHist);
+  }
+  renderCoach();
+}
+
+async function sendCoach(){
+  const inp=document.getElementById('coach-inp');if(!inp||!inp.value.trim())return;
+  const key=aiKey();if(!key){tst('⚠️ Configurá la IA en el chat');return;}
+  const txt=inp.value.trim();inp.value='';
+  coachHist.push({role:'user',text:txt});
+  S.s('coachHist1',coachHist);
+
+  // Si estamos en la entrevista inicial, guardamos la respuesta y seguimos preguntando
+  if(!coachInterviewDone()){
+    const p=coachProfile();
+    const pending=COACH_Q.find(q=>!p[q.k]);
+    if(pending){
+      p[pending.k]=txt;
+      S.s('coachProfile1',p);
+      // guardar en memoria global también para que el chat lo sepa
+      if(pending.k==='trabajo'||pending.k==='objetivo'){
+        const mem=S.g('userMem1',[]);mem.push({t:'La persona '+(pending.k==='trabajo'?'trabaja en/de':'tiene como objetivo')+': '+txt,tag:'general',ts:Date.now()});S.s('userMem1',mem);
+      }
+    }
+    const next=COACH_Q.find(q=>!coachProfile()[q.k]);
+    renderCoach();
+    if(next){
+      setTimeout(()=>{coachHist.push({role:'assistant',text:next.q});S.s('coachHist1',coachHist);renderCoach();},400);
+    } else {
+      // terminó la entrevista: primer mensaje del coach con contexto completo
+      coachHist.push({role:'assistant',text:'',streaming:true});S.s('coachHist1',coachHist);renderCoach();
+      await coachStream('Acabás de terminar de conocer a la persona. Saludala por su nombre, resumí en una frase cálida lo que entendiste de ella, y proponele UN primer paso muy chiquito y concreto para hoy. Breve y motivador.');
+    }
+    return;
+  }
+
+  // Conversación normal con streaming
+  coachHist.push({role:'assistant',text:'',streaming:true});
+  S.s('coachHist1',coachHist);renderCoach();
+  await coachStream(txt);
+}
+
+async function coachStream(userMsg){
+  const key=aiKey();
+  const bubble=document.getElementById('coach-live');
+  try{
+    const full=await _geminiStream(coachPrompt(userMsg),key,(chunk,acc)=>{
+      const visible=acc.split('[ACCION')[0];
+      if(bubble){bubble.innerHTML=_mdBold(visible)+'<span class="ai-caret">▍</span>';const cont=document.querySelector('#coach-b > div:first-child');if(cont)cont.scrollTop=cont.scrollHeight;}
+    });
+    let reply=full;
+    const actionRegex=/\[ACCION\]([\s\S]*?)\[\/ACCION\]/g;
+    let match;const resultados=[];
+    while((match=actionRegex.exec(reply))!==null){
+      try{resultados.push(ejecutarAccion(JSON.parse(match[1])));}catch(e){resultados.push('Error: '+e.message);}
+    }
+    if(resultados.length){reply=reply.replace(/\[ACCION\][\s\S]*?\[\/ACCION\]/g,'').trim();if(reply)reply+='\n\n';reply+='✅ '+resultados.join(' · ');}
+    coachHist[coachHist.length-1]={role:'assistant',text:reply||'(sin respuesta)'};
+    S.s('coachHist1',coachHist);
+    if(resultados.length){gastos=S.g('gst4',[]);events=S.g('evts1',[]);}
+    if(_voiceSent){_voiceSent=false;const clean=reply.replace(/[✅•⚠️📅📊💪🔴🟢🌱]/g,'').replace(/\*\*(.+?)\*\*/g,'$1').replace(/\n/g,' ').trim();speak(clean.slice(0,300));}
+  }catch(e){
+    _voiceSent=false;tst('⚠️ Error: '+e.message,4000);coachHist.pop();S.s('coachHist1',coachHist);
+  }
+  renderCoach();
+}
+
+function startVoiceCoach(){
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SR){tst('🎤 Usá Chrome o Edge',3000);return;}
+  const btn=document.getElementById('coach-mic-btn');
+  const rec=new SR();rec.lang='es-UY';rec.interimResults=true;rec.continuous=false;
+  if(btn)btn.classList.add('recording');
+  const stop=()=>{if(btn)btn.classList.remove('recording');};
+  rec.onresult=e=>{const r=e.results[e.results.length-1];if(r.isFinal){const inp=document.getElementById('coach-inp');if(inp){inp.value=r[0].transcript;_voiceSent=true;sendCoach();}stop();}};
+  rec.onerror=()=>stop();rec.onend=()=>stop();
+  try{rec.start();}catch(e){stop();tst('🎤 Error: '+e.message,3000);}
+}
+
 function ejecutarAccion(acc){
   if(!acc||!acc.op)return 'Acción inválida';
   if(acc.op==='gasto'){
@@ -2643,12 +3022,10 @@ function ejecutarAccion(acc){
     const m=acc.m!==undefined?acc.m:now.getMonth();
     const y=acc.y!==undefined?acc.y:now.getFullYear();
     pf[acc.cat+'_'+m+'_'+y]=parseMoney(acc.v);
-    S.s('pf4',pf);
-    pagosFijos=pf;
+    S.s('pf4',pf);pagosFijos=pf;
     return cat.n+' actualizado a $'+fmt(parseMoney(acc.v));
   }
   if(acc.op==='ahorro'){
-    // registrar un aporte de ahorro este mes (suma al acumulado)
     const cat=cats.find(c=>c.id===acc.cat&&c.ahorro)||cats.find(c=>c.ahorro);
     if(!cat)return 'No hay ninguna meta de ahorro. Creá una primero.';
     const pf=S.g('pf4',{});
@@ -2657,8 +3034,7 @@ function ejecutarAccion(acc){
     const y=acc.y!==undefined?acc.y:now.getFullYear();
     const key=cat.id+'_'+m+'_'+y;
     pf[key]=money((pf[key]||0)+parseMoney(acc.v));
-    S.s('pf4',pf);
-    pagosFijos=pf;
+    S.s('pf4',pf);pagosFijos=pf;
     return '🐷 $'+fmt(parseMoney(acc.v))+' guardado en "'+cat.n+'". Llevás $'+fmt(ahorroAcumCat(cat.id));
   }
   if(acc.op==='crear_meta'){
@@ -2707,6 +3083,17 @@ function ejecutarAccion(acc){
   }
   if(acc.op==='responder'){
     return acc.texto||acc.text||'';
+  }
+  if(acc.op==='comida'){
+    const name=acc.nombre||acc.name||acc.comida||'Comida';
+    const cal=parseInt(acc.cal||acc.calorias,10)||0;
+    const prot=parseInt(acc.prot||acc.proteinas,10)||0;
+    const today=todayStr();
+    if(!nutData.foodLog)nutData.foodLog={};
+    if(!nutData.foodLog[today])nutData.foodLog[today]=[];
+    nutData.foodLog[today].push({name,cal,prot,t:Date.now()});
+    S.s('nutData',nutData);
+    return '🍽️ "'+name+'" registrada ('+cal+' kcal)';
   }
   if(acc.op==='crear_dieta'){
     const meals=acc.comidas||acc.meals||[];
@@ -3503,7 +3890,6 @@ async function interpretVoice(txt){
     '  * [ACCION]{"op":"evento","titulo":"...","fecha":"YYYY-MM-DD","hora":"HH:MM","recordatorio":15}[/ACCION]\n'+
     '  * [ACCION]{"op":"crear_rutina","name":"...","days":[...]}[/ACCION]\n'+
     '  * [ACCION]{"op":"responder","texto":"texto a decir en voz alta"}[/ACCION]\n'+
-    '- El AHORRO no es gasto: es plata apartada. Para guardar usá [ACCION]{"op":"ahorro","cat":"id","v":monto}[/ACCION]; para meta nueva [ACCION]{"op":"crear_meta","nombre":"Auto","objetivo":500000,"aporte":1500}[/ACCION].\n'+
     '- muscle debe ser: Pecho, Espalda, Hombros, Bíceps, Tríceps, Cuádriceps, Femoral, Gemelos, Abdomen\n'+
     '- IDs son los que ves arriba. NO inventes IDs.\n'+
     '- Siempre optimista y motivador como un entrenador personal.\n\n'+
