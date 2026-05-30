@@ -4944,7 +4944,7 @@ async function runGeminiAnalysis(){
     });
 
     const resp=await fetch('https://generativelanguage.googleapis.com/v1beta/models/'+GEMINI_MODEL+':generateContent',{method:'POST',headers:{'Content-Type':'application/json','X-goog-api-key':key},body:JSON.stringify({contents:[{parts:[
-      {text:'Analizá este estado de cuenta de tarjeta de crédito. Extraé cada compra con: nombre del comercio, monto en pesos uruguayos, cantidad de cuotas totales y cuota actual que SE PAGA en este resumen. Si dice 3/12 significa que la cuota actual (la que vence en este resumen) es la 3 de 12 totales; cuota_actual=3. Si dice 4/4 es la cuota 4 de 4 — se paga en este resumen, NO está saldada. NO marques cuota_actual=0 ni descartes compras donde cuota_actual == cuotas_totales. Categorizá cada compra en: nafta, supermercado, farmacia, restaurante, ropa, electrónica, servicios, entretenimiento, u otro. Respondé SOLO con un array JSON sin texto extra. Formato: [{"comercio":"...","monto":0,"cuotas_totales":1,"cuota_actual":1,"categoria":"otro"}]'},
+      {text:'Analizá este estado de cuenta de tarjeta de crédito. Extraé cada compra con: nombre del comercio, monto en pesos uruguayos, cantidad de cuotas totales y cuota actual que SE PAGA en este resumen. ATENCIÓN CON LOS MONTOS: en Uruguay el punto separa miles y la coma es decimal. Ej: "$ 1.500" = 1500, "$ 1.500,50" = 1500.50. Convertí a número JSON sin formato: 1500 en vez de 1.500, 1500.50 en vez de 1.500,50. Si dice 3/12 significa que la cuota actual (la que vence en este resumen) es la 3 de 12 totales; cuota_actual=3. Si dice 4/4 es la cuota 4 de 4 — se paga en este resumen, NO está saldada. NO marques cuota_actual=0 ni descartes compras donde cuota_actual == cuotas_totales. Categorizá cada compra en: nafta, supermercado, farmacia, restaurante, ropa, electrónica, servicios, entretenimiento, u otro. Respondé SOLO con un array JSON sin texto extra. Formato: [{"comercio":"...","monto":1500,"cuotas_totales":4,"cuota_actual":4,"categoria":"otro"}]'},
       {inline_data:{mime_type:file.type,data:b64}}
     ]}]})});
 
@@ -4957,6 +4957,12 @@ async function runGeminiAnalysis(){
     if(!jsonMatch)throw new Error('Gemini no devolvió un JSON válido. Intentá con una imagen más clara.');
     const purchases=JSON.parse(jsonMatch[0]);
     if(!Array.isArray(purchases)||!purchases.length)throw new Error('No se detectaron compras en el documento.');
+    // Normalizar montos en formato uruguayo (1.500 → 1500, 1.500,50 → 1500.50)
+    purchases.forEach(p=>{
+      if(typeof p.monto==='string')p.monto=parseFloat(p.monto.replace(/\./g,'').replace(',','.'))||0;
+      if(typeof p.cuotas_totales==='string')p.cuotas_totales=parseInt(p.cuotas_totales.replace(/\./g,''))||1;
+      if(typeof p.cuota_actual==='string')p.cuota_actual=parseInt(p.cuota_actual.replace(/\./g,''))||0;
+    });
 
     window._aiPurchases=purchases;
     window._aiCardId=document.getElementById('ai-card-id')?.value;
