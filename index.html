@@ -684,6 +684,17 @@ function ring(id,pct,color,label,size=46){
 
 function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2)}
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
+function normStr(s){return String(s).toLowerCase().replace(/[áàâãäå]/g,'a').replace(/[éèêë]/g,'e').replace(/[íìîï]/g,'i').replace(/[óòôõö]/g,'o').replace(/[úùûü]/g,'u').replace(/[ýÿ]/g,'y').replace(/ñ/g,'n').replace(/ç/g,'c').trim();}
+function highlightFragment(text,query,maxLen){
+  if(!query||!text)return esc((text||'').slice(0,(maxLen||120)));
+  const q=normStr(query);const t=normStr(text);const idx=t.indexOf(q);
+  if(idx<0)return esc(text.slice(0,(maxLen||120)));
+  const half=Math.floor(((maxLen||120)-q.length)/2);
+  const start=Math.max(0,idx-half);const end=Math.min(text.length,idx+q.length+half);
+  let before=text.slice(start,idx),match=text.slice(idx,idx+q.length),after=text.slice(idx+q.length,end);
+  if(start>0)before='…'+before;if(end<text.length)after=after+'…';
+  return esc(before)+'<b>'+esc(match)+'</b>'+esc(after);
+}
 function fmt(n){const v=Math.round(n||0);if(Math.abs(v)>=10000)return '$'+(v/1000).toFixed(v%1000?1:0)+'k';return '$'+v.toLocaleString('es-UY')}
     function fmtFull(n){return '$'+Math.round(n||0).toLocaleString('es-UY')}
     function money(n){return Math.round(((+n||0)+Number.EPSILON)*100)/100;}
@@ -1718,7 +1729,11 @@ function getCardMonthAmtAll(){
   cards.forEach(card=>{const a=getCardMonthAmt(card.id);if(a>0)r[card.id]={name:card.name,type:card.type,color:card.color,amt:a};});
   return r;
 }
-function totalGastosMes(m,y){return money(totalCompromisosMes(m,y)+totalVariablesMes(m,y)+totalCardMonth());}
+function totalGastosMes(m,y){
+  let t=0;
+  cats.forEach(c=>{if(c.ahorro)return;const mt=montoCat(c,m,y);if(mt>0)t=money(t+mt);});
+  return money(t+totalVariablesMes(m,y));
+}
 function totalCatAnio(catId,y){
   const cat=cats.find(x=>x.id===catId);
   if(!cat)return 0;
@@ -1737,7 +1752,7 @@ function delta(actual,anterior){if(!anterior)return null;const d=actual-anterior
 function tieneDatos(m,y){
   for(const c of cats){if(pagosFijos[k(c.id,m,y)]!==undefined)return true;}
   for(const g of gastos)if(g.m===m&&g.y===y)return true;
-  if(totalCardMonth()>0)return true;
+  if(cats.some(c=>c.cardRef&&montoCat(c,m,y)>0))return true;
   return false;
 }
 
@@ -1747,17 +1762,16 @@ function rMes(){
   const sueldo=getSueldo(m,y);
   const compromisos=totalCompromisosMes(m,y);
   const variables=totalVariablesMes(m,y);
-  const cardTotal=totalCardMonth();
+  const cardTotal=sumMoney(cats.filter(c=>c.cardRef),c=>montoCat(c,m,y));
   const ahorroMes=totalAhorroMes(m,y);
-  const totalMes=money(compromisos+variables);
-  const total=money(totalMes+cardTotal);
-  const disponible=money(sueldo-total-ahorroMes);
-  const pctGasto=sueldo>0?Math.round((total/sueldo)*100):0;
+  const totalGastos=money(compromisos+variables+cardTotal);
+  const disponible=money(sueldo-totalGastos-ahorroMes);
+  const pctGasto=sueldo>0?Math.round((totalGastos/sueldo)*100):0;
   const color=pctGasto>100?'var(--red)':pctGasto>85?'var(--gold)':'var(--green)';
 
   const pm=m===0?11:m-1,py=m===0?y-1:y;
   const prevTotal=totalGastosMes(pm,py);
-  const dlt=delta(total,prevTotal);
+  const dlt=delta(totalGastos,prevTotal);
 
   let h=`<div class="sec">`;
   h+=mnav(m,y);
@@ -1771,7 +1785,7 @@ function rMes(){
   </div>`;
 
   h+=`<div class="stats s2" style="margin-bottom:10px">
-    <div class="st"><div class="sv" style="color:${color}">${fmt(total)}</div><div class="sl">Gasto total</div></div>
+    <div class="st">    <div class="sv" style="color:${color}">${fmt(totalGastos)}</div><div class="sl">Gasto total</div></div>
     <div class="st"><div class="sv" style="color:${disponible>=0?'var(--green)':'var(--red)'}">${fmt(Math.abs(disponible))}</div><div class="sl">${disponible>=0?'💚 Disponible':'🔴 Déficit'}</div></div>
   </div>
   <div class="stats s4" style="margin-bottom:14px">
@@ -1780,6 +1794,35 @@ function rMes(){
     <div class="st"><div class="sv" style="font-size:14px;color:var(--purple)">${fmt(cardTotal)}</div><div class="sl">${cardTotal>0?'💳 Tarjetas':'Tarjetas'}</div></div>
     <div class="st"><div class="sv" style="font-size:14px;color:#A78BFA">${fmt(ahorroMes)}</div><div class="sl">🐷 Ahorro</div></div>
   </div>`;
+
+  // ── Proyección fin de mes ──
+  const _now=new Date();
+  if(curM===_now.getMonth()&&curY===_now.getFullYear()){
+    const _today=_now.getDate();
+    const _dim=new Date(curY,curM+1,0).getDate();
+    const _fijo=totalCompromisosMes(curM,curY);
+    const _cardAmt=sumMoney(cats.filter(c=>c.cardRef),c=>montoCat(c,curM,curY));
+    const _varAct=totalVariablesMes(curM,curY);
+    const _proyVar=_today>1?Math.round((_varAct/_today)*_dim):_varAct;
+    const _proyTotal=money(_fijo+_cardAmt+_proyVar);
+    const _sueldo=getSueldo(curM,curY);
+    const _ahorroProy=totalAhorroMes(curM,curY);
+    h+=`<div class="card" style="margin-bottom:14px;border-color:var(--blue-b)">
+      <div style="font-size:10px;color:var(--text2);letter-spacing:1.5px;font-weight:700;margin-bottom:6px;text-transform:uppercase">📊 Proyección fin de mes</div>
+      <div style="display:flex;justify-content:space-between;align-items:baseline">
+        <div style="font-size:12px;color:var(--text2)">Total proyectado <span style="font-size:10px;color:var(--text3)">(día ${_today} de ${_dim})</span></div>
+        <div style="font-size:20px;font-weight:800">${fmtFull(_proyTotal)}</div>
+      </div>`;
+    if(_sueldo>0){
+      const _resto=money(_sueldo-_proyTotal-_ahorroProy);
+      const _col=_resto>=0?'var(--green)':'var(--red)';
+      h+=`<div style="display:flex;justify-content:space-between;align-items:baseline;margin-top:6px;padding-top:8px;border-top:1px solid var(--border)">
+        <div style="font-size:12px;color:var(--text2)">${_resto>=0?'💚 Te quedarían':'🔴 Te pasás por'}</div>
+        <div style="font-size:16px;font-weight:700;color:${_col}">${_resto>=0?'':'−'}${fmtFull(Math.abs(_resto))}</div>
+      </div>`;
+    }
+    h+=`</div>`;
+  }
 
   const catsAhorro=cats.filter(c=>c.ahorro);
   if(catsAhorro.length){
@@ -1864,11 +1907,12 @@ function rMes(){
 
   h+=`<div class="sec-t" style="display:flex;justify-content:space-between;align-items:center">
     <span>Compromisos · Tocá montos para editar</span>
-    <span style="color:var(--text2);text-transform:none;letter-spacing:.5px;font-size:10px">${cats.filter(c=>montoCat(c,m,y)>0&&isPaid(c.id,m,y)).length}/${cats.filter(c=>montoCat(c,m,y)>0).length} ✓</span>
+    <span style="color:var(--text2);text-transform:none;letter-spacing:.5px;font-size:10px">${cats.filter(c=>!c.ahorro&&montoCat(c,m,y)>0&&isPaid(c.id,m,y)).length}/${cats.filter(c=>!c.ahorro&&montoCat(c,m,y)>0).length} ✓</span>
   </div>`;
 
   if(!cats.length)h+=`<div style="font-size:12px;color:var(--text2);padding:14px;text-align:center">Sin categorías todavía · Agregá tus primeros compromisos desde <strong>Editar</strong> o cargá gastos</div>`;
   cats.forEach(cat=>{
+    if(cat.ahorro)return;
     const isCard=!!cat.cardRef;
     const monto=montoCat(cat,m,y);
     if(monto<=0)return;
@@ -1888,7 +1932,20 @@ function rMes(){
         ${isCard?`style="color:var(--purple);font-weight:700"`:`style=""`}
         onfocus="this.select()" onchange="event.stopPropagation();onMontoChange('${cat.id}',${m},${y},this.value)">
       <button class="paid-btn ${paid?'yes':'no'}" onclick="event.stopPropagation();onTogglePaid('${cat.id}',${m},${y})">${paid?'✓':'○'}</button>
-    </div>`;
+    </div>${(()=>{
+      const lim=money(cat.limite||0);
+      if(lim<=0)return'';
+      const vars=sumMoney(gastos.filter(g=>g.c===cat.id&&g.m===m&&g.y===y),g=>g.v);
+      const total=money(monto+vars);
+      const pct=Math.min(Math.round((total/lim)*100),200);
+      const barCol=pct>100?'var(--red)':pct>=70?'var(--gold)':'var(--green)';
+      return`<div style="margin:-2px 0 10px 46px;display:flex;align-items:center;gap:8px">
+        <div style="flex:1;height:6px;background:var(--bg3);border-radius:3px;overflow:hidden">
+          <div style="width:${Math.min(pct,100)}%;height:100%;background:${barCol};border-radius:3px;transition:width .4s"></div>
+        </div>
+        <div style="font-size:10px;color:var(--text2);white-space:nowrap">${fmtFull(total)} / ${fmtFull(lim)} · <span style="color:${barCol};font-weight:700">${pct}%</span></div>
+      </div>`;
+    })()}`;
   });
 
   const variables_list=gastosVariablesMes(m,y);
@@ -1913,6 +1970,7 @@ function rMes(){
   }
 
   h+=`<button class="btn b-lg b-p" style="margin-top:14px" onclick="xTab(5)">+ Agregar gasto variable</button>`;
+  h+=`<button class="btn b-lg b-g" style="margin-top:10px" onclick="analizarGastos()" id="btn-analizar">🔍 Analizar mis gastos</button>`;
   return h+'</div>';
 }
 
@@ -1920,6 +1978,65 @@ function onSueldoChange(v){const val=parseMoney(v);setSueldo(curM,curY,val);}
 function onMontoChange(catId,m,y,v){const val=parseMoney(v);setMontoPago(catId,m,y,val);tst('Monto actualizado');renderGastos();}
 function onTogglePaid(catId,m,y){togPaid(catId,m,y);const c=cats.find(x=>x.id===catId);tst(isPaid(catId,m,y)?`✅ ${c?.n}`:`↩ ${c?.n}`);renderGastos();}
 function onVarChange(id,v){const g=gastos.find(x=>x._id===id);if(g){g.v=parseMoney(v);S.s('gst4',gastos);tst('Gasto actualizado');renderGastos();}}
+
+async function analizarGastos(){
+  const key=aiKey();
+  if(!key){tst('Configurá la IA primero',3500);return;}
+  const m=curM,y=curY;
+  const sueldo=getSueldo(m,y);
+  const fijos=totalCompromisosMes(m,y);
+  const vars=totalVariablesMes(m,y);
+  const cardTotal=sumMoney(cats.filter(c=>c.cardRef),c=>montoCat(c,m,y));
+  const total=totalGastosMes(m,y);
+  if(!sueldo&&!fijos&&!vars&&!cardTotal){
+    tst('No hay datos de gastos para analizar en este mes',3500);
+    return;
+  }
+  const btn=document.getElementById('btn-analizar');
+  if(btn){btn.textContent='⏳ Analizando…';btn.disabled=true;}
+  const mLabel=MONTHS[m];
+  let catLines=cats.filter(c=>montoCat(c,m,y)>0||gastos.some(g=>g.c===c.id&&g.m===m&&g.y===y)).map(c=>{
+    const cFijo=montoCat(c,m,y);
+    const cVar=sumMoney(gastos.filter(g=>g.c===c.id&&g.m===m&&g.y===y),g=>g.v);
+    const cTotal=money(cFijo+cVar);
+    const lim=c.limite?' (límite '+fmtFull(c.limite)+')':'';
+    return '  - '+c.n+': '+fmtFull(cTotal)+lim;
+  }).join('\n');
+  const resumen='Mes: '+mLabel+' '+y+'\n'+
+    'Ingreso (sueldo): '+(sueldo>0?fmtFull(sueldo):'No cargado')+'\n'+
+    'Compromisos fijos: '+fmtFull(fijos)+'\n'+
+    'Gastos variables: '+fmtFull(vars)+'\n'+
+    'Tarjetas: '+fmtFull(cardTotal)+'\n'+
+    'Total gastado: '+fmtFull(total)+'\n'+
+    'Desglose por categoría:\n'+catLines;
+  const prompt='Sos un asesor financiero personal. Dado el siguiente resumen del mes, dame un diagnóstico breve (2-3 frases) y 3-4 recomendaciones concretas de ahorro.\n'+
+    'REGLAS:\n- Español uruguayo, tono directo y útil\n- NO inventes números: usá solo los del resumen\n- Si detectás una oportunidad clara de ahorro, podés sugerir crear una meta con [ACCION]{"op":"crear_meta","nombre":"...","aporte":0,"objetivo":0}[/ACCION]\n'+
+    '- Respondé SOLO con el diagnóstico y recomendaciones en texto plano con **negrita** para énfasis, más las [ACCION] si corresponde. Nada más.\n\n'+
+    'RESUMEN:\n'+resumen;
+  try{
+    const texto=await _aiComplete(prompt);
+    let reply=texto||'(sin respuesta)';
+    const actionRegex=/\[ACCION\]([\s\S]*?)\[\/ACCION\]/g;
+    let match;const resultados=[];
+    while((match=actionRegex.exec(reply))!==null){
+      try{resultados.push(ejecutarAccion(JSON.parse(match[1])));}
+      catch(e){resultados.push('Error en acción: '+e.message);}
+    }
+    if(resultados.length){
+      reply=reply.replace(/\[ACCION\][\s\S]*?\[\/ACCION\]/g,'').trim();
+      if(reply)reply+='\n\n';
+      reply+='✅ Acciones ejecutadas:\n'+resultados.map(r=>'• '+r).join('\n');
+      cats=S.g('cats4',[]);
+      renderGastos();
+    }
+    oOv1(`<div class="mt">🔍 Análisis de gastos</div>
+      <div style="font-size:12px;color:var(--text2);margin-bottom:14px;line-height:1.7">${_mdBold(reply).replace(/\n/g,'<br>')}</div>
+      <button class="btn b-lg b-p" onclick="cOv1()">Cerrar</button>`);
+  }catch(e){
+    tst('⚠️ Error al analizar: '+e.message,4000);
+  }
+  if(btn){btn.textContent='🔍 Analizar mis gastos';btn.disabled=false;}
+}
 
 // ── TAB 1: PAGOS ──
 function rPagos(){
@@ -2339,7 +2456,8 @@ function rConfig(){
       return`<div style="display:flex;align-items:center;gap:10px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--r-sm);padding:11px 13px;margin-bottom:8px">
       <div class="cdot" style="background:${c.c};width:12px;height:12px;flex-shrink:0"></div>
       <div style="flex:1;font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(c.n)}</div>
-      <input type="text" inputmode="decimal" value="${c.base}" oninput="cats[${realIdx}].base=parseMoney(this.value);S.s('cats4',cats)" style="width:88px;padding:6px 8px;border-radius:8px;background:var(--bg3);border:1px solid var(--border2);color:var(--text0);font-size:12px;text-align:right;outline:none;font-family:var(--fm)">
+      <input type="text" inputmode="decimal" value="${c.base}" oninput="cats[${realIdx}].base=parseMoney(this.value);S.s('cats4',cats)" style="width:78px;padding:6px 8px;border-radius:8px;background:var(--bg3);border:1px solid var(--border2);color:var(--text0);font-size:12px;text-align:right;outline:none;font-family:var(--fm)" title="Monto base">
+      <input type="text" inputmode="decimal" value="${c.limite||''}" placeholder="sin límite" oninput="cats[${realIdx}].limite=parseMoney(this.value);S.s('cats4',cats)" style="width:68px;padding:6px 8px;border-radius:8px;background:var(--bg3);border:1px solid var(--border2);color:var(--text2);font-size:11px;text-align:right;outline:none;font-family:var(--fm)" title="Límite mensual">
       <button onclick="delCat(${realIdx})" style="color:var(--text3);font-size:16px">✕</button>
     </div>`;}).join('')}
     ${cats.filter(c=>c.cardRef).map(c=>`
@@ -2623,9 +2741,106 @@ function scheduleNotif(e){
 // CHAT AI
 // ══════════════════════════════════════════
 var curChatTab=0;
-var chatHist=S.g('chat1',[]);
+var chatSessions=S.g('chatSessions',[]);
+var activeChatId=S.g('activeChatId',null);
+var chatHist=[];
+// Migración desde chat1 (hilo único) → multi-sesión
+(function(){
+  const old=S.g('chat1',[]);
+  if(old.length&&!chatSessions.length){
+    const id=uid();
+    chatSessions.push({id,titulo:'Conversación '+new Date().toLocaleDateString('es-UY'),createdAt:Date.now(),updatedAt:Date.now(),mensajes:old});
+    activeChatId=id;
+    S.s('chatSessions',chatSessions);
+    S.s('activeChatId',activeChatId);
+  }
+  if(!chatSessions.length){
+    // Crear primera sesión vacía
+    const id=uid();
+    chatSessions.push({id,titulo:'Conversación '+new Date().toLocaleDateString('es-UY'),createdAt:Date.now(),updatedAt:Date.now(),mensajes:[]});
+    activeChatId=id;
+    S.s('chatSessions',chatSessions);
+    S.s('activeChatId',activeChatId);
+  }
+  // Apuntar chatHist a la sesión activa
+  const s=chatSessions.find(s=>s.id===activeChatId);
+  if(s) chatHist=s.mensajes;
+  else {
+    // fallback a la más reciente
+    const last=chatSessions[chatSessions.length-1];
+    activeChatId=last.id;
+    chatHist=last.mensajes;
+    S.s('activeChatId',activeChatId);
+  }
+})();
 var _pendingImport=null;
 var _voiceSent=false;
+
+function saveChat(){
+  const s=chatSessions.find(s=>s.id===activeChatId);
+  if(s){s.mensajes=chatHist;s.updatedAt=Date.now();S.s('chatSessions',chatSessions);}
+}
+function switchSession(id){
+  const old=chatSessions.find(s=>s.id===activeChatId);
+  if(old)generarResumenSesion(old,'asistente');
+  const s=chatSessions.find(s=>s.id===id);
+  if(!s) return;
+  activeChatId=id;
+  chatHist=s.mensajes;
+  S.s('activeChatId',id);
+  cOv1();
+  renderChat();
+}
+function newSession(){
+  const old=chatSessions.find(s=>s.id===activeChatId);
+  if(old)generarResumenSesion(old,'asistente');
+  const id=uid();
+  chatSessions.push({id,titulo:'Conversación '+new Date().toLocaleDateString('es-UY'),createdAt:Date.now(),updatedAt:Date.now(),mensajes:[]});
+  activeChatId=id;
+  chatHist=chatSessions.find(s=>s.id===id).mensajes;
+  S.s('chatSessions',chatSessions);
+  S.s('activeChatId',id);
+  renderChat();
+}
+function deleteSession(id){
+  if(!confirm('¿Borrar esta conversación?')) return;
+  chatSessions=chatSessions.filter(s=>s.id!==id);
+  S.s('chatSessions',chatSessions);
+  if(activeChatId===id){
+    if(chatSessions.length){
+      const last=chatSessions[chatSessions.length-1];
+      activeChatId=last.id;
+      chatHist=last.mensajes;
+      S.s('activeChatId',activeChatId);
+    } else {
+      // No sessions left, create one
+      const nid=uid();
+      chatSessions.push({id:nid,titulo:'Conversación '+new Date().toLocaleDateString('es-UY'),createdAt:Date.now(),updatedAt:Date.now(),mensajes:[]});
+      activeChatId=nid;
+      chatHist=chatSessions[0].mensajes;
+      S.s('chatSessions',chatSessions);
+      S.s('activeChatId',nid);
+    }
+  }
+  renderChat();
+}
+function showSessionsList(){
+  const sorted=[...chatSessions].sort((a,b)=>b.updatedAt-a.updatedAt);
+  let h='<div class="mt">Conversaciones</div><div style="max-height:400px;overflow-y:auto">';
+  sorted.forEach(s=>{
+    const act=s.id===activeChatId;
+    h+=`<div style="display:flex;align-items:center;gap:8px;padding:11px 4px;border-bottom:1px solid var(--border);cursor:pointer${act?';background:var(--bg3)':''}" onclick="switchSession('${s.id}')">
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13px;font-weight:${act?'700':'600'};overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(s.titulo)}${act?' <span style="color:var(--blue);font-size:10px">(activa)</span>':''}</div>
+        <div style="font-size:10px;color:var(--text3)">${s.mensajes.length} mensajes · ${new Date(s.updatedAt).toLocaleDateString('es-UY')}</div>
+        ${s.resumen?`<div style="font-size:10px;color:var(--text2);margin-top:2px;line-height:1.4">${esc(s.resumen)}</div>`:''}
+      </div>
+      <button class="btn b-xs b-g" onclick="event.stopPropagation();deleteSession('${s.id}')" style="font-size:10px;color:var(--red);flex-shrink:0">🗑</button>
+    </div>`;
+  });
+  h+='</div><button class="btn b-lg b-p" style="width:100%;margin-top:14px" onclick="newSession();cOv1()">✏️ Nueva conversación</button>';
+  oOv1(h);
+}
 
 function renderChat(){
   const el=document.getElementById('chat-b');if(!el)return;
@@ -2639,7 +2854,11 @@ function renderChat(){
   };
   const bar=document.getElementById('chat-ph-bar');
   if(bar)bar.innerHTML=`<button class="btn b-xs ${key?'b-grn':'b-red'}" onclick="xTab(6);page('gastos')" style="font-size:10px">${key?('✓ '+provLabel+' conectado'):'⚙️ Configurar IA'}</button>
-    <button class="btn b-xs b-g" onclick="if(confirm('¿Borrar historial de conversación?')){chatHist=[];S.s('chat1',[]);renderChat();}" style="font-size:10px;margin-left:6px">🗑 Borrar historial</button>${aiProvider()==='free'?`<div style="margin-top:8px;font-size:10px;color:var(--text2);background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:7px 10px;line-height:1.5">⚡ <b>Modo gratis activo</b> — funciona sin configurar nada. Para mejor calidad y privacidad, agregá tu propia API key (Gemini es gratis) en <span style="color:var(--blue);cursor:pointer" onclick="xTab(6);page('gastos')">Configuración</span>.</div>`:''}`;
+    <button class="btn b-xs b-p" onclick="newSession()" style="font-size:10px;margin-left:6px">✏️ Nueva</button>
+    <button class="btn b-xs b-g" onclick="openBuscador()" style="font-size:10px;margin-left:6px">🔍 Buscar</button>
+    <button class="btn b-xs b-g" onclick="openMemoria()" style="font-size:10px;margin-left:6px">🧠 Memoria</button>
+    <button class="btn b-xs b-g" onclick="showSessionsList()" style="font-size:10px;margin-left:6px">📋 Sesiones</button>
+    <button class="btn b-xs b-g" onclick="if(confirm('¿Borrar esta conversación?')){deleteSession(activeChatId)}" style="font-size:10px;margin-left:6px">🗑 Borrar</button>${aiProvider()==='free'?`<div style="margin-top:8px;font-size:10px;color:var(--text2);background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:7px 10px;line-height:1.5">⚡ <b>Modo gratis activo</b> — funciona sin configurar nada. Para mejor calidad y privacidad, agregá tu propia API key (Gemini es gratis) en <span style="color:var(--blue);cursor:pointer" onclick="xTab(6);page('gastos')">Configuración</span>.</div>`:''}`;
 
   if(!key){
     el.innerHTML=`<div class="cx-empty">
@@ -2711,7 +2930,7 @@ async function sendChat(){
   if(!key){tst('⚠️ Configurá tu API Key de Gemini');return;}
   const txt=inp.value.trim();inp.value='';
   chatHist.push({role:'user',text:txt});
-  S.s('chat1',chatHist);
+  saveChat();
   renderChat();
 
   // ---- Construcción de contexto (idéntica a la original) ----
@@ -2760,7 +2979,7 @@ async function sendChat(){
 
   // ---- Burbuja del asistente que se va llenando en vivo ----
   chatHist.push({role:'assistant',text:'',streaming:true});
-  S.s('chat1',chatHist);
+  saveChat();
   renderChat();
   const bubble=document.getElementById('chat-live');
 
@@ -2789,7 +3008,7 @@ async function sendChat(){
       reply+='✅ Acciones ejecutadas:\n'+resultados.map(r=>'• '+r).join('\n');
     }
     chatHist[chatHist.length-1]={role:'assistant',text:reply||'(sin respuesta)'};
-    S.s('chat1',chatHist);
+    saveChat();
     if(resultados.length){gastos=S.g('gst4',[]);pagosFijos=S.g('pf4',{});pagosEstado=S.g('pe4',{});}
     if(_voiceSent){
       _voiceSent=false;
@@ -2800,7 +3019,7 @@ async function sendChat(){
     _voiceSent=false;
     tst('⚠️ Error: '+e.message,4000);
     chatHist.pop(); // saca la burbuja vacía
-    S.s('chat1',chatHist);
+    saveChat();
   }
   renderChat();
 }
@@ -2808,7 +3027,99 @@ async function sendChat(){
 // ════════════════════════════════════════════
 //  COACH DE BIENESTAR
 // ════════════════════════════════════════════
-var coachHist=S.g('coachHist1',[]);
+var coachSessions=S.g('coachSessions',[]);
+var activeCoachId=S.g('activeCoachId',null);
+var coachHist=[];
+// Migración desde coachHist1 → multi-sesión
+(function(){
+  const old=S.g('coachHist1',[]);
+  if(old.length&&!coachSessions.length){
+    const id=uid();
+    coachSessions.push({id,titulo:'Charla '+new Date().toLocaleDateString('es-UY'),createdAt:Date.now(),updatedAt:Date.now(),mensajes:old});
+    activeCoachId=id;
+    S.s('coachSessions',coachSessions);
+    S.s('activeCoachId',activeCoachId);
+  }
+  if(!coachSessions.length){
+    const id=uid();
+    coachSessions.push({id,titulo:'Charla '+new Date().toLocaleDateString('es-UY'),createdAt:Date.now(),updatedAt:Date.now(),mensajes:[]});
+    activeCoachId=id;
+    S.s('coachSessions',coachSessions);
+    S.s('activeCoachId',activeCoachId);
+  }
+  const s=coachSessions.find(s=>s.id===activeCoachId);
+  if(s) coachHist=s.mensajes;
+  else {
+    const last=coachSessions[coachSessions.length-1];
+    activeCoachId=last.id;
+    coachHist=last.mensajes;
+    S.s('activeCoachId',activeCoachId);
+  }
+})();
+function saveCoach(){
+  const s=coachSessions.find(s=>s.id===activeCoachId);
+  if(s){s.mensajes=coachHist;s.updatedAt=Date.now();S.s('coachSessions',coachSessions);}
+}
+function switchCoachSession(id){
+  const old=coachSessions.find(s=>s.id===activeCoachId);
+  if(old)generarResumenSesion(old,'coach');
+  const s=coachSessions.find(s=>s.id===id);
+  if(!s) return;
+  activeCoachId=id;
+  coachHist=s.mensajes;
+  S.s('activeCoachId',id);
+  cOv1();
+  renderCoach();
+}
+function newCoachSession(){
+  const old=coachSessions.find(s=>s.id===activeCoachId);
+  if(old)generarResumenSesion(old,'coach');
+  const id=uid();
+  coachSessions.push({id,titulo:'Charla '+new Date().toLocaleDateString('es-UY'),createdAt:Date.now(),updatedAt:Date.now(),mensajes:[]});
+  activeCoachId=id;
+  coachHist=coachSessions.find(s=>s.id===id).mensajes;
+  S.s('coachSessions',coachSessions);
+  S.s('activeCoachId',id);
+  renderCoach();
+}
+function deleteCoachSession(id){
+  if(!confirm('¿Borrar esta conversación con tu coach?')) return;
+  coachSessions=coachSessions.filter(s=>s.id!==id);
+  S.s('coachSessions',coachSessions);
+  if(activeCoachId===id){
+    if(coachSessions.length){
+      const last=coachSessions[coachSessions.length-1];
+      activeCoachId=last.id;
+      coachHist=last.mensajes;
+      S.s('activeCoachId',activeCoachId);
+    } else {
+      const nid=uid();
+      coachSessions.push({id:nid,titulo:'Charla '+new Date().toLocaleDateString('es-UY'),createdAt:Date.now(),updatedAt:Date.now(),mensajes:[]});
+      activeCoachId=nid;
+      coachHist=coachSessions[0].mensajes;
+      S.s('coachSessions',coachSessions);
+      S.s('activeCoachId',nid);
+    }
+  }
+  renderCoach();
+}
+function showCoachSessionsList(){
+  const sorted=[...coachSessions].sort((a,b)=>b.updatedAt-a.updatedAt);
+  let h='<div class="mt">Charlas con tu coach</div><div style="max-height:400px;overflow-y:auto">';
+  sorted.forEach(s=>{
+    const act=s.id===activeCoachId;
+    h+=`<div style="display:flex;align-items:center;gap:8px;padding:11px 4px;border-bottom:1px solid var(--border);cursor:pointer${act?';background:var(--bg3)':''}" onclick="switchCoachSession('${s.id}')">
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13px;font-weight:${act?'700':'600'};overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(s.titulo)}${act?' <span style="color:#10B981;font-size:10px">(activa)</span>':''}</div>
+        <div style="font-size:10px;color:var(--text3)">${s.mensajes.length} mensajes · ${new Date(s.updatedAt).toLocaleDateString('es-UY')}</div>
+        ${s.resumen?`<div style="font-size:10px;color:var(--text2);margin-top:2px;line-height:1.4">${esc(s.resumen)}</div>`:''}
+      </div>
+      <button class="btn b-xs b-g" onclick="event.stopPropagation();deleteCoachSession('${s.id}')" style="font-size:10px;color:var(--red);flex-shrink:0">🗑</button>
+    </div>`;
+  });
+  h+='</div><button class="btn b-lg b-p" style="width:100%;margin-top:14px;background:#10B981" onclick="newCoachSession();cOv1()">✏️ Nueva charla</button>';
+  oOv1(h);
+}
 // Preguntas de la entrevista inicial (una sola vez)
 const COACH_Q=[
   {k:'nombre',q:'¡Hola! Soy tu coach personal 🌱 Voy a acompañarte a organizarte, moverte más y dejar de postergar. Para arrancar, ¿cómo te gusta que te llamen?'},
@@ -2872,7 +3183,11 @@ function renderCoach(){
   const el=document.getElementById('coach-b');if(!el)return;
   const key=aiKey();
   const bar=document.getElementById('coach-ph-bar');
-  if(bar)bar.innerHTML=`<button class="btn b-xs b-g" onclick="if(confirm('¿Borrar la conversación con tu coach?')){coachHist=[];S.s('coachHist1',[]);renderCoach();}" style="font-size:10px">🗑 Reiniciar charla</button>`;
+  if(bar)bar.innerHTML=`<button class="btn b-xs b-p" onclick="newCoachSession()" style="font-size:10px;background:#10B981">✏️ Nueva</button>
+    <button class="btn b-xs b-g" onclick="openBuscador()" style="font-size:10px;margin-left:6px">🔍 Buscar</button>
+    <button class="btn b-xs b-g" onclick="openMemoria()" style="font-size:10px;margin-left:6px">🧠 Memoria</button>
+    <button class="btn b-xs b-g" onclick="showCoachSessionsList()" style="font-size:10px;margin-left:6px">📋 Charlas</button>
+    <button class="btn b-xs b-g" onclick="deleteCoachSession(activeCoachId)" style="font-size:10px;margin-left:6px">🗑 Borrar</button>`;
   if(!key){
     el.innerHTML=`<div class="cx-empty"><div style="font-size:32px;margin-bottom:12px">🌱</div><div style="font-size:14px;font-weight:600;margin-bottom:6px">Necesitás una IA configurada</div><div style="font-size:12px;color:var(--text3);margin-bottom:16px">Tu coach usa la misma IA del chat</div><button class="btn b-lg b-p" onclick="page('chat')">Ir a configurar</button></div>`;
     const gm=document.getElementById('mic-btn');if(gm)gm.style.display='none';
@@ -2913,10 +3228,10 @@ function coachStart(){
     const p=coachProfile();
     const next=COACH_Q.find(q=>!p[q.k]);
     coachHist.push({role:'assistant',text:next.q});
-    S.s('coachHist1',coachHist);
+    saveCoach();
   } else {
     coachHist.push({role:'assistant',text:'¡Qué bueno verte de nuevo! ¿Cómo venís hoy? ¿En qué andás?'});
-    S.s('coachHist1',coachHist);
+    saveCoach();
   }
   renderCoach();
 }
@@ -2926,7 +3241,7 @@ async function sendCoach(){
   const key=aiKey();if(!key){tst('⚠️ Configurá la IA en el chat');return;}
   const txt=inp.value.trim();inp.value='';
   coachHist.push({role:'user',text:txt});
-  S.s('coachHist1',coachHist);
+  saveCoach();
 
   // Si estamos en la entrevista inicial, guardamos la respuesta y seguimos preguntando
   if(!coachInterviewDone()){
@@ -2943,10 +3258,10 @@ async function sendCoach(){
     const next=COACH_Q.find(q=>!coachProfile()[q.k]);
     renderCoach();
     if(next){
-      setTimeout(()=>{coachHist.push({role:'assistant',text:next.q});S.s('coachHist1',coachHist);renderCoach();},400);
+      setTimeout(()=>{coachHist.push({role:'assistant',text:next.q});saveCoach();renderCoach();},400);
     } else {
       // terminó la entrevista: primer mensaje del coach con contexto completo
-      coachHist.push({role:'assistant',text:'',streaming:true});S.s('coachHist1',coachHist);renderCoach();
+      coachHist.push({role:'assistant',text:'',streaming:true});saveCoach();renderCoach();
       await coachStream('Acabás de terminar de conocer a la persona. Saludala por su nombre, resumí en una frase cálida lo que entendiste de ella, y proponele UN primer paso muy chiquito y concreto para hoy. Breve y motivador.');
     }
     return;
@@ -2954,7 +3269,7 @@ async function sendCoach(){
 
   // Conversación normal con streaming
   coachHist.push({role:'assistant',text:'',streaming:true});
-  S.s('coachHist1',coachHist);renderCoach();
+  saveCoach();renderCoach();
   await coachStream(txt);
 }
 
@@ -2974,11 +3289,11 @@ async function coachStream(userMsg){
     }
     if(resultados.length){reply=reply.replace(/\[ACCION\][\s\S]*?\[\/ACCION\]/g,'').trim();if(reply)reply+='\n\n';reply+='✅ '+resultados.join(' · ');}
     coachHist[coachHist.length-1]={role:'assistant',text:reply||'(sin respuesta)'};
-    S.s('coachHist1',coachHist);
+    saveCoach();
     if(resultados.length){gastos=S.g('gst4',[]);events=S.g('evts1',[]);}
     if(_voiceSent){_voiceSent=false;const clean=reply.replace(/[✅•⚠️📅📊💪🔴🟢🌱]/g,'').replace(/\*\*(.+?)\*\*/g,'$1').replace(/\n/g,' ').trim();speak(clean.slice(0,300));}
   }catch(e){
-    _voiceSent=false;tst('⚠️ Error: '+e.message,4000);coachHist.pop();S.s('coachHist1',coachHist);
+    _voiceSent=false;tst('⚠️ Error: '+e.message,4000);coachHist.pop();saveCoach();
   }
   renderCoach();
 }
@@ -2993,6 +3308,26 @@ function startVoiceCoach(){
   rec.onresult=e=>{const r=e.results[e.results.length-1];if(r.isFinal){const inp=document.getElementById('coach-inp');if(inp){inp.value=r[0].transcript;_voiceSent=true;sendCoach();}stop();}};
   rec.onerror=()=>stop();rec.onend=()=>stop();
   try{rec.start();}catch(e){stop();tst('🎤 Error: '+e.message,3000);}
+}
+
+// ════════════════════════════════════════════
+//  GENERAR RESUMEN DE SESIÓN (Chat y Coach)
+// ════════════════════════════════════════════
+async function generarResumenSesion(sesion, modo){
+  if(!sesion||!sesion.mensajes||sesion.mensajes.length<4) return;
+  const last=sesion.mensajes[sesion.mensajes.length-1];
+  if(last&&last.streaming) return;
+  const lastLen=sesion._lastResumenLen||0;
+  if(lastLen>0&&sesion.mensajes.length-lastLen<6) return;
+  const ctx=sesion.mensajes.filter(m=>!m.streaming).slice(-20).map(m=>'['+m.role+']: '+(m.text||'')).join('\n');
+  const label=modo==='coach'?'coaching personal':'asistente personal';
+  try{
+    const raw=await _aiComplete('Resumí esta conversación de '+label+' en español uruguayo. Devolvé SOLO JSON sin formato: {"titulo":"máximo 5 palabras","resumen":"1-2 frases en tercera persona"}.\n\nConversación:\n'+ctx);
+    const j=JSON.parse(_extractJSON(raw)||'{}');
+    if(j.titulo&&j.resumen){sesion.titulo=j.titulo.trim();sesion.resumen=j.resumen.trim();sesion.tituloAuto=true;}
+  }catch(e){/*silent*/}
+  sesion._lastResumenLen=sesion.mensajes.length;
+  if(modo==='coach')S.s('coachSessions',coachSessions);else S.s('chatSessions',chatSessions);
 }
 
 function ejecutarAccion(acc){
@@ -3418,7 +3753,7 @@ async function handleExcelImport(files){
     if(data.length>MAX_CHARS){tst(`⚠️ Archivo muy grande (${(data.length/1024).toFixed(0)}KB), máximo ${(MAX_CHARS/1024).toFixed(0)}KB`,4000);return;}
 
     chatHist.push({role:'user',text:`📄 Analizá este archivo: ${esc(file.name)}`});
-    S.s('chat1',chatHist);
+    saveChat();
     renderChat();
 
     // 2) Prompt que CLASIFICA y devuelve la estructura correcta
@@ -3455,11 +3790,11 @@ DATOS DEL ARCHIVO:
 `+data.slice(0,50000);
 
     const res=await _gemini(prompt,key);
-    if(!res.ok){const e=await res.text().catch(()=>'');tst('⚠️ Gemini: '+res.status+' '+e.slice(0,80),4000);chatHist.pop();S.s('chat1',chatHist);renderChat();return;}
+    if(!res.ok){const e=await res.text().catch(()=>'');tst('⚠️ Gemini: '+res.status+' '+e.slice(0,80),4000);chatHist.pop();saveChat();renderChat();return;}
     const raw=await res.json();
     const text=raw?.candidates?.[0]?.content?.parts?.[0]?.text||'';
     const jsonStr=_extractJSON(text);
-    if(!jsonStr){chatHist.pop();S.s('chat1',chatHist);tst('⚠️ No pude interpretar el archivo',3500);renderChat();return;}
+    if(!jsonStr){chatHist.pop();saveChat();tst('⚠️ No pude interpretar el archivo',3500);renderChat();return;}
     const obj=JSON.parse(jsonStr);
 
     // 3) Rutear según tipo
@@ -3468,7 +3803,7 @@ DATOS DEL ARCHIVO:
     if(tipo==='error'){
       chatHist[chatHist.length-1]={role:'user',text:`📄 ${esc(file.name)}`};
       chatHist.push({role:'assistant',text:'ℹ️ '+(obj.error||'No reconocí datos importables en el archivo.')});
-      S.s('chat1',chatHist);renderChat();return;
+      saveChat();renderChat();return;
     }
 
     if(tipo==='gastos'){
@@ -3476,7 +3811,7 @@ DATOS DEL ARCHIVO:
       const years=[...new Set((obj.gastos||[]).map(g=>g.y).filter(Boolean))].sort();
       chatHist[chatHist.length-1]={role:'user',text:`📄 ${esc(file.name)}: ${nCats} categorías, ${nGastos} gastos, ${nPF} fijos. Años: ${years.join(', ')||'—'}`};
       chatHist.push({role:'assistant',text:`📊 **Gastos detectados**\n\nEncontré **${nCats} categorías**, **${nGastos} movimientos** y **${nPF} pagos fijos** (${years.join(', ')||'—'}).\n\nUsá el botón de abajo para importar. Se **fusiona** con lo que ya tenés.\n\n⚠️ Revisá antes de confirmar.`});
-      S.s('chat1',chatHist);
+      saveChat();
       _pendingImport=obj; // mismo mecanismo de siempre → renderChat dibuja los botones
       renderChat();
       return;
@@ -3488,11 +3823,11 @@ DATOS DEL ARCHIVO:
       chatHist[chatHist.length-1]={role:'user',text:`📄 ${esc(file.name)}: rutina "${esc(obj.name||'Sin nombre')}"`};
       const preview=days.map(d=>`• ${d.label||'Día'}: ${(d.exercises||[]).map(e=>e.name).slice(0,4).join(', ')}${(d.exercises||[]).length>4?'…':''}`).join('\n');
       chatHist.push({role:'assistant',text:`🏋️ **Rutina detectada:** ${obj.name||'Sin nombre'}\n${days.length} días · ${nEj} ejercicios\n\n${preview}`});
-      S.s('chat1',chatHist);renderChat();
+      saveChat();renderChat();
       if(confirm(`¿Crear la rutina "${obj.name||'Sin nombre'}" con ${days.length} días y ${nEj} ejercicios?`)){
         const r=ejecutarAccion({op:'crear_rutina',name:obj.name,days});
         routines=S.g('rt2',[]);
-        chatHist.push({role:'assistant',text:'✅ '+r});S.s('chat1',chatHist);renderChat();
+        chatHist.push({role:'assistant',text:'✅ '+r});saveChat();renderChat();
         if(curPage==='gym')renderGym();
         tst('✅ Rutina importada',3000);
       }
@@ -3504,11 +3839,11 @@ DATOS DEL ARCHIVO:
       chatHist[chatHist.length-1]={role:'user',text:`📄 ${esc(file.name)}: plan de ${comidas.length} comidas`};
       const preview=comidas.map(c=>`• ${c.momento}: ${c.comida||''}`).join('\n');
       chatHist.push({role:'assistant',text:`🍽️ **Plan de comidas detectado**\n${comidas.length} comidas\n\n${preview}`});
-      S.s('chat1',chatHist);renderChat();
+      saveChat();renderChat();
       if(confirm(`¿Guardar este plan de ${comidas.length} comidas?`)){
         const r=ejecutarAccion({op:'crear_dieta',comidas});
         nutData=S.g('nutData',{});
-        chatHist.push({role:'assistant',text:'✅ '+r});S.s('chat1',chatHist);renderChat();
+        chatHist.push({role:'assistant',text:'✅ '+r});saveChat();renderChat();
         tst('✅ Plan guardado',3000);
       }
       return;
@@ -3517,7 +3852,7 @@ DATOS DEL ARCHIVO:
   }catch(e){
     console.error('import',e);
     tst('⚠️ Error: '+e.message,4000);
-    chatHist.pop();S.s('chat1',chatHist);renderChat();
+    chatHist.pop();saveChat();renderChat();
   }
 }
 
@@ -3528,7 +3863,7 @@ async function analyzeExpenseFile(file,isPdf){
 
   chatHist.push({role:'user',text:`${isPdf?'📑':'🖼️'} ${esc(file.name)}`});
   chatHist.push({role:'assistant',text:'🔎 Leyendo el archivo y detectando gastos…'});
-  S.s('chat1',chatHist);renderChat();
+  saveChat();renderChat();
 
   try{
     const b64=await new Promise((res,rej)=>{const r=new FileReader();r.onload=e=>res(e.target.result.split(',')[1]);r.onerror=rej;r.readAsDataURL(file);});
@@ -3553,7 +3888,7 @@ async function analyzeExpenseFile(file,isPdf){
     const jsonStr=_extractJSON(text);
     if(!jsonStr)throw new Error('No pude leer gastos del archivo. Probá con una imagen más clara o mejor encuadrada.');
     const obj=JSON.parse(jsonStr);
-    if(obj.error){chatHist[chatHist.length-1]={role:'assistant',text:'ℹ️ '+esc(obj.error)};S.s('chat1',chatHist);renderChat();return;}
+    if(obj.error){chatHist[chatHist.length-1]={role:'assistant',text:'ℹ️ '+esc(obj.error)};saveChat();renderChat();return;}
 
     const list=obj.gastos||[];
     if(!list.length)throw new Error('No se detectaron gastos en el archivo.');
@@ -3566,11 +3901,11 @@ async function analyzeExpenseFile(file,isPdf){
     _pendingImport=obj;
 
     chatHist[chatHist.length-1]={role:'assistant',text:`🧾 **${list.length} gasto${list.length!==1?'s':''} detectado${list.length!==1?'s':''}** · total ${fmtFull(total)}`+(nNew?`\nSe crearán ${nNew} categoría${nNew!==1?'s':''} nueva${nNew!==1?'s':''}.`:'')+`\n\nRevisá y confirmá abajo para cargarlos en el programa.`};
-    S.s('chat1',chatHist);
+    saveChat();
     renderChat(); // renderChat dibuja el botón "📥 Importar datos" porque _pendingImport quedó seteado
   }catch(e){
     chatHist[chatHist.length-1]={role:'assistant',text:'⚠️ '+esc(e.message)};
-    S.s('chat1',chatHist);renderChat();
+    saveChat();renderChat();
   }
 }
 
@@ -3641,7 +3976,7 @@ function confirmExcelImport(){
     const total=(obj.gastos||[]).length+Object.keys(obj.pagosFijos||{}).length;
     tst(`✅ ${total} registros importados`,3000);
     chatHist.push({role:'assistant',text:`✅ **Importación exitosa** — ${total} registros agregados a tu app. Podés verlos en la sección Gastos.`});
-    S.s('chat1',chatHist);
+    saveChat();
     renderChat();
   } catch(e){
     console.error('confirmImport',e);
@@ -3932,7 +4267,7 @@ async function interpretVoice(txt){
     if(resultados.length){voz+='. '+resultados.join('. ');}
     chatHist.push({role:'user',text:'🎤 '+txt});
     chatHist.push({role:'assistant',text:voz});
-    S.s('chat1',chatHist);
+    saveChat();
     if(resultados.length){
       gastos=S.g('gst4',[]);pagosFijos=S.g('pf4',{});pagosEstado=S.g('pe4',{});events=S.g('evts1',[]);
       if(curPage==='gym')renderGym();else if(curPage==='gastos')renderGastos();else if(curPage==='agenda')renderAgenda();
@@ -4670,6 +5005,131 @@ function importData(ev){
   ev.target.value='';
 }
 
+function buscarConversaciones(query){
+  const q=normStr(query||'');const R=[];
+  function add(s,modo){
+    if(s.titulo&&q&&normStr(s.titulo).includes(q))R.push({sesionId:s.id,modo,titulo:s.titulo,fecha:s.updatedAt,fragmento:highlightFragment(s.titulo,query,120),msgIndex:null});
+    if(s.resumen&&q&&normStr(s.resumen).includes(q))R.push({sesionId:s.id,modo,titulo:s.titulo,fecha:s.updatedAt,fragmento:highlightFragment(s.resumen,query,120),msgIndex:null});
+    if(s.mensajes)s.mensajes.forEach((m,i)=>{
+      if(m.text&&q&&normStr(m.text).includes(q))R.push({sesionId:s.id,modo,titulo:s.titulo,fecha:s.updatedAt,fragmento:highlightFragment(m.text,query,120),msgIndex:i});
+    });
+  }
+  chatSessions.forEach(s=>add(s,'asistente'));
+  coachSessions.forEach(s=>add(s,'coach'));
+  if(!q){
+    chatSessions.forEach(s=>R.push({sesionId:s.id,modo:'asistente',titulo:s.titulo,fecha:s.updatedAt,fragmento:'',msgIndex:null}));
+    coachSessions.forEach(s=>R.push({sesionId:s.id,modo:'coach',titulo:s.titulo,fecha:s.updatedAt,fragmento:'',msgIndex:null}));
+  }
+  return R.sort((a,b)=>b.fecha-a.fecha);
+}
+function openBuscador(){
+  oOv1(`<div class="mt">🔍 Buscar en conversaciones</div>
+    <input class="inp" id="buscar-q" placeholder="Buscá en Chat y Coach…" oninput="mostrarBusqueda()" autofocus>
+    <div id="buscar-results" style="max-height:400px;overflow-y:auto;margin-top:10px"></div>`);
+  setTimeout(()=>{mostrarBusqueda();document.getElementById('buscar-q')?.focus();},50);
+}
+function mostrarBusqueda(){
+  const q=document.getElementById('buscar-q')?.value||'';
+  const R=buscarConversaciones(q);
+  const el=document.getElementById('buscar-results');if(!el)return;
+  if(!R.length){
+    el.innerHTML='<div style="text-align:center;padding:30px;color:var(--text3)">'+(q?'Sin resultados para «'+esc(q)+'»':'Sin conversaciones')+'</div>';return;
+  }
+  el.innerHTML=R.map(r=>{
+    const isCoach=r.modo==='coach';
+    const bc=isCoach?'#10B981':'var(--blue)';
+    const bg=isCoach?'rgba(16,185,129,0.13)':'rgba(59,130,246,0.13)';
+    const bl=isCoach?'Coach':'Asistente';
+    return `<div style="display:flex;align-items:flex-start;gap:10px;padding:12px 4px;border-bottom:1px solid var(--border);cursor:pointer" onclick="abrirResultado('${r.sesionId}','${r.modo}',${r.msgIndex!==null?r.msgIndex:'null'})">
+      <div style="flex-shrink:0;padding:3px 8px;border-radius:6px;background:${bg};color:${bc};font-size:10px;font-weight:700">${bl}</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(r.titulo)}</div>
+        <div style="font-size:10px;color:var(--text3);margin-top:2px">${new Date(r.fecha).toLocaleDateString('es-UY')}</div>
+        ${r.fragmento?`<div style="font-size:11px;color:var(--text2);margin-top:4px;line-height:1.5">${r.fragmento}</div>`:''}
+      </div>
+    </div>`;
+  }).join('');
+}
+function abrirResultado(sesionId,modo,msgIndex){
+  cOv1();
+  if(modo==='asistente'){page('chat');switchSession(sesionId);}
+  else{page('coach');switchCoachSession(sesionId);}
+  if(msgIndex!=null){
+    setTimeout(()=>{
+      const cont=document.getElementById(modo==='asistente'?'cx-msgs':'coach-msgs');
+      if(!cont)return;
+      const rows=cont.querySelectorAll('.cx-row');
+      if(rows[msgIndex]){
+        rows[msgIndex].scrollIntoView({behavior:'smooth',block:'center'});
+        rows[msgIndex].style.transition='background 0.3s';
+        rows[msgIndex].style.background='rgba(59,130,246,0.13)';
+        setTimeout(()=>rows[msgIndex].style.background='',1200);
+      }
+    },200);
+  }
+}
+function openMemoria(){
+  const TAG_META={
+    dieta:{emoji:'🍎',label:'Dieta',color:'#F97316'},
+    gym:{emoji:'💪',label:'Gimnasio',color:'#22C55E'},
+    finanzas:{emoji:'💰',label:'Finanzas',color:'#3B82F6'},
+    agenda:{emoji:'📅',label:'Agenda',color:'#A855F7'},
+    general:{emoji:'📝',label:'General',color:'#6B7280'}
+  };
+  function renderMem(){
+    const mem=S.g('userMem1',[]);
+    const sorted=[...mem].sort((a,b)=>b.ts-a.ts);
+    const groups={};
+    sorted.forEach(x=>{
+      const key=x.tag&&TAG_META[x.tag]?x.tag:'general';
+      if(!groups[key])groups[key]=[];
+      groups[key].push(x);
+    });
+    let h=`<div class="mt">🧠 Lo que sé de vos</div>
+      <div style="font-size:11px;color:var(--text3);margin-bottom:12px">${mem.length} / 80 recuerdos</div>
+      <div style="display:flex;gap:6px;margin-bottom:14px">
+        <input class="inp" id="mem-inp" placeholder="Ej: No como carne roja" style="flex:1" onkeydown="if(event.key==='Enter')agregarMemoria()">
+        <button class="btn b-sm b-p" onclick="agregarMemoria()">➕ Agregar</button>
+      </div>
+      <div style="max-height:420px;overflow-y:auto">`;
+    Object.keys(TAG_META).forEach(tag=>{
+      const items=groups[tag];
+      if(!items||!items.length)return;
+      const m=TAG_META[tag];
+      h+=`<div style="margin-bottom:8px">
+        <div style="font-size:12px;font-weight:700;color:${m.color};margin-bottom:4px">${m.emoji} ${m.label}</div>`;
+      items.forEach(x=>{
+        h+=`<div style="display:flex;align-items:flex-start;gap:8px;padding:6px 8px;border-radius:6px;background:var(--bg3);margin-bottom:3px">
+          <div style="flex:1;font-size:12px;color:var(--text1);line-height:1.5">${esc(x.t)}</div>
+          <button class="btn b-xs b-g" onclick="eliminarMemoria(${x.ts})" style="font-size:10px;color:var(--red);flex-shrink:0">🗑</button>
+        </div>`;
+      });
+      h+=`</div>`;
+    });
+    h+=`</div>
+      <div style="margin-top:12px"><button class="btn b-sm b-g" onclick="if(confirm('¿Borrar TODA la memoria?')){S.s('userMem1',[]);renderMem()}" style="color:var(--red)">🗑 Borrar toda la memoria</button></div>`;
+    document.getElementById('m1').innerHTML=h;
+    setTimeout(()=>document.getElementById('mem-inp')?.focus(),50);
+  }
+  oOv1('');renderMem();
+  window.agregarMemoria=function(){
+    const inp=document.getElementById('mem-inp');
+    const txt=inp?.value.trim();
+    if(!txt)return;
+    const mem=S.g('userMem1',[]);
+    if(mem.length>=80){tst('🧠 Máximo 80 recuerdos. Borrá algunos primero.');return;}
+    mem.push({t:txt,tag:'general',ts:Date.now()});
+    S.s('userMem1',mem);
+    inp.value='';renderMem();tst('✓ Anotado');
+  };
+  window.eliminarMemoria=function(ts){
+    const mem=S.g('userMem1',[]);
+    const idx=mem.findIndex(x=>x.ts===ts);
+    if(idx>=0)mem.splice(idx,1);
+    S.s('userMem1',mem);
+    renderMem();
+  };
+}
 initAuth();
 </script>
 <button id="mic-btn" onclick="startVoice()" aria-label="Registrar gasto por voz">🎤</button>
