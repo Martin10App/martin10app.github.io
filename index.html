@@ -1874,7 +1874,7 @@ function rMes(){
   // Comparativa misma fecha año anterior
   const prevY=totalGastosMes(m,y-1);
   if(prevY>0){
-    const dlt2=delta(total,prevY);
+    const dlt2=delta(totalGastos,prevY);
     const dCls=dlt2.up?'delta-up':'delta-dn';
     const arrow=dlt2.up?'↑':'↓';
     h+=`<div class="alert ${dlt2.up?'al-warn':'al-suc'}" style="margin-bottom:14px">
