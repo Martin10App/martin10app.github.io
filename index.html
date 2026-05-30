@@ -1660,7 +1660,7 @@ function ensureCardCats(){
 
 function k(catId,m,y){return `${catId}_${m}_${y}`}
 function km(m,y){return `${m}_${y}`}
-function montoPago(catId,m,y){const cat=cats.find(x=>x.id===catId);const ky=k(catId,m,y);if(pagosFijos[ky]!==undefined)return pagosFijos[ky];if(cat&&cat.cardRef)return getCardMonthAmt(cat.cardRef);return cat?.base||0;}
+function montoPago(catId,m,y){const cat=cats.find(x=>x.id===catId);const ky=k(catId,m,y);if(pagosFijos[ky]!==undefined)return pagosFijos[ky];if(cat&&cat.cardRef)return getCardMonthAmt(cat.cardRef,m,y);return cat?.base||0;}
 function setMontoPago(catId,m,y,v){pagosFijos[k(catId,m,y)]=v;S.s('pf4',pagosFijos);}
 function isPaid(catId,m,y){return !!pagosEstado[k(catId,m,y)]}
 function togPaid(catId,m,y){pagosEstado[k(catId,m,y)]=!pagosEstado[k(catId,m,y)];S.s('pe4',pagosEstado);}
@@ -1671,7 +1671,7 @@ function totalCatMes(catId,m,y){return sumMoney(gastos.filter(g=>g.c===catId&&g.
 function montoCat(c,m,y){
   const ky=k(c.id,m,y);
   if(!c.cardRef)return pagosFijos[ky]!==undefined?money(pagosFijos[ky]):money(c.base);
-  return pagosFijos[ky]!==undefined?money(pagosFijos[ky]):getCardMonthAmt(c.cardRef);
+  return pagosFijos[ky]!==undefined?money(pagosFijos[ky]):getCardMonthAmt(c.cardRef,m,y);
 }
 function totalCompromisosMes(m,y){
   let t=0;
@@ -1721,12 +1721,13 @@ function totalPagadoMes(m,y){
 }
 function gastosVariablesMes(m,y){return gastos.filter(g=>g.m===m&&g.y===y);}
 function totalVariablesMes(m,y){return sumMoney(gastosVariablesMes(m,y),g=>g.v);}
-function totalCardMonth(){
-  return sumMoney(cards,card=>getCardMonthAmt(card.id));
+function totalCardMonth(m,y){
+  return sumMoney(cards,card=>getCardMonthAmt(card.id,m,y));
 }
 function getCardMonthAmtAll(){
+  const n=new Date(),_m=n.getMonth(),_y=n.getFullYear();
   const r={};
-  cards.forEach(card=>{const a=getCardMonthAmt(card.id);if(a>0)r[card.id]={name:card.name,type:card.type,color:card.color,amt:a};});
+  cards.forEach(card=>{const a=getCardMonthAmt(card.id,_m,_y);if(a>0)r[card.id]={name:card.name,type:card.type,color:card.color,amt:a};});
   return r;
 }
 function totalGastosMes(m,y){
@@ -2942,7 +2943,7 @@ async function sendChat(){
     const pagado=isPaid(c.id,m,y);
     return '{id:"'+c.id+'",n:"'+c.n+'",base:'+c.base+',fijo:'+montoCat(c,m,y)+',totalMes:'+f+(cardRef?',tarjeta:"'+cardRef+'"':'')+',pagado:'+pagado+',color:"'+c.c+'"}';
   }).join(',\n');
-  const cards=(S.g('cards1',[])||[]).map(c=>'{id:"'+c.id+'",n:"'+c.n+'",cuota:'+(getCardMonthAmt(c.id)||0)+'}').join(',');
+  const cards=(S.g('cards1',[])||[]).map(c=>'{id:"'+c.id+'",n:"'+c.n+'",cuota:'+(getCardMonthAmt(c.id,m,y)||0)+'}').join(',');
   const ultimosGastos=gastos.filter(g=>g.y>=y-1).slice(-30).map(g=>'{c:"'+g.c+'",v:'+g.v+',d:"'+(g.desc||'')+'",m:'+g.m+',y:'+g.y+',f:"'+g.f+'"}').join(',');
   const sueldosData=sueldos&&Object.keys(sueldos).length?Object.entries(sueldos).map(([k,v])=>k+':'+v).join(', '):'(sin datos)';
   const profile=gymProfile||{};
@@ -4199,7 +4200,7 @@ async function interpretVoice(txt){
   const nutStr='Nutrición hoy: '+waterGlasses+'/'+waterTargetScore+' vasos de agua'+(nd.lastPlanDate===todayVoice?' · Plan de comidas generado hoy por IA':'');
   const profileStr='Perfil físico: '+(profile.height?'Altura:'+profile.height+'cm, ':'')+(profile.weight?'Peso:'+profile.weight+'kg, ':'')+'Experiencia:'+(profile.experience||0)+'años'+(profile.goal?', Objetivo:'+profile.goal:'')+(profile.dietRestrictions?', Dieta:'+profile.dietRestrictions:'')+' '+nutStr;
   const catsInfo=cats.map(c=>'{id:"'+c.id+'",n:"'+c.n+'",base:'+c.base+',totalMes:'+totalCatMes(c.id,m,y)+',pagado:'+isPaid(c.id,m,y)+'}').join(',\n');
-  const cards=(S.g('cards1',[])||[]).map(c=>'{id:"'+c.id+'",n:"'+c.n+'",cuota:'+(getCardMonthAmt(c.id)||0)+'}').join(',');
+  const cards=(S.g('cards1',[])||[]).map(c=>'{id:"'+c.id+'",n:"'+c.n+'",cuota:'+(getCardMonthAmt(c.id,m,y)||0)+'}').join(',');
   const ultimosGastos=gastos.filter(g=>g.y>=y-1).slice(-30).map(g=>'{c:"'+g.c+'",v:'+g.v+',d:"'+(g.desc||'')+'",m:'+g.m+',y:'+g.y+'}').join(',');
   const sueldosData=sueldos&&Object.keys(sueldos).length?Object.entries(sueldos).map(([k,v])=>k+':'+v).join(', '):'(sin datos)';
   const exNameMap={};
@@ -4526,6 +4527,19 @@ function loadUserData(){
   const _aCat=cats.find(c=>c.id==='ahorro');
   if(_aCat&&!_aCat.ahorro){_aCat.ahorro=true;S.s('cats4',cats);}
   cards=S.g('cards1',[]);cpurch=S.g('cpurch1',[]);
+  // Migración: backfill startM/startY para compras viejas
+  let _cpurchChanged=false;
+  cpurch.forEach(p=>{
+    if(p.startM!==undefined||p.startY!==undefined)return;
+    const inst=p.installments||1;
+    const paid=Math.min(inst,Math.max(0,p.paidInstallments||1));
+    const offset=paid-1;
+    const totalM=p.addedM-offset;
+    p.startM=((totalM%12)+12)%12;
+    p.startY=p.addedY+Math.floor(totalM/12);
+    _cpurchChanged=true;
+  });
+  if(_cpurchChanged)S.s('cpurch1',cpurch);
   events=S.g('evts1',[]);
   gymProfile=S.g('gymProfile',{height:0,weight:0,experience:0});
   gymWeekLog=S.g('gymWeekLog',[]);
@@ -4652,7 +4666,20 @@ function getCardPurchs(cardId){return cpurch.filter(p=>p.cardId===cardId);}
 function pInstAmt(p){return p.installments>0?money(p.total/p.installments):money(p.total);}
 function pRemaining(p){return Math.max(0,(p.installments||1)-(p.paidInstallments||0));}
 function getCardDebt(cardId){return sumMoney(getCardPurchs(cardId),p=>pInstAmt(p)*pRemaining(p));}
-function getCardMonthAmt(cardId){return sumMoney(getCardPurchs(cardId).filter(p=>pRemaining(p)>0),p=>pInstAmt(p));}
+function getCardMonthAmt(cardId,m,y){
+  return sumMoney(getCardPurchs(cardId).filter(p=>{
+    const stM=p.startM!==undefined?p.startM:null;
+    const stY=p.startY!==undefined?p.startY:null;
+    if(stM===null||stY===null)return false;
+    for(let c=1;c<=p.installments&&c<=p.paidInstallments;c++){
+      const total=stM+(c-1);
+      const im=((total%12)+12)%12;
+      const iy=stY+Math.floor(total/12);
+      if(im===m&&iy===y)return true;
+    }
+    return false;
+  }),p=>pInstAmt(p));
+}
 
 // ── TAB TARJETAS ──
 function rTarjetas(){
@@ -4670,9 +4697,10 @@ function rTarjetas(){
   }
 
   let totDeuda=0,totMes=0;
+  const _nd=new Date(),_nm=_nd.getMonth(),_ny=_nd.getFullYear();
   cards.forEach(card=>{
     const debt=getCardDebt(card.id);
-    const mes=getCardMonthAmt(card.id);
+    const mes=getCardMonthAmt(card.id,_nm,_ny);
     const purchs=getCardPurchs(card.id);
     const active=purchs.filter(p=>pRemaining(p)>0).length;
     totDeuda+=debt;totMes+=mes;
@@ -4711,7 +4739,8 @@ function openCardDetail(cardId){
   const card=cards.find(c=>c.id===cardId);if(!card)return;
   const purchs=getCardPurchs(cardId);
   const debt=getCardDebt(cardId);
-  const mes=getCardMonthAmt(cardId);
+  const _nd2=new Date(),_nm2=_nd2.getMonth(),_ny2=_nd2.getFullYear();
+  const mes=getCardMonthAmt(cardId,_nm2,_ny2);
   const gemKey=S.g('gemini_key','');
 
   // Cabecera
@@ -4872,11 +4901,21 @@ function markInstPaid(id){
 
 // ── ANÁLISIS CON GEMINI ──
 function openAIAnalysis(cardId){
+  const _sn=new Date();
   oOv2(`<div class="mt">✨ Analizar con Gemini</div>
   <input type="hidden" id="ai-card-id" value="${cardId}">
   <div style="background:linear-gradient(135deg,rgba(66,133,244,.08),rgba(124,58,237,.08));border:1px solid rgba(124,58,237,.25);border-radius:var(--r-sm);padding:14px;margin-bottom:18px;font-size:12px;color:var(--text1);line-height:1.7">
     Subí una foto o PDF de tu estado de cuenta. Gemini extraerá automáticamente las compras, cuotas y categorías.<br>
     <span style="color:var(--text2);font-size:11px">Revisá el resultado antes de confirmar.</span>
+  </div>
+  <div style="display:flex;align-items:center;gap:6px;margin-bottom:14px;font-size:12px">
+    <span style="color:var(--text2);flex-shrink:0">Mes del resumen:</span>
+    <select id="stmt-month" style="flex:1;padding:6px 8px;border-radius:6px;border:1px solid var(--b2);background:var(--bg2);color:var(--text1);font-size:12px">
+      ${MONTHS.map((l,i)=>`<option value="${i}"${i===_sn.getMonth()?' selected':''}>${l}</option>`).join('')}
+    </select>
+    <select id="stmt-year" style="flex-shrink:0;padding:6px 8px;border-radius:6px;border:1px solid var(--b2);background:var(--bg2);color:var(--text1);font-size:12px">
+      ${[_sn.getFullYear()-2,_sn.getFullYear()-1,_sn.getFullYear(),_sn.getFullYear()+1].map(y=>`<option value="${y}"${y===_sn.getFullYear()?' selected':''}>${y}</option>`).join('')}
+    </select>
   </div>
   <div class="fld" style="margin-bottom:20px">
     <label>Imagen o PDF del estado de cuenta</label>
@@ -4905,7 +4944,7 @@ async function runGeminiAnalysis(){
     });
 
     const resp=await fetch('https://generativelanguage.googleapis.com/v1beta/models/'+GEMINI_MODEL+':generateContent',{method:'POST',headers:{'Content-Type':'application/json','X-goog-api-key':key},body:JSON.stringify({contents:[{parts:[
-      {text:'Analizá este estado de cuenta de tarjeta de crédito. Extraé cada compra con: nombre del comercio, monto en pesos uruguayos, cantidad de cuotas totales y cuota actual (si dice 3/12 son 3 pagadas de 12 totales), y categorizá cada compra en: nafta, supermercado, farmacia, restaurante, ropa, electrónica, servicios, entretenimiento, u otro. Respondé SOLO con un array JSON sin texto extra. Formato: [{"comercio":"...","monto":0,"cuotas_totales":1,"cuota_actual":0,"categoria":"otro"}]'},
+      {text:'Analizá este estado de cuenta de tarjeta de crédito. Extraé cada compra con: nombre del comercio, monto en pesos uruguayos, cantidad de cuotas totales y cuota actual que SE PAGA en este resumen. Si dice 3/12 significa que la cuota actual (la que vence en este resumen) es la 3 de 12 totales; cuota_actual=3. Si dice 4/4 es la cuota 4 de 4 — se paga en este resumen, NO está saldada. NO marques cuota_actual=0 ni descartes compras donde cuota_actual == cuotas_totales. Categorizá cada compra en: nafta, supermercado, farmacia, restaurante, ropa, electrónica, servicios, entretenimiento, u otro. Respondé SOLO con un array JSON sin texto extra. Formato: [{"comercio":"...","monto":0,"cuotas_totales":1,"cuota_actual":1,"categoria":"otro"}]'},
       {inline_data:{mime_type:file.type,data:b64}}
     ]}]})});
 
@@ -4955,13 +4994,35 @@ function confirmAIPurchases(){
   if(!cardId||!purchases?.length)return;
   const now=new Date();
   const f=`${String(now.getDate()).padStart(2,'0')}/${String(now.getMonth()+1).padStart(2,'0')}`;
+  const stmtSelM=document.getElementById('stmt-month');
+  const stmtSelY=document.getElementById('stmt-year');
+  const stmtM=stmtSelM?parseInt(stmtSelM.value):now.getMonth();
+  const stmtY=stmtSelY?parseInt(stmtSelY.value):now.getFullYear();
+  let added=0,omitidas=0;
   purchases.forEach(p=>{
     const inst=Math.max(1,p.cuotas_totales||1);
     const paid=Math.min(inst,Math.max(0,p.cuota_actual||0));
-    cpurch.push({id:uid(),cardId,commerce:p.comercio||'Sin nombre',total:p.monto||0,installments:inst,paidInstallments:paid,category:p.categoria||'otro',date:f,addedM:now.getMonth(),addedY:now.getFullYear()});
+    const startOffset=paid-1;
+    const totalM=stmtM-startOffset;
+    const startM=((totalM%12)+12)%12;
+    const startY=stmtY+Math.floor(totalM/12);
+    const commerce=(p.comercio||'Sin nombre').trim();
+    const monto=p.monto||0;
+    // Dedup: misma tarjeta + mismo comercio + mismo monto
+    const existing=cpurch.find(x=>x.cardId===cardId&&x.commerce.toLowerCase()===commerce.toLowerCase()&&x.total===monto);
+    if(existing){
+      existing.paidInstallments=Math.max(existing.paidInstallments,paid);
+      existing.installments=Math.max(existing.installments,inst);
+      existing.startM=startM;existing.startY=startY;
+      omitidas++;
+    }else{
+      cpurch.push({id:uid(),cardId,commerce,total:monto,installments:inst,paidInstallments:paid,category:p.categoria||'otro',date:f,addedM:now.getMonth(),addedY:now.getFullYear(),startM,startY});
+      added++;
+    }
   });
   S.s('cpurch1',cpurch);
-  cOv2();tst(`✓ ${purchases.length} compra${purchases.length!==1?'s':''} guardada${purchases.length!==1?'s':''}`);
+  const txt=`✓ ${added} compra${added!==1?'s':''} guardada${added!==1?'s':''}`+(omitidas?`, ${omitidas} omitida${omitidas!==1?'s':''} (ya existente${omitidas!==1?'s':''})`:'');
+  cOv2();tst(txt);
   openCardDetail(cardId);
 }
 
