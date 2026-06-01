@@ -6,14 +6,14 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="theme-color" content="#08090D">
+<meta name="theme-color" content="#0A0B11">
 <title>MARTIN · APP</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 html{font-size:16px}
-body{background:#08090D;color:#F0F0F5;font-family:'Inter',sans-serif;height:100dvh;overflow:hidden;-webkit-font-smoothing:antialiased}
+body{background:radial-gradient(130% 70% at 50% -15%,rgba(110,91,255,.10),transparent 55%),#0A0B11;color:#F4F5FA;font-family:'Inter',sans-serif;height:100dvh;overflow:hidden;-webkit-font-smoothing:antialiased}
 input,select,textarea,button{font-family:inherit}
 ::-webkit-scrollbar{width:2px}::-webkit-scrollbar-thumb{background:#2a2d38;border-radius:2px}
 button{cursor:pointer;border:none;background:none;color:inherit}
@@ -21,51 +21,58 @@ input[type=number]{-moz-appearance:textfield}
 input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
 
 :root{
-  --bg0:#08090D;--bg1:#0F1018;--bg2:#161820;--bg3:#1E2029;--bg4:#252833;
-  --border:#ffffff0f;--border2:#ffffff1a;--border3:#ffffff2a;
-  --text0:#F0F0F5;--text1:#A8AAB8;--text2:#6B6E7E;--text3:#3D4052;
-  --accent:#FF3B4E;
-  --red:#FF3B4E;--red-d:rgba(255,59,78,.12);--red-b:rgba(255,59,78,.25);
-  --green:#00C48C;--green-d:rgba(0,196,140,.1);--green-b:rgba(0,196,140,.28);
-  --blue:#3B7FFF;--blue-d:rgba(59,127,255,.1);--blue-b:rgba(59,127,255,.25);
-  --gold:#FFB347;--gold-d:rgba(255,179,71,.1);--gold-b:rgba(255,179,71,.28);
+  --bg0:#0A0B11;--bg1:#11131C;--bg2:#171A26;--bg3:#1F2433;--bg4:#2A3042;
+  --border:#ffffff0d;--border2:#ffffff17;--border3:#ffffff28;
+  --text0:#F4F5FA;--text1:#AFB2C4;--text2:#71748A;--text3:#454960;
+  --accent:#6E5BFF;--accent2:#8E7BFF;--accent-d:rgba(110,91,255,.13);--accent-b:rgba(110,91,255,.34);
+  --red:#FF4D5E;--red-d:rgba(255,77,94,.12);--red-b:rgba(255,77,94,.26);
+  --green:#10D29B;--green-d:rgba(16,210,155,.1);--green-b:rgba(16,210,155,.28);
+  --blue:#4D8DFF;--blue-d:rgba(77,141,255,.1);--blue-b:rgba(77,141,255,.26);
+  --gold:#FFC062;--gold-d:rgba(255,192,98,.1);--gold-b:rgba(255,192,98,.28);
   --purple:#A855F7;--cyan:#22D3EE;--lime:#84CC16;--rose:#FB7185;--teal:#14B8A6;--orange:#F97316;
-  --r:18px;--r-sm:12px;--r-xs:8px;
+  --r:18px;--r-sm:13px;--r-xs:8px;
   --fd:'Syne',sans-serif;--fm:'JetBrains Mono',monospace;
+  --shadow-sm:0 1px 2px rgba(0,0,0,.32);
+  --shadow:0 8px 24px -8px rgba(0,0,0,.55);
+  --shadow-lg:0 22px 56px -14px rgba(0,0,0,.65);
+  --glow:0 0 28px -6px var(--accent-b);
 }
 
 #app{display:flex;flex-direction:column;height:100dvh;max-width:480px;margin:0 auto}
 #scr{flex:1;overflow-y:auto;overflow-x:hidden;overscroll-behavior-y:contain;-webkit-overflow-scrolling:touch}
-#nav{flex-shrink:0;display:grid;grid-template-columns:repeat(5,1fr);background:rgba(8,9,13,.97);backdrop-filter:blur(24px) saturate(180%);border-top:1px solid var(--border);padding:10px 0 max(10px,env(safe-area-inset-bottom));z-index:100}
-.nb{display:flex;flex-direction:column;align-items:center;gap:5px;color:var(--text2);font-size:10px;font-weight:600;letter-spacing:.8px;text-transform:uppercase;padding:6px 6px;transition:color .2s;font-family:var(--fd)}
+#nav{flex-shrink:0;display:grid;grid-template-columns:repeat(5,1fr);background:rgba(10,11,17,.86);backdrop-filter:blur(28px) saturate(180%);-webkit-backdrop-filter:blur(28px) saturate(180%);border-top:1px solid var(--border2);box-shadow:0 -10px 40px -12px rgba(0,0,0,.7);padding:10px 0 max(10px,env(safe-area-inset-bottom));z-index:100;position:relative}
+#nav::before{content:"";position:absolute;top:0;left:18%;right:18%;height:1px;background:linear-gradient(90deg,transparent,var(--accent-b),transparent)}
+.nb{display:flex;flex-direction:column;align-items:center;gap:5px;color:var(--text2);font-size:10px;font-weight:600;letter-spacing:.8px;text-transform:uppercase;padding:6px 6px;transition:color .2s,transform .2s;font-family:var(--fd)}
 .nb svg{width:24px;height:24px;stroke-width:1.8;transition:all .2s}
-.nb.on{color:var(--text0)}.nb.on svg{filter:drop-shadow(0 0 8px currentColor)}
+.nb:active{transform:scale(.9)}
+.nb.on{color:var(--accent2)}.nb.on svg{filter:drop-shadow(0 0 10px var(--accent-b))}
 
 .pg{display:none;min-height:100%;padding-bottom:24px}
 .pg.on{display:block;animation:fi .25s ease}
 @keyframes fi{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
 
-.ph{position:sticky;top:0;z-index:50;background:rgba(8,9,13,.96);backdrop-filter:blur(24px);border-bottom:1px solid var(--border);padding:18px 20px 0}
+.ph{position:sticky;top:0;z-index:50;background:rgba(10,11,17,.82);backdrop-filter:blur(28px) saturate(180%);-webkit-backdrop-filter:blur(28px) saturate(180%);border-bottom:1px solid var(--border);padding:18px 20px 0}
 .ph-r{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px}
-.ph-t{font-family:var(--fd);font-size:22px;font-weight:800;letter-spacing:-.5px;line-height:1.1}
+.ph-t{font-family:var(--fd);font-size:23px;font-weight:800;letter-spacing:-.6px;line-height:1.05}
 .ph-s{font-size:10px;color:var(--text2);letter-spacing:2.5px;font-weight:600;margin-top:3px;text-transform:uppercase}
 .tabs{display:flex;overflow-x:auto;scrollbar-width:none;margin:0 -20px;padding:0 20px}
 .tabs::-webkit-scrollbar{display:none}
 .tab{flex-shrink:0;padding:10px 14px;color:var(--text2);font-size:12px;font-weight:600;border-bottom:2px solid transparent;margin-bottom:-1px;transition:all .2s;font-family:var(--fd);white-space:nowrap}
-.tab.on{color:var(--text0);border-color:var(--red)}
+.tab.on{color:var(--text0);border-color:var(--accent)}
 .tab-line{border-bottom:1px solid var(--border)}
 
 .sec{padding:18px 20px}
 .sec+.sec{padding-top:0}
 .sec-t{font-size:9px;color:var(--text2);letter-spacing:2.5px;font-weight:700;text-transform:uppercase;margin-bottom:12px}
 
-.card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:16px;position:relative}
+.card{background:linear-gradient(180deg,#191c29,var(--bg2));border:1px solid var(--border2);border-radius:var(--r);padding:16px;position:relative;box-shadow:var(--shadow);overflow:hidden}
+.card::before{content:"";position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.10),transparent)}
 .card+.card,.card+.crd,.crd+.card,.crd+.crd{margin-top:9px}
-.crd{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r-sm);padding:13px}
+.crd{background:var(--bg2);border:1px solid var(--border2);border-radius:var(--r-sm);padding:13px;box-shadow:var(--shadow-sm)}
 
 .stats{display:grid;gap:9px}
 .s2{grid-template-columns:1fr 1fr}.s3{grid-template-columns:1fr 1fr 1fr}.s4{grid-template-columns:repeat(4,1fr)}
-.st{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r-sm);padding:13px 10px;text-align:center;min-width:0}
+.st{background:linear-gradient(180deg,#191c29,var(--bg2));border:1px solid var(--border2);border-radius:var(--r-sm);padding:14px 10px;text-align:center;min-width:0;box-shadow:var(--shadow-sm)}
 .sv{font-family:var(--fm);font-size:18px;font-weight:700;line-height:1;margin-bottom:5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .sl{font-size:9px;color:var(--text2);letter-spacing:1.5px;text-transform:uppercase;font-weight:600;line-height:1.3}
 
@@ -74,8 +81,8 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
 .b-md{padding:10px 16px}
 .b-sm{padding:7px 12px;font-size:12px;border-radius:var(--r-xs)}
 .b-xs{padding:5px 10px;font-size:11px;border-radius:7px}
-.b-p{background:var(--red);color:#fff}
-.b-p:active{background:#e0243a}
+.b-p{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;box-shadow:0 6px 18px -6px var(--accent-b)}
+.b-p:active{background:linear-gradient(135deg,#5a48e8,#7a66f5)}
 .b-g{background:var(--bg3);border:1px solid var(--border2);color:var(--text1)}
 .b-g:active{background:var(--bg4)}
 .b-grn{background:var(--green-d);border:1px solid var(--green-b);color:var(--green)}
@@ -90,7 +97,7 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
 .fld{margin-bottom:14px}
 .fld label{display:block;font-size:10px;color:var(--text2);letter-spacing:2px;font-weight:700;text-transform:uppercase;margin-bottom:7px}
 .inp{width:100%;padding:12px 14px;border-radius:var(--r-sm);background:var(--bg3);border:1px solid var(--border2);color:var(--text0);font-size:14px;outline:none;transition:border-color .2s;-webkit-appearance:none}
-.inp:focus{border-color:var(--border3)}
+.inp:focus{border-color:var(--accent-b);box-shadow:0 0 0 3px var(--accent-d)}
 .inp::placeholder{color:var(--text3)}
 .inp option{background:#1a1c28}
 .inp-r{display:grid;grid-template-columns:1fr 1fr;gap:10px}
@@ -110,7 +117,7 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
 
 .ov{display:none;position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.85);backdrop-filter:blur(12px);align-items:flex-end;justify-content:center}
 .ov.on{display:flex;animation:fi .2s}
-.mdl{background:var(--bg1);border:1px solid var(--border2);border-radius:24px 24px 0 0;width:100%;max-width:480px;max-height:90dvh;overflow-y:auto;padding:20px 20px max(20px,env(safe-area-inset-bottom));animation:su .25s cubic-bezier(.4,0,.2,1)}
+.mdl{background:var(--bg1);border:1px solid var(--border2);border-radius:24px 24px 0 0;width:100%;max-width:480px;max-height:90dvh;overflow-y:auto;padding:20px 20px max(20px,env(safe-area-inset-bottom));animation:su .25s cubic-bezier(.4,0,.2,1);box-shadow:var(--shadow-lg)}
 @keyframes su{from{transform:translateY(60px);opacity:0}to{transform:none;opacity:1}}
 .mh{width:36px;height:4px;background:var(--bg4);border-radius:2px;margin:0 auto 20px}
 .mt{font-family:var(--fd);font-size:18px;font-weight:800;margin-bottom:20px}
@@ -209,10 +216,13 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
 #voice-interim{position:fixed;left:50%;bottom:140px;transform:translateX(-50%) translateY(10px);max-width:84%;background:rgba(20,22,32,.97);border:1px solid var(--border3);color:var(--text0);padding:12px 18px;border-radius:14px;font-size:14px;font-weight:500;line-height:1.4;text-align:center;z-index:998;opacity:0;transition:all .25s;pointer-events:none;box-shadow:0 8px 32px rgba(0,0,0,.5)}
 #voice-interim.on{opacity:1;transform:translateX(-50%) translateY(0)}
 @keyframes dotPulse{0%,80%,100%{transform:scale(.6);opacity:.3}40%{transform:scale(1);opacity:.8}}
-.typing-dots{display:flex;gap:4px;align-self:flex-start;padding:12px 16px;background:var(--bg3);border-radius:16px 16px 16px 4px;margin-top:4px}
-.typing-dots span{width:7px;height:7px;border-radius:50%;background:var(--text3);animation:dotPulse 1.4s ease-in-out infinite}
-.typing-dots span:nth-child(2){animation-delay:.2s}
-.typing-dots span:nth-child(3){animation-delay:.4s}
+.typing-dots{display:inline-flex;align-items:center;gap:8px;align-self:flex-start;padding:11px 15px;background:var(--bg3);border:1px solid var(--border2);border-radius:16px 16px 16px 4px;margin-top:4px;box-shadow:var(--shadow-sm)}
+.typing-dots .tk-txt{font-size:12.5px;font-weight:600;background:linear-gradient(90deg,var(--text2) 30%,var(--text0) 50%,var(--text2) 70%);background-size:220% 100%;-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;animation:tkShimmer 1.8s linear infinite}
+@keyframes tkShimmer{0%{background-position:140% 0}100%{background-position:-40% 0}}
+.typing-dots .tk-d{display:inline-flex;gap:4px}
+.typing-dots span.dot{width:6px;height:6px;border-radius:50%;background:var(--accent2);animation:dotPulse 1.4s ease-in-out infinite}
+.typing-dots span.dot:nth-child(2){animation-delay:.2s}
+.typing-dots span.dot:nth-child(3){animation-delay:.4s}
 .ai-caret{display:inline-block;width:7px;animation:caretBlink .9s steps(1) infinite;color:var(--text2)}
 @keyframes caretBlink{50%{opacity:0}}
 .cx-msgs{flex:1;overflow-y:auto;overflow-x:hidden;padding:16px 14px;display:flex;flex-direction:column;gap:13px;-webkit-overflow-scrolling:touch}
@@ -249,7 +259,7 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
 <div id="login-screen">
   <div class="login-card">
     <div class="login-logo">
-      <div class="login-logo-t">MARTIN<span style="color:var(--red)">·</span>APP</div>
+      <div class="login-logo-t">MARTIN<span style="color:var(--accent2)">·</span>APP</div>
       <div class="login-logo-s">Acceso privado</div>
     </div>
 
@@ -322,11 +332,12 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
     </div>
     <div class="tabs tab-line">
       <button class="tab on" id="gt-0" onclick="gTab(0)">Rutinas</button>
+      <button class="tab" id="gt-4" onclick="gTab(4)">Semanas</button>
       <button class="tab" id="gt-1" onclick="gTab(1)">Entrenar</button>
+      <button class="tab" id="gt-5" onclick="gTab(5)">🥗 Nutrición</button>
+      <button class="tab" id="gt-6" onclick="gTab(6)">🏃 Cardio</button>
       <button class="tab" id="gt-2" onclick="gTab(2)">Historial</button>
       <button class="tab" id="gt-3" onclick="gTab(3)">Timer</button>
-      <button class="tab" id="gt-4" onclick="gTab(4)">Semanas</button>
-      <button class="tab" id="gt-5" onclick="gTab(5)">Nutrición</button>
     </div>
   </div>
   <div id="gym-b"></div>
@@ -348,6 +359,7 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
       <button class="tab" id="xt-3" onclick="xTab(3)">Comparar</button>
       <button class="tab" id="xt-4" onclick="xTab(4)">Tarjetas</button>
       <button class="tab" id="xt-5" onclick="xTab(5)">+ Gasto</button>
+      <button class="tab" id="xt-7" onclick="xTab(7)">🛒 Súper</button>
       <button class="tab" id="xt-6" onclick="xTab(6)">Config</button>
     </div>
   </div>
@@ -535,7 +547,7 @@ function apiForMuscle(m){
 }
 
 // ── STATE ──
-let routines=[],activeRid=null,sets={},weights={},gymHist=[];
+let routines=[],activeRid=null,sets={},weights={},gymHist=[],cardioLog=[];
 let gymProfile=S.g('gymProfile',{height:0,weight:0,experience:0});
 let nutData=S.g('nutData',{waterLog:{},waterTarget:0,mealPlans:[],lastPlanDate:'',foodLog:{},dietType:'',targetWeight:0,weeklyPlan:null,weeklyPlanDate:''});
 if(!nutData.foodLog)nutData.foodLog={};
@@ -627,7 +639,7 @@ function getWeekDayPct(weekId,dayId){
 const MONTHS=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
 const MS=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
 
-let gastos=[],pagosFijos={},pagosEstado={},sueldos={};
+let gastos=[],pagosFijos={},pagosEstado={},sueldos={},shopList=[];
 let cards=[],cpurch=[];
 
 // Categorías — se cargan por usuario post-login
@@ -723,7 +735,7 @@ const MC={Pecho:'#FF3B4E',Espalda:'#3B7FFF',Hombros:'#A855F7',Bíceps:'#22D3EE',
 // ═════════════════════════════════════════
 // GYM
 // ═════════════════════════════════════════
-function gTab(i){curGT=i;for(let j=0;j<6;j++)document.getElementById('gt-'+j)?.classList.toggle('on',j===i);renderGym();}
+function gTab(i){curGT=i;for(let j=0;j<7;j++)document.getElementById('gt-'+j)?.classList.toggle('on',j===i);renderGym();}
 
 function renderGym(){
   const el=document.getElementById('gym-b');if(!el)return;
@@ -734,6 +746,7 @@ function renderGym(){
   if(curGT===3)el.innerHTML=rGymTimer();
   if(curGT===4)el.innerHTML=rGymWeeks();
   if(curGT===5)el.innerHTML=rGymNutricion();
+  if(curGT===6){el.innerHTML=rGymCardio();setTimeout(drawCardioChart,60);}
   updWring();
   if(curGT===3)setTimeout(drawTimerRing,60);
 }
@@ -777,16 +790,20 @@ function rGymList(){
           <div style="font-size:13px;font-weight:800;margin-top:3px;color:${dp===100?col:'#fff'}">${esc(d.label.slice(0,5))}</div>
           <div style="font-size:10px;font-family:var(--fm);color:${col};margin-top:3px">${dp}%</div></div>`;}).join('')}
       </div></div>`;
-    setTimeout(()=>ring('ar',pct,'#FF3B4E',pct+'%',48),40);
+    setTimeout(()=>ring('ar',pct,'#6E5BFF',pct+'%',48),40);
   }
   h+=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
     <div class="sec-t" style="margin:0">Mis rutinas</div>
-    <button class="btn b-sm b-p" onclick="newRoutine()">+ Nueva</button>
+    <div style="display:flex;gap:6px">
+      ${aiKey()?`<button class="btn b-sm b-blu" onclick="openAIRoutine()">✨ Crear con IA</button>`:''}
+      <button class="btn b-sm b-p" onclick="newRoutine()">+ Nueva</button>
+    </div>
   </div>`;
   if(!routines.length){
     h+=`<div class="empty"><div class="empty-i">🏋️</div><div class="empty-t">Sin rutinas todavía</div>
-    <div class="empty-s">Creá tu primera rutina con ejercicios de la base local o agregalos manualmente</div>
-    <button class="btn b-md b-p" style="margin-top:18px" onclick="newRoutine()">Crear rutina</button></div>`;
+    <div class="empty-s">Creá una con IA (te la arma según tu objetivo y dónde entrenás) o cargala a mano</div>
+    ${aiKey()?`<button class="btn b-md b-blu" style="margin-top:18px" onclick="openAIRoutine()">✨ Crear con IA</button>`:''}
+    <button class="btn b-md b-g" style="margin-top:10px" onclick="newRoutine()">Crear a mano</button></div>`;
   } else {
     routines.forEach(r=>{
       const isA=r.id===activeRid;
@@ -821,7 +838,7 @@ function routineAlert(r){
 function ageStr(r){const d=Math.floor((Date.now()-r.createdAt)/86400000);if(d<30)return d+'d';const m=Math.floor(d/30);return m===1?'1 mes':`${m} meses`;}
 function getRoutinePct(rid){const r=routines.find(x=>x.id===rid);if(!r)return 0;const tot=r.days.reduce((s,d)=>s+d.exercises.reduce((a,e)=>a+e.series,0),0);if(!tot)return 0;const done=Object.entries(sets).filter(([k,v])=>v&&k.startsWith(rid+'|')).length;return Math.round((done/tot)*100);}
 function getDayPct(rid,did){const r=routines.find(x=>x.id===rid);const d=r?.days.find(x=>x.id===did);if(!r||!d)return 0;const tot=d.exercises.reduce((s,e)=>s+e.series,0);if(!tot)return 0;const done=d.exercises.reduce((s,ex,ei)=>s+Array.from({length:ex.series},(_,si)=>sets[`${rid}|${did}|${ei}|${si}`]?1:0).reduce((a,b)=>a+b,0),0);return Math.round((done/tot)*100);}
-function updWring(){const pct=activeRid?getRoutinePct(activeRid):0;ring('wring',pct,'#FF3B4E',pct+'%');const lbl=document.getElementById('wring-lbl');if(lbl)lbl.textContent=pct+'%';}
+function updWring(){const pct=activeRid?getRoutinePct(activeRid):0;ring('wring',pct,'#6E5BFF',pct+'%');const lbl=document.getElementById('wring-lbl');if(lbl)lbl.textContent=pct+'%';}
 
 function openDay(rid,did){
   const r=routines.find(x=>x.id===rid);const d=r?.days.find(x=>x.id===did);if(!r||!d)return;
@@ -895,14 +912,20 @@ function addSet(rid,did,ei,col){
   tst(`+1 serie (total: ${ex.series})`);
 }
 
+function verTecnica(nameStr){
+  const name=JSON.parse(nameStr);
+  const q=encodeURIComponent('técnica correcta '+name+' ejercicio');
+  window.open('https://www.youtube.com/results?search_query='+q,'_blank');
+}
 function openExInfo(exStr){
   const ex=JSON.parse(exStr);const related=apiForMuscle(ex.muscle);const mc=MC[ex.muscle]||'#aaa';
   let h=`<div style="margin-bottom:20px">
     <div style="font-size:9px;font-weight:700;color:${mc};letter-spacing:2px;text-transform:uppercase;margin-bottom:6px">${esc(ex.muscle)}</div>
     <div class="mt" style="margin-bottom:0">${esc(ex.name)}</div></div>
-  <div class="stats s2" style="margin-bottom:20px">
+  <div class="stats s2" style="margin-bottom:14px">
     <div class="st"><div class="sv" style="color:${mc}">${ex.series}</div><div class="sl">Series</div></div>
-    <div class="st"><div class="sv" style="color:${mc}">${esc(ex.reps)}</div><div class="sl">Reps</div></div></div>`;
+    <div class="st"><div class="sv" style="color:${mc}">${esc(ex.reps)}</div><div class="sl">Reps</div></div></div>
+  <button class="btn b-lg" style="width:100%;background:#FF0000;color:#fff;margin-bottom:18px" onclick="verTecnica(${JSON.stringify(JSON.stringify(ex.name))})">▶ Ver técnica en YouTube</button>`;
   if(related.length){h+=`<div class="sec-t">Ejercicios similares</div>`;
     related.forEach(r=>{h+=`<div class="crd" style="margin-bottom:8px;display:flex;align-items:flex-start;gap:10px">
       <div style="width:34px;height:34px;border-radius:9px;background:${mc}18;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:16px">💪</div>
@@ -1112,6 +1135,15 @@ function rGymNutricion(){
 
   let h=`<div class="sec">`;
 
+  // ── Encabezado de sección ──
+  h+=`<div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
+    <div style="width:46px;height:46px;border-radius:14px;background:linear-gradient(135deg,rgba(16,210,155,.18),rgba(77,141,255,.18));border:1px solid var(--green-b);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">🥗</div>
+    <div style="flex:1;min-width:0">
+      <div style="font-family:var(--fd);font-size:20px;font-weight:800;letter-spacing:-.4px;line-height:1.05">Nutrición</div>
+      <div style="font-size:11px;color:var(--text2);margin-top:2px">${consumed>0||glasses>0?`Hoy: ${consumed} kcal · ${glasses}/${target} vasos`:'Tu alimentación, agua y plan del día'}</div>
+    </div>
+  </div>`;
+
   // ── Objetivo / tipo de dieta ──
   const dietLabels={mantener:'Mantener peso',bajar_lento:'Bajar de peso (lento)',bajar_rapido:'Bajar de peso (rápido)',masa:'Aumentar masa muscular',keto:'Cetogénica (keto)',recomp:'Recomposición'};
   h+=`<div class="card" style="margin-bottom:14px;border-color:#34D39940">
@@ -1184,6 +1216,41 @@ function rGymNutricion(){
     </div>
   </div>`;
 
+  // ── Sueño ──
+  const sleepLog=nd.sleepLog||{};
+  const _ayer=(()=>{const d=new Date();d.setDate(d.getDate()-1);return d.toISOString().slice(0,10);})();
+  const sToday=sleepLog[today];const sAyer=sleepLog[_ayer];
+  const sLast=sToday||sAyer;
+  const last7Sleep=_last7Keys().map(k=>sleepLog[k]?.hours||0);
+  const avgSleep=(()=>{const v=last7Sleep.filter(x=>x>0);return v.length?(v.reduce((a,b)=>a+b,0)/v.length).toFixed(1):0;})();
+  const qualEmoji={mala:'😴',regular:'😐',buena:'🙂',excelente:'😃'};
+  h+=`<div class="card" style="border-color:var(--accent-b);margin-bottom:14px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+      <div class="sec-t" style="margin:0">🌙 Sueño</div>
+      <div style="display:flex;gap:6px">
+        ${(S.g('gemini_key','')||'').trim()?`<button class="btn b-sm b-blu" onclick="cardioFromPhoto()">📷 Foto</button>`:''}
+        <button class="btn b-sm b-p" onclick="openSleepModal()">+ Registrar</button>
+      </div>
+    </div>`;
+  if(sLast){
+    h+=`<div style="display:flex;align-items:center;gap:14px;margin-bottom:10px">
+      <div style="font-family:var(--fm);font-size:32px;font-weight:800;color:var(--accent2)">${sLast.hours}<span style="font-size:16px;color:var(--text2)">h</span></div>
+      <div style="flex:1">
+        <div style="font-size:13px;font-weight:600">${qualEmoji[sLast.quality]||''} ${sLast.quality?sLast.quality.charAt(0).toUpperCase()+sLast.quality.slice(1):''}${sToday?' (hoy)':' (anoche)'}</div>
+        <div style="font-size:11px;color:var(--text2);margin-top:2px">Promedio 7 días: ${avgSleep}h${sLast.wakeups?' · '+sLast.wakeups+' despertares':''}</div>
+      </div>
+    </div>`;
+    if(last7Sleep.some(x=>x>0)){
+      const maxS=Math.max(...last7Sleep,9);
+      h+=`<div style="display:flex;align-items:flex-end;gap:4px;height:44px;margin-top:6px">`;
+      last7Sleep.forEach(v=>{const bh=v>0?Math.max(8,(v/maxS)*44):4;const col=v>=7?'var(--green)':v>=6?'var(--gold)':v>0?'var(--red)':'rgba(255,255,255,.06)';h+=`<div style="flex:1;height:${bh}px;background:${col};border-radius:3px 3px 0 0" title="${v}h"></div>`;});
+      h+=`</div>`;
+    }
+  } else {
+    h+=`<div style="font-size:12px;color:var(--text2);line-height:1.5">Registrá cuántas horas dormiste y cómo descansaste. La IA lo cruza con tu entrenamiento y nutrición.<br><span style="font-size:11px;color:var(--text3)">Si tenés reloj, mirá el dato en su app y cargalo acá.</span></div>`;
+  }
+  h+=`</div>`;
+
   // ── Plan semanal IA ──
   h+=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
     <div class="sec-t" style="margin:0">📅 Plan semanal</div>
@@ -1202,6 +1269,412 @@ function rGymNutricion(){
   h+=`</div>`;
   setTimeout(()=>{ring('wtr-ring',waterPct,glasses>=target?'var(--green)':'var(--blue)',waterPct+'%',64);if(calGoal>0)ring('cal-ring',calPct,consumed>calGoal?'var(--red)':'var(--green)',calPct+'%',64);},50);
   return h;
+}
+
+// ════════════════════════════════════════════
+//  CARDIO
+// ════════════════════════════════════════════
+const CARDIO_TYPES={
+  caminar:{label:'Caminar (aire libre)',emoji:'🚶',color:'#10D29B',met:3.5,indoor:false},
+  caminar_cinta:{label:'Caminar (cinta)',emoji:'🚶',color:'#10D29B',met:3.3,indoor:true},
+  correr:{label:'Correr (aire libre)',emoji:'🏃',color:'#FF4D5E',met:9.0,indoor:false},
+  correr_cinta:{label:'Correr (cinta)',emoji:'🏃',color:'#FF4D5E',met:8.3,indoor:true},
+  bici:{label:'Bici (aire libre)',emoji:'🚴',color:'#4D8DFF',met:7.0,indoor:false},
+  bici_fija:{label:'Bici fija',emoji:'🚲',color:'#4D8DFF',met:6.8,indoor:true},
+  natacion:{label:'Natación',emoji:'🏊',color:'#22D3EE',met:7.0,indoor:true},
+  eliptico:{label:'Elíptico',emoji:'🌀',color:'#A855F7',met:5.0,indoor:true},
+  otro:{label:'Otro',emoji:'💓',color:'#FFC062',met:5.0,indoor:false}
+};
+// Estima calorías: MET × peso(kg) × horas. La inclinación (cinta) sube el gasto ~4% por cada 1%.
+function cardioCalories(type,mins,incline){
+  const p=gymProfile||{};const w=p.weight||70;
+  let met=(CARDIO_TYPES[type]||CARDIO_TYPES.otro).met;
+  const inc=+incline||0;
+  if(inc>0)met=met*(1+inc*0.04);
+  return Math.round(met*w*(mins/60));
+}
+function _last7Keys(){
+  const r=[];const n=new Date();
+  for(let i=6;i>=0;i--){const d=new Date(n);d.setDate(n.getDate()-i);r.push(d.toISOString().slice(0,10));}
+  return r;
+}
+function rGymCardio(){
+  const cardioPlan=(nutData&&nutData.cardioPlan)||'';
+  const days=_last7Keys();
+  const log=[...cardioLog].sort((a,b)=>b.ts-a.ts);
+  // Resumen de la semana
+  const weekLog=log.filter(c=>days.includes(c.date));
+  const totMin=weekLog.reduce((s,c)=>s+(+c.mins||0),0);
+  const totKm=weekLog.reduce((s,c)=>s+(+c.km||0),0);
+  const totCal=weekLog.reduce((s,c)=>s+(+c.cal||0),0);
+  const sesiones=weekLog.length;
+
+  let h=`<div class="sec">`;
+
+  // Encabezado
+  h+=`<div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
+    <div style="width:46px;height:46px;border-radius:14px;background:linear-gradient(135deg,rgba(255,77,94,.18),rgba(77,141,255,.18));border:1px solid var(--red-b);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">🏃</div>
+    <div style="flex:1;min-width:0">
+      <div style="font-family:var(--fd);font-size:20px;font-weight:800;letter-spacing:-.4px;line-height:1.05">Cardio</div>
+      <div style="font-size:11px;color:var(--text2);margin-top:2px">${sesiones?`Esta semana: ${sesiones} ${sesiones===1?'sesión':'sesiones'} · ${totMin} min`:'Registrá tus caminatas, corridas y bici'}</div>
+    </div>
+  </div>`;
+
+  // Stats de la semana
+  h+=`<div class="stats s3" style="margin-bottom:14px">
+    <div class="st"><div class="sv" style="color:var(--red)">${totMin}</div><div class="sl">Min / semana</div></div>
+    <div class="st"><div class="sv" style="color:var(--blue)">${totKm.toFixed(1)}</div><div class="sl">Km / semana</div></div>
+    <div class="st"><div class="sv" style="color:var(--gold)">${totCal}</div><div class="sl">Kcal / semana</div></div>
+  </div>`;
+
+  // Botones de registro + plan IA
+  const _aik=aiKey();
+  const _gk=(S.g('gemini_key','')||'').trim();
+  h+=`<div style="display:flex;gap:8px;margin-bottom:8px">
+    <button class="btn b-lg b-p" style="flex:1" onclick="openCardioModal()">+ Registrar</button>
+    <button class="btn b-lg b-grn" style="flex:1" onclick="openGPS()">📍 Salida GPS</button>
+  </div>`;
+  if(_gk){
+    h+=`<div style="margin-bottom:14px">
+      <button class="btn b-lg b-blu" style="width:100%" onclick="cardioFromPhoto()">📷 Foto del reloj (cardio o sueño)</button>
+      <div style="font-size:10px;color:var(--text3);text-align:center;margin-top:5px">Sacale foto a la pantalla y la IA detecta si es actividad o sueño y lo carga sola</div>
+    </div>`;
+  }
+  // Plan de cardio recomendado por IA
+  h+=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+    <div class="sec-t" style="margin:0">🎯 Mi plan de cardio</div>
+    ${_aik?`<button class="btn b-sm b-blu" onclick="askCardioPlan()">✨ ${cardioPlan?'Regenerar':'Recomendar'}</button>`:`<span style="font-size:10px;color:var(--text2)">Configurá IA</span>`}
+  </div>`;
+  if(cardioPlan){
+    h+=`<div class="card" style="margin-bottom:16px;border-color:var(--blue-b)">${cardioPlan}</div>`;
+  } else {
+    h+=`<div class="card" style="text-align:center;padding:20px;margin-bottom:16px">
+      <div style="font-size:24px;margin-bottom:6px">🎯</div>
+      <div style="font-size:12px;color:var(--text2);line-height:1.5">${_aik?'La IA te recomienda qué cardio hacer según tu peso, altura, objetivo y lo que ya entrenás.':'Configurá tu IA en el chat para recibir un plan.'}</div>
+      ${_aik?`<button class="btn b-md b-p" style="margin-top:12px" onclick="askCardioPlan()">✨ Recomendar mi cardio</button>`:''}
+    </div>`;
+  }
+
+  // Gráfico últimos 7 días
+  h+=`<div class="card" style="margin-bottom:14px">
+    <div class="sec-t" style="margin-bottom:10px">📊 Minutos últimos 7 días</div>
+    <canvas id="cardio-chart" width="320" height="120" style="width:100%;height:120px"></canvas>
+  </div>`;
+
+  // Historial
+  h+=`<div class="sec-t" style="margin-bottom:10px">Historial</div>`;
+  if(!log.length){
+    h+=`<div class="card" style="text-align:center;padding:24px">
+      <div style="font-size:26px;margin-bottom:6px">🏃</div>
+      <div style="font-size:12px;color:var(--text2);line-height:1.5">Todavía no registraste cardio.<br>Tocá "Registrar actividad" para empezar.</div>
+    </div>`;
+  } else {
+    log.slice(0,40).forEach(c=>{
+      const t=CARDIO_TYPES[c.type]||CARDIO_TYPES.otro;
+      const fecha=new Date(c.ts).toLocaleDateString('es-UY',{day:'numeric',month:'short'});
+      h+=`<div class="crd" style="margin-bottom:8px;display:flex;align-items:center;gap:12px">
+        <div style="width:38px;height:38px;border-radius:11px;background:${t.color}22;border:1px solid ${t.color}44;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">${t.emoji}</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:13px;font-weight:700">${t.label}${c.km?` · ${(+c.km).toFixed(1)} km`:''}${c.gps?' <span style="font-size:10px;color:var(--green)">📍 GPS</span>':''}${c.fromPhoto?' <span style="font-size:10px;color:var(--blue)">📷</span>':''}</div>
+          <div style="font-size:10px;color:var(--text2);margin-top:2px">${fecha} · ${c.mins} min${c.incline?' · '+c.incline+'% incl':''} · ${c.cal||0} kcal</div>
+        </div>
+        <button class="btn b-xs b-g" onclick="delCardio(${c.ts})" style="color:var(--red);flex-shrink:0">🗑</button>
+      </div>`;
+    });
+  }
+
+  h+=`</div>`;
+  return h;
+}
+function drawCardioChart(){
+  const c=document.getElementById('cardio-chart');if(!c)return;
+  const ctx=c.getContext('2d');const W=c.width,H=c.height;
+  ctx.clearRect(0,0,W,H);
+  const days=_last7Keys();
+  const vals=days.map(d=>cardioLog.filter(x=>x.date===d).reduce((s,x)=>s+(+x.mins||0),0));
+  const max=Math.max(...vals,30);
+  const n=days.length,gap=10,bw=(W-gap*(n+1))/n;
+  const dayLbl=['D','L','M','M','J','V','S'];
+  days.forEach((d,i)=>{
+    const v=vals[i];const bh=Math.max(2,(v/max)*(H-26));
+    const x=gap+i*(bw+gap),y=H-22-bh;
+    const grd=ctx.createLinearGradient(0,y,0,H-22);
+    grd.addColorStop(0,'#FF4D5E');grd.addColorStop(1,'rgba(255,77,94,.35)');
+    ctx.fillStyle=v>0?grd:'rgba(255,255,255,.06)';
+    ctx.beginPath();ctx.roundRect(x,y,bw,bh,[4,4,0,0]);ctx.fill();
+    ctx.fillStyle='#71748A';ctx.font='9px Inter,sans-serif';ctx.textAlign='center';
+    const dd=new Date(d+'T00:00:00');
+    ctx.fillText(dayLbl[dd.getDay()],x+bw/2,H-8);
+    if(v>0){ctx.fillStyle='#F4F5FA';ctx.font='bold 9px JetBrains Mono';ctx.fillText(v,x+bw/2,y-3);}
+  });
+}
+function openCardioModal(){
+  const opts=Object.entries(CARDIO_TYPES).map(([k,v])=>`<option value="${k}">${v.emoji} ${v.label}</option>`).join('');
+  oOv1(`<div class="mt">🏃 Registrar cardio</div>
+    <div class="fld"><label>Tipo de actividad</label><select class="inp" id="cd-type" onchange="cardioTypeChange()">${opts}</select></div>
+    <div class="inp-r">
+      <div class="fld"><label>Duración (min)</label><input class="inp" id="cd-min" type="number" inputmode="numeric" placeholder="30" oninput="cardioEstimate()"></div>
+      <div class="fld"><label>Distancia (km, opcional)</label><input class="inp" id="cd-km" type="number" inputmode="decimal" step="0.1" placeholder="—"></div>
+    </div>
+    <div class="fld" id="cd-incline-wrap" style="display:none"><label>Inclinación (%, opcional)</label><input class="inp" id="cd-incline" type="number" inputmode="decimal" step="0.5" placeholder="0" oninput="cardioEstimate()"><div style="font-size:10px;color:var(--text3);margin-top:5px">La que marca la cinta. Sube el gasto calórico.</div></div>
+    <div class="fld"><label>Calorías estimadas</label><input class="inp" id="cd-cal" type="number" inputmode="numeric" placeholder="—" oninput="this.dataset.touched=1"><div style="font-size:10px;color:var(--text3);margin-top:5px">Se calcula solo según tu peso y la actividad. Si la cinta te da las calorías, podés copiarlas acá.</div></div>
+    <button class="btn b-lg b-p" onclick="saveCardio()">Guardar actividad</button>`);
+  setTimeout(()=>{cardioTypeChange();},60);
+}
+function cardioTypeChange(){
+  const type=document.getElementById('cd-type')?.value||'caminar';
+  const meta=CARDIO_TYPES[type]||CARDIO_TYPES.otro;
+  const wrap=document.getElementById('cd-incline-wrap');
+  // Inclinación solo tiene sentido en cinta
+  const showIncline=(type==='correr_cinta'||type==='caminar_cinta');
+  if(wrap)wrap.style.display=showIncline?'block':'none';
+  cardioEstimate();
+}
+function cardioEstimate(){
+  const type=document.getElementById('cd-type')?.value||'caminar';
+  const mins=+document.getElementById('cd-min')?.value||0;
+  const incline=+document.getElementById('cd-incline')?.value||0;
+  const calEl=document.getElementById('cd-cal');
+  if(calEl&&mins>0&&!calEl.dataset.touched){calEl.value=cardioCalories(type,mins,incline);}
+}
+function saveCardio(){
+  const type=document.getElementById('cd-type')?.value||'caminar';
+  const mins=+document.getElementById('cd-min')?.value||0;
+  const km=+document.getElementById('cd-km')?.value||0;
+  const incline=+document.getElementById('cd-incline')?.value||0;
+  let cal=+document.getElementById('cd-cal')?.value||0;
+  if(mins<=0){tst('Ingresá la duración en minutos');return;}
+  if(!cal)cal=cardioCalories(type,mins,incline);
+  const now=new Date();
+  cardioLog.unshift({ts:now.getTime(),date:now.toISOString().slice(0,10),type,mins,km,cal,incline});
+  if(cardioLog.length>200)cardioLog=cardioLog.slice(0,200);
+  S.s('cardio1',cardioLog);
+  cOv1();renderGym();
+  const t=CARDIO_TYPES[type]||CARDIO_TYPES.otro;
+  tst(`${t.emoji} ${t.label} · ${mins} min registrados`);
+}
+function delCardio(ts){
+  cardioLog=cardioLog.filter(c=>c.ts!==ts);
+  S.s('cardio1',cardioLog);
+  renderGym();
+}
+
+// ════════════════════════════════════════════
+//  GPS — medir una salida al aire libre (con la app abierta)
+// ════════════════════════════════════════════
+let _gps={watchId:null,points:[],dist:0,startTs:0,timerIv:null,last:null,type:'correr'};
+// Distancia entre 2 coords (Haversine, en metros)
+function _haversine(a,b){
+  const R=6371000,toR=x=>x*Math.PI/180;
+  const dLat=toR(b.lat-a.lat),dLng=toR(b.lng-a.lng);
+  const s=Math.sin(dLat/2)**2+Math.cos(toR(a.lat))*Math.cos(toR(b.lat))*Math.sin(dLng/2)**2;
+  return R*2*Math.atan2(Math.sqrt(s),Math.sqrt(1-s));
+}
+function openGPS(){
+  if(!('geolocation' in navigator)){tst('Tu dispositivo no tiene GPS disponible');return;}
+  oOv1(`<div class="mt">📍 Salida con GPS</div>
+    <div class="fld"><label>Tipo de actividad</label>
+      <select class="inp" id="gps-type">
+        <option value="correr">🏃 Correr</option>
+        <option value="caminar">🚶 Caminar</option>
+        <option value="bici">🚴 Bici</option>
+      </select>
+    </div>
+    <div style="background:var(--gold-d);border:1px solid var(--gold-b);border-radius:var(--r-sm);padding:11px;font-size:11px;color:var(--text1);line-height:1.5;margin-bottom:16px">
+      ⚠️ Mantené la app abierta y la pantalla encendida durante la salida. Si bloqueás el teléfono, el GPS se pausa.
+    </div>
+    <button class="btn b-lg b-grn" onclick="gpsStart()">▶ Empezar</button>`);
+}
+function gpsStart(){
+  _gps.type=document.getElementById('gps-type')?.value||'correr';
+  _gps.points=[];_gps.dist=0;_gps.last=null;_gps.startTs=Date.now();
+  // Pantalla de tracking en vivo
+  oOv1(`<div class="mt">📍 ${(CARDIO_TYPES[_gps.type]||{}).label||'Salida'}</div>
+    <div style="text-align:center;padding:10px 0 20px">
+      <div style="font-family:var(--fm);font-size:54px;font-weight:800;color:var(--green);line-height:1" id="gps-dist">0.00</div>
+      <div style="font-size:11px;color:var(--text2);letter-spacing:1px;margin-top:4px">KILÓMETROS</div>
+    </div>
+    <div class="stats s3" style="margin-bottom:20px">
+      <div class="st"><div class="sv" id="gps-time">0:00</div><div class="sl">Tiempo</div></div>
+      <div class="st"><div class="sv" id="gps-pace">—</div><div class="sl">Ritmo /km</div></div>
+      <div class="st"><div class="sv" id="gps-cal">0</div><div class="sl">Kcal</div></div>
+    </div>
+    <div id="gps-status" style="text-align:center;font-size:11px;color:var(--gold);margin-bottom:14px">📡 Buscando señal GPS…</div>
+    <button class="btn b-lg" style="background:var(--red);color:#fff" onclick="gpsStop()">⏹ Terminar y guardar</button>`);
+  // Cronómetro
+  _gps.timerIv=setInterval(gpsUpdateUI,1000);
+  // Seguimiento de posición
+  try{
+    _gps.watchId=navigator.geolocation.watchPosition(gpsOnPos,gpsOnErr,{enableHighAccuracy:true,maximumAge:1000,timeout:15000});
+  }catch(e){tst('Error al iniciar GPS: '+e.message,4000);}
+}
+function gpsOnPos(pos){
+  const st=document.getElementById('gps-status');
+  if(st){st.textContent='📡 GPS activo · señal '+(pos.coords.accuracy<20?'buena':'regular');st.style.color='var(--green)';}
+  const p={lat:pos.coords.latitude,lng:pos.coords.longitude,t:Date.now()};
+  // Ignorar saltos imprecisos (accuracy mala o salto irreal)
+  if(pos.coords.accuracy>40)return;
+  if(_gps.last){
+    const d=_haversine(_gps.last,p);
+    if(d>1&&d<200)_gps.dist+=d; // entre 1m y 200m por lectura (filtra ruido)
+  }
+  _gps.last=p;_gps.points.push(p);
+  gpsUpdateUI();
+}
+function gpsOnErr(err){
+  const st=document.getElementById('gps-status');
+  if(st){st.textContent=err.code===1?'🔕 Permiso de ubicación denegado':'📡 Sin señal GPS…';st.style.color='var(--red)';}
+}
+function gpsUpdateUI(){
+  const km=_gps.dist/1000;
+  const secs=Math.floor((Date.now()-_gps.startTs)/1000);
+  const de=document.getElementById('gps-dist');if(de)de.textContent=km.toFixed(2);
+  const te=document.getElementById('gps-time');if(te)te.textContent=Math.floor(secs/60)+':'+String(secs%60).padStart(2,'0');
+  const pe=document.getElementById('gps-pace');
+  if(pe){if(km>0.05){const paceSec=secs/km;pe.textContent=Math.floor(paceSec/60)+':'+String(Math.round(paceSec%60)).padStart(2,'0');}else pe.textContent='—';}
+  const ce=document.getElementById('gps-cal');if(ce)ce.textContent=cardioCalories(_gps.type,secs/60,0);
+}
+function gpsStop(){
+  if(_gps.watchId!=null){try{navigator.geolocation.clearWatch(_gps.watchId);}catch(e){}_gps.watchId=null;}
+  if(_gps.timerIv){clearInterval(_gps.timerIv);_gps.timerIv=null;}
+  const km=+(_gps.dist/1000).toFixed(2);
+  const mins=Math.max(1,Math.round((Date.now()-_gps.startTs)/60000));
+  if(km<0.05){cOv1();tst('Salida muy corta, no se guardó');return;}
+  const cal=cardioCalories(_gps.type,mins,0);
+  const now=new Date();
+  cardioLog.unshift({ts:now.getTime(),date:now.toISOString().slice(0,10),type:_gps.type,mins,km,cal,gps:true});
+  if(cardioLog.length>200)cardioLog=cardioLog.slice(0,200);
+  S.s('cardio1',cardioLog);
+  cOv1();renderGym();
+  tst(`📍 ${km} km en ${mins} min · ${cal} kcal`);
+}
+
+// ── Leer datos de cardio desde foto del reloj/cinta/bici ──
+function cardioFromPhoto(){
+  const gkey=(S.g('gemini_key','')||'').trim();
+  if(!gkey){tst('La foto usa Gemini. Pegá una key de Gemini en Config.',5000);return;}
+  const inp=document.createElement('input');
+  inp.type='file';inp.accept='image/*';inp.capture='environment';
+  inp.onchange=async()=>{
+    const file=inp.files&&inp.files[0];if(!file)return;
+    oOv1(`<div class="mt">📷 Leyendo los datos…</div><div style="text-align:center;padding:30px"><div style="font-size:32px;margin-bottom:12px">⌚</div><div style="font-size:13px;color:var(--text2)">La IA está leyendo la pantalla…</div></div>`);
+    try{
+      const b64=await new Promise((res,rej)=>{const r=new FileReader();r.onload=e=>res(e.target.result.split(',')[1]);r.onerror=rej;r.readAsDataURL(file);});
+      const prompt='La foto es de la pantalla de un reloj inteligente, una cinta o una bici de gimnasio. PRIMERO determiná de qué tipo de datos se trata:\n'+
+        '- Si muestra una ACTIVIDAD FÍSICA / cardio (correr, caminar, bici, pasos, distancia, ritmo, calorías quemadas en ejercicio) → categoria "cardio".\n'+
+        '- Si muestra datos de SUEÑO (horas dormidas, fases de sueño, sueño profundo/ligero/REM, calidad del descanso) → categoria "sueno".\n\n'+
+        'Respondé SOLO con JSON sin texto extra ni markdown.\n'+
+        'Si es CARDIO: {"categoria":"cardio","type":"correr_cinta","mins":30,"km":5.2,"cal":350,"incline":2}. Para "type" elegí uno de: correr, correr_cinta, caminar, caminar_cinta, bici, bici_fija, eliptico, natacion, otro. Si es cinta usá correr_cinta/caminar_cinta; si es bici de gym, bici_fija. Datos que no aparezcan ponelos en 0.\n'+
+        'Si es SUEÑO: {"categoria":"sueno","horas":7.5,"calidad":"buena","despertares":0}. "horas" = total dormido (convertí "7h 30m" a 7.5). "calidad" = mala|regular|buena|excelente (deducila de la calidad/puntuación que muestre; si hay puntaje: <50 mala, 50-69 regular, 70-84 buena, 85+ excelente).';
+      const resp=await fetch('https://generativelanguage.googleapis.com/v1beta/models/'+GEMINI_MODEL+':generateContent',
+        {method:'POST',headers:{'Content-Type':'application/json','X-goog-api-key':gkey},body:JSON.stringify({contents:[{parts:[{text:prompt},{inline_data:{mime_type:file.type||'image/jpeg',data:b64}}]}]})});
+      if(!resp.ok)throw new Error('Gemini '+resp.status);
+      const data=await resp.json();
+      const txt=data?.candidates?.[0]?.content?.parts?.[0]?.text||'';
+      const j=_extractJSON(txt);
+      if(!j)throw new Error('No pude leer los datos de la foto. Probá con una más clara.');
+      const o=JSON.parse(j);
+      const cat=(o.categoria||o.category||'').toLowerCase();
+
+      // ── SUEÑO ──
+      if(cat.includes('sueno')||cat.includes('sueño')||o.horas!=null&&o.mins==null){
+        const horas=+o.horas||0;
+        if(horas<=0)throw new Error('No encontré las horas de sueño. Cargalo a mano.');
+        let q=(o.calidad||o.quality||'buena').toLowerCase();
+        if(!['mala','regular','buena','excelente'].includes(q))q='buena';
+        window._photoSleep={hours:horas,quality:q,wakeups:+o.despertares||+o.wakeups||0};
+        const qE={mala:'😴',regular:'😐',buena:'🙂',excelente:'😃'};
+        oOv1(`<div class="mt">🌙 Sueño detectado</div>
+          <div style="text-align:center;padding:6px 0 16px">
+            <div style="font-family:var(--fm);font-size:46px;font-weight:800;color:var(--accent2);line-height:1">${horas}<span style="font-size:20px;color:var(--text2)">h</span></div>
+            <div style="font-size:14px;margin-top:6px">${qE[q]} ${q.charAt(0).toUpperCase()+q.slice(1)}${window._photoSleep.wakeups?' · '+window._photoSleep.wakeups+' despertares':''}</div>
+          </div>
+          <div style="font-size:11px;color:var(--text3);text-align:center;margin-bottom:16px">Revisá que esté bien antes de guardar</div>
+          <div style="display:flex;gap:8px">
+            <button class="btn b-lg b-g" style="flex:1" onclick="cOv1()">Cancelar</button>
+            <button class="btn b-lg b-p" style="flex:1" onclick="savePhotoSleep()">Guardar sueño</button>
+          </div>`);
+        return;
+      }
+
+      // ── CARDIO ──
+      const type=CARDIO_TYPES[o.type]?o.type:'otro';
+      const mins=Math.round(+o.mins||0);
+      if(mins<=0)throw new Error('No encontré la duración en la foto. Cargala a mano.');
+      const km=+o.km||0;
+      const incline=+o.incline||0;
+      let cal=Math.round(+o.cal||0);
+      if(!cal)cal=cardioCalories(type,mins,incline);
+      window._photoCardio={type,mins,km,incline,cal};
+      const t=CARDIO_TYPES[type];
+      oOv1(`<div class="mt">🏃 Actividad detectada</div>
+        <div style="text-align:center;padding:6px 0 16px">
+          <div style="font-size:34px;margin-bottom:4px">${t.emoji}</div>
+          <div style="font-family:var(--fd);font-size:17px;font-weight:800">${t.label}</div>
+        </div>
+        <div class="stats s2" style="margin-bottom:10px">
+          <div class="st"><div class="sv" style="color:var(--red)">${mins}</div><div class="sl">Minutos</div></div>
+          <div class="st"><div class="sv" style="color:var(--blue)">${km?km.toFixed(1):'—'}</div><div class="sl">Km</div></div>
+          <div class="st"><div class="sv" style="color:var(--gold)">${cal}</div><div class="sl">Kcal</div></div>
+          <div class="st"><div class="sv" style="color:var(--accent2)">${incline?incline+'%':'—'}</div><div class="sl">Inclin.</div></div>
+        </div>
+        <div style="font-size:11px;color:var(--text3);text-align:center;margin-bottom:16px">Revisá que esté bien antes de guardar</div>
+        <div style="display:flex;gap:8px">
+          <button class="btn b-lg b-g" style="flex:1" onclick="cOv1()">Cancelar</button>
+          <button class="btn b-lg b-p" style="flex:1" onclick="savePhotoCardio()">Guardar</button>
+        </div>`);
+    }catch(e){cOv1();tst('⚠️ '+e.message,4000);}
+  };
+  inp.click();
+}
+function savePhotoCardio(){
+  const o=window._photoCardio;if(!o)return;
+  const now=new Date();
+  cardioLog.unshift({ts:now.getTime(),date:now.toISOString().slice(0,10),type:o.type,mins:o.mins,km:o.km,cal:o.cal,incline:o.incline,fromPhoto:true});
+  if(cardioLog.length>200)cardioLog=cardioLog.slice(0,200);
+  S.s('cardio1',cardioLog);
+  window._photoCardio=null;
+  cOv1();renderGym();
+  const t=CARDIO_TYPES[o.type]||CARDIO_TYPES.otro;
+  tst(`${t.emoji} ${t.label} · ${o.mins} min guardados`);
+}
+function savePhotoSleep(){
+  const o=window._photoSleep;if(!o)return;
+  const today=todayStr();
+  if(!nutData.sleepLog)nutData.sleepLog={};
+  nutData.sleepLog[today]={hours:o.hours,quality:o.quality,wakeups:o.wakeups||0,note:'',ts:Date.now()};
+  S.s('nutData',nutData);
+  window._photoSleep=null;
+  cOv1();renderGym();
+  tst(`🌙 ${o.hours}h de sueño guardadas`);
+}
+async function askCardioPlan(){
+  const key=aiKey();if(!key){tst('Configurá la IA');return;}
+  const p=gymProfile||{};const nd=nutData||{};
+  const dietLabels={mantener:'mantener peso',bajar_lento:'bajar de peso lento',bajar_rapido:'bajar de peso rápido',masa:'aumentar masa muscular',keto:'dieta cetogénica',recomp:'recomposición corporal'};
+  const entrena=routines.length?routines.map(r=>r.name+'('+r.days.length+' días/sem)').join(', '):'no hace pesas';
+  const _cd7=cardioLog.filter(c=>_last7Keys().includes(c.date));
+  const cardioActual=_cd7.length?_cd7.reduce((s,c)=>s+c.mins,0)+' min en '+_cd7.length+' sesiones esta semana ('+_cd7.map(c=>(CARDIO_TYPES[c.type]||{}).label||c.type).join(', ')+')':'no viene haciendo cardio';
+  // IMC para contexto
+  const imc=(p.weight&&p.height)?(p.weight/Math.pow(p.height/100,2)).toFixed(1):null;
+  const btn=document.querySelector('[onclick="askCardioPlan()"]');
+  if(btn){btn.textContent='⏳…';btn.disabled=true;}
+  tst('✨ Armando tu plan de cardio…',3000);
+  try{
+    const prompt='Sos un preparador físico experto en acondicionamiento cardiovascular. Recomendá un plan de cardio semanal PERSONALIZADO para esta persona.\n'+
+      'Datos: '+(p.weight?p.weight+'kg, ':'')+(p.height?p.height+'cm, ':'')+(imc?'IMC '+imc+', ':'')+
+      'edad/experiencia: '+(p.experience||0)+' años entrenando, objetivo: '+(dietLabels[nd.dietType]||'salud general')+
+      (nd.targetWeight?', peso meta '+nd.targetWeight+'kg':'')+'.\n'+
+      'Entrenamiento de fuerza actual: '+entrena+'.\n'+
+      'Cardio actual: '+cardioActual+'.\n'+
+      'Recomendá: cuántos días por semana, qué tipo de cardio (caminar/correr/bici/etc según su nivel y objetivo), cuántos minutos por sesión, a qué intensidad (suave/moderado/intenso o zona de pulsaciones), y si conviene en ayunas o no según su objetivo. Tené en cuenta no sobrecargar si ya hace mucha fuerza. Si recién empieza, progresá de a poco.\n'+
+      'Respondé en HTML simple y compacto, SIN markdown ni bloques de código: un breve diagnóstico en <div style="font-size:12px;color:var(--text1);line-height:1.6;margin-bottom:8px"> y luego el plan con <div style="font-weight:700;color:#4D8DFF;margin:10px 0 4px;font-size:13px"> para cada día o bloque y <div style="font-size:12px;line-height:1.6;color:var(--text1)"> para el detalle. Cerrá con un consejo corto. Español uruguayo, tono directo y motivador.';
+    const html=await _aiComplete(prompt);
+    nutData.cardioPlan=html.replace(/```html|```/g,'').trim();
+    nutData.cardioPlanDate=todayStr();
+    S.s('nutData',nutData);
+    tst('✓ Plan de cardio listo');renderGym();
+  }catch(e){tst('Error: '+e.message,4000);if(btn){btn.textContent='✨ Recomendar';btn.disabled=false;}}
 }
 
 // Objetivo calórico diario según peso + tipo de dieta
@@ -1239,6 +1712,41 @@ function subWater(){
   nutData.waterLog[today]=Math.max(0,(nutData.waterLog[today]||0)-1);
   S.s('nutData',nutData);
   renderGym();
+}
+
+// ── Sueño ──
+function openSleepModal(){
+  const today=todayStr();
+  const ex=(nutData.sleepLog||{})[today]||{};
+  oOv1(`<div class="mt">🌙 Registrar sueño</div>
+    <div class="fld"><label>¿Cuántas horas dormiste?</label>
+      <input class="inp" id="sl-h" type="number" inputmode="decimal" step="0.5" placeholder="7.5" value="${ex.hours||''}">
+    </div>
+    <div class="fld"><label>¿Cómo descansaste?</label>
+      <select class="inp" id="sl-q">
+        <option value="mala"${ex.quality==='mala'?' selected':''}>😴 Mala — me desperté cansado</option>
+        <option value="regular"${ex.quality==='regular'?' selected':''}>😐 Regular</option>
+        <option value="buena"${!ex.quality||ex.quality==='buena'?' selected':''}>🙂 Buena</option>
+        <option value="excelente"${ex.quality==='excelente'?' selected':''}>😃 Excelente — pleno descanso</option>
+      </select>
+    </div>
+    <div class="fld"><label>Veces que te despertaste (opcional)</label>
+      <input class="inp" id="sl-w" type="number" inputmode="numeric" placeholder="0" value="${ex.wakeups||''}">
+    </div>
+    <div class="fld"><label>Nota (opcional)</label>
+      <input class="inp" id="sl-n" placeholder="Ej: me costó dormir, dormí siesta…" value="${ex.note?esc(ex.note):''}">
+    </div>
+    <button class="btn b-lg b-p" onclick="saveSleep()">Guardar</button>`);
+}
+function saveSleep(){
+  const h=+document.getElementById('sl-h')?.value||0;
+  if(h<=0||h>24){tst('Ingresá las horas dormidas');return;}
+  const today=todayStr();
+  if(!nutData.sleepLog)nutData.sleepLog={};
+  nutData.sleepLog[today]={hours:h,quality:document.getElementById('sl-q')?.value||'buena',wakeups:+document.getElementById('sl-w')?.value||0,note:document.getElementById('sl-n')?.value.trim()||'',ts:Date.now()};
+  S.s('nutData',nutData);
+  cOv1();renderGym();
+  tst(`🌙 ${h}h registradas`);
 }
 
 // ── Objetivo / tipo de dieta ──
@@ -1474,6 +1982,76 @@ function setTP(p){timerP=p;timerS=p;timerOn=false;clearInterval(timerIv);renderG
 function togTimer(){if(timerOn){timerOn=false;clearInterval(timerIv);}else{timerOn=true;clearInterval(timerIv);timerIv=setInterval(()=>{if(timerS>0){timerS--;drawTimerRing();}else{timerOn=false;clearInterval(timerIv);tst('⏱ ¡Fin del descanso!');renderGym();}},1000);}renderGym();setTimeout(drawTimerRing,60);}
 
 function newRoutine(editId=null){const ex=editId?routines.find(r=>r.id===editId):null;window._draft=ex?JSON.parse(JSON.stringify(ex)):{id:uid(),name:'',days:[],createdAt:Date.now()};rEditor(!!editId);}
+
+// ── Crear rutina con IA (incluye opción de entrenar en casa) ──
+function openAIRoutine(){
+  if(!aiKey()){tst('Configurá la IA en el chat');return;}
+  const p=gymProfile||{};
+  oOv1(`<div class="mt">✨ Crear rutina con IA</div>
+    <div class="fld"><label>¿Dónde entrenás?</label>
+      <select class="inp" id="air-lugar">
+        <option value="gym">🏋️ Gimnasio (máquinas y pesas)</option>
+        <option value="casa_sin">🏠 En casa, sin equipamiento</option>
+        <option value="casa_basico">🏠 En casa, con poco equipo (mancuernas, bandas)</option>
+        <option value="mixto">🔀 Mixto (gym + casa)</option>
+      </select>
+    </div>
+    <div class="inp-r">
+      <div class="fld"><label>Días por semana</label>
+        <select class="inp" id="air-dias"><option>2</option><option>3</option><option selected>4</option><option>5</option><option>6</option></select>
+      </div>
+      <div class="fld"><label>Nivel</label>
+        <select class="inp" id="air-nivel"><option value="principiante">Principiante</option><option value="intermedio" selected>Intermedio</option><option value="avanzado">Avanzado</option></select>
+      </div>
+    </div>
+    <div class="fld"><label>Objetivo</label>
+      <select class="inp" id="air-obj">
+        <option value="hipertrofia"${p.goal==='hipertrofia'?' selected':''}>Masa muscular</option>
+        <option value="fuerza"${p.goal==='fuerza'?' selected':''}>Fuerza</option>
+        <option value="resistencia"${p.goal==='resistencia'?' selected':''}>Definición / resistencia</option>
+        <option value="salud"${p.goal==='salud'?' selected':''}>Salud general</option>
+        <option value="bajar_peso"${p.goal==='bajar_peso'?' selected':''}>Bajar de peso</option>
+      </select>
+    </div>
+    <div class="fld"><label>Aclaraciones (opcional)</label><input class="inp" id="air-nota" placeholder="Ej: cuido la rodilla, tengo poco tiempo…"></div>
+    <button class="btn b-lg b-p" onclick="askAIRoutine()">✨ Generar mi rutina</button>`);
+}
+async function askAIRoutine(){
+  const key=aiKey();if(!key)return;
+  const lugar=document.getElementById('air-lugar')?.value||'gym';
+  const dias=document.getElementById('air-dias')?.value||'4';
+  const nivel=document.getElementById('air-nivel')?.value||'intermedio';
+  const obj=document.getElementById('air-obj')?.value||'hipertrofia';
+  const nota=document.getElementById('air-nota')?.value.trim()||'';
+  const p=gymProfile||{};
+  const lugarTxt={
+    gym:'en un gimnasio con acceso a máquinas, barras, mancuernas y poleas',
+    casa_sin:'EN CASA SIN NINGÚN EQUIPAMIENTO: solo ejercicios con peso corporal y objetos comunes de casa (silla, pared, mochila con peso, botellas de agua llenas). NO uses máquinas, barras, mancuernas ni poleas',
+    casa_basico:'en casa con equipamiento básico: un par de mancuernas y/o bandas elásticas. NO uses máquinas ni barras de gimnasio',
+    mixto:'combinando gimnasio y ejercicios que también se pueden hacer en casa'
+  }[lugar];
+  const objTxt={hipertrofia:'ganar masa muscular',fuerza:'ganar fuerza',resistencia:'definición y resistencia muscular',salud:'salud general y estar en forma',bajar_peso:'bajar de peso'}[obj];
+  oOv1(`<div class="mt">✨ Creando tu rutina…</div><div style="text-align:center;padding:30px"><div style="font-size:32px;margin-bottom:12px">🏋️</div><div style="font-size:13px;color:var(--text2)">La IA está armando una rutina de ${dias} días para entrenar ${lugar.startsWith('casa')?'en casa':'en el gym'}…</div></div>`);
+  try{
+    const prompt='Sos un entrenador personal experto. Armá una rutina de entrenamiento de '+dias+' días por semana para una persona que entrena '+lugarTxt+'.\n'+
+      'Perfil: '+(p.weight?p.weight+'kg, ':'')+(p.height?p.height+'cm, ':'')+'nivel '+nivel+', objetivo: '+objTxt+(p.experience?', '+p.experience+' años de experiencia':'')+'.'+(nota?' Aclaraciones importantes: '+nota+'.':'')+'\n'+
+      'Para cada día indicá un nombre/foco (ej: "Tren superior", "Piernas y core") y una lista de ejercicios apropiados al lugar de entrenamiento, con series y repeticiones adecuadas al objetivo y nivel.\n'+
+      'IMPORTANTE: respondé SOLO con un JSON válido, sin texto extra ni markdown ni bloques de código, con esta forma EXACTA:\n'+
+      '{"name":"Nombre corto de la rutina","days":[{"label":"Foco del día","exercises":[{"name":"Nombre del ejercicio","muscle":"Pecho","series":4,"reps":"10-12"}]}]}\n'+
+      'El campo "muscle" debe ser uno de exactamente: Pecho, Espalda, Hombros, Bíceps, Tríceps, Cuádriceps, Femoral, Gemelos, Abdomen. Usá nombres de ejercicios claros y conocidos.';
+    const raw=await _aiComplete(prompt);
+    const m=raw.match(/\{[\s\S]*\}/);
+    if(!m)throw new Error('La IA no devolvió una rutina válida. Probá de nuevo.');
+    const obj2=JSON.parse(m[0]);
+    if(!obj2.days||!obj2.days.length)throw new Error('La rutina vino vacía. Probá de nuevo.');
+    // Normalizar al formato del editor y abrir para revisar antes de guardar
+    window._draft={id:uid(),name:obj2.name||'Rutina IA',createdAt:Date.now(),
+      days:obj2.days.map(d=>({id:uid(),label:d.label||'Día',exercises:(d.exercises||[]).map(e=>({name:e.name||'Ejercicio',muscle:e.muscle||'Pecho',series:parseInt(e.series)||3,reps:String(e.reps||'10')}))}))};
+    cOv1();
+    rEditor(false); // abre el editor con la rutina cargada para revisar/ajustar y guardar
+    tst('✓ Rutina generada · revisala y guardá');
+  }catch(e){tst('Error: '+e.message,4000);openAIRoutine();}
+}
 function editRoutine(id){newRoutine(id);}
 function rEditor(isE){const d=window._draft;
   oOv1(`<div class="mt">${isE?'Editar rutina':'Nueva rutina'}</div>
@@ -1632,7 +2210,7 @@ function startNewWeek(){
 // ═════════════════════════════════════════
 // GASTOS
 // ═════════════════════════════════════════
-function xTab(i){curXT=i;for(let j=0;j<7;j++)document.getElementById('xt-'+j)?.classList.toggle('on',j===i);renderGastos();}
+function xTab(i){curXT=i;for(let j=0;j<8;j++)document.getElementById('xt-'+j)?.classList.toggle('on',j===i);renderGastos();}
 
 function renderGastos(){
   const el=document.getElementById('gastos-b');if(!el)return;
@@ -1644,6 +2222,7 @@ function renderGastos(){
   if(curXT===4)el.innerHTML=rTarjetas();
   if(curXT===5)el.innerHTML=rNuevoGasto();
   if(curXT===6)el.innerHTML=rConfig();
+  if(curXT===7)el.innerHTML=rCompras();
 }
 
 function ensureCardCats(){
@@ -1721,13 +2300,12 @@ function totalPagadoMes(m,y){
 }
 function gastosVariablesMes(m,y){return gastos.filter(g=>g.m===m&&g.y===y);}
 function totalVariablesMes(m,y){return sumMoney(gastosVariablesMes(m,y),g=>g.v);}
-function totalCardMonth(m,y){
-  return sumMoney(cards,card=>getCardMonthAmt(card.id,m,y));
+function totalCardMonth(){
+  return sumMoney(cards,card=>getCardMonthAmt(card.id));
 }
 function getCardMonthAmtAll(){
-  const n=new Date(),_m=n.getMonth(),_y=n.getFullYear();
   const r={};
-  cards.forEach(card=>{const a=getCardMonthAmt(card.id,_m,_y);if(a>0)r[card.id]={name:card.name,type:card.type,color:card.color,amt:a};});
+  cards.forEach(card=>{const a=getCardMonthAmt(card.id);if(a>0)r[card.id]={name:card.name,type:card.type,color:card.color,amt:a};});
   return r;
 }
 function totalGastosMes(m,y){
@@ -1919,7 +2497,7 @@ function rMes(){
     if(monto<=0)return;
     const tieneMonto=pagosFijos[k(cat.id,m,y)]!==undefined;
     const paid=isPaid(cat.id,m,y);
-    h+=`<div class="pres-row${paid?' paid':''}"${isCard?` onclick="if(event.target.tagName!=='INPUT'&&event.target.tagName!=='BUTTON'){xTab(4);setTimeout(()=>openCardDetail('${cat.cardRef}'),100)}"`:''}>
+    h+=`<div class="pres-row${paid?' paid':''}"${isCard?` onclick="if(event.target.tagName!=='INPUT'&&event.target.tagName!=='BUTTON'){xTab(4);setTimeout(()=>openCardDetail('${cat.cardRef}',${m},${y}),100)}"`:''}>
       <div style="width:36px;height:36px;border-radius:10px;background:${cat.c}18;border:1px solid ${cat.c}44;display:flex;align-items:center;justify-content:center;flex-shrink:0">
         <div class="cdot" style="background:${cat.c};width:11px;height:11px"></div>
       </div>
@@ -2070,7 +2648,7 @@ function rPagos(){
       const monto=montoPago(cat.id,m,y);
       if(!monto)return;
       const isCard=!!cat.cardRef;
-      h+=`<div class="pres-row"${isCard?` style="cursor:pointer" onclick="xTab(4);setTimeout(()=>openCardDetail('${cat.cardRef}'),100)"`:''}>
+      h+=`<div class="pres-row"${isCard?` style="cursor:pointer" onclick="xTab(4);setTimeout(()=>openCardDetail('${cat.cardRef}',${m},${y}),100)"`:''}>
         <div style="width:36px;height:36px;border-radius:10px;background:${cat.c}18;border:1px solid ${cat.c}44;display:flex;align-items:center;justify-content:center;flex-shrink:0">
           <div class="cdot" style="background:${cat.c};width:11px;height:11px"></div>
         </div>
@@ -2429,6 +3007,135 @@ function saveNG(){
 }
 function delGasto(id){gastos=gastos.filter(g=>g._id!==id);S.s('gst4',gastos);tst('Eliminado');renderGastos();}
 
+// ════════════════════════════════════════════
+//  LISTA DE COMPRAS DEL SÚPER
+// ════════════════════════════════════════════
+const SHOP_CATS={
+  verduleria:{label:'Verdulería',emoji:'🥬',color:'#10D29B'},
+  carniceria:{label:'Carnicería',emoji:'🥩',color:'#FF4D5E'},
+  almacen:{label:'Almacén',emoji:'🥫',color:'#FFC062'},
+  lacteos:{label:'Lácteos',emoji:'🧀',color:'#4D8DFF'},
+  limpieza:{label:'Limpieza',emoji:'🧽',color:'#22D3EE'},
+  bebidas:{label:'Bebidas',emoji:'🧃',color:'#A855F7'},
+  otro:{label:'Otro',emoji:'🛒',color:'#71748A'}
+};
+function rCompras(){
+  const pend=shopList.filter(x=>!x.done);
+  const done=shopList.filter(x=>x.done);
+  let h=`<div class="sec">`;
+  // Encabezado
+  h+=`<div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
+    <div style="width:46px;height:46px;border-radius:14px;background:linear-gradient(135deg,rgba(16,210,155,.18),rgba(255,192,98,.18));border:1px solid var(--green-b);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">🛒</div>
+    <div style="flex:1;min-width:0">
+      <div style="font-family:var(--fd);font-size:20px;font-weight:800;letter-spacing:-.4px;line-height:1.05">Lista del súper</div>
+      <div style="font-size:11px;color:var(--text2);margin-top:2px">${pend.length?pend.length+' por comprar'+(done.length?' · '+done.length+' en el carro':''):'Anotá lo que necesitás comprar'}</div>
+    </div>
+  </div>`;
+  // Agregar
+  const opts=Object.entries(SHOP_CATS).map(([k,v])=>`<option value="${k}">${v.emoji} ${v.label}</option>`).join('');
+  h+=`<div class="card" style="margin-bottom:14px">
+    <div style="display:flex;gap:8px;margin-bottom:8px">
+      <input class="inp" id="shop-inp" placeholder="Ej: 2kg de pollo" style="flex:1" onkeydown="if(event.key==='Enter')addShopItem()">
+    </div>
+    <div style="display:flex;gap:8px">
+      <select class="inp" id="shop-cat" style="flex:1">${opts}</select>
+      <button class="btn b-md b-p" onclick="addShopItem()" style="flex-shrink:0">➕ Agregar</button>
+    </div>
+    ${aiKey()&&(nutData&&nutData.weeklyPlan)?`<button class="btn b-md b-blu" style="width:100%;margin-top:8px" onclick="shopFromPlan()">✨ Generar lista desde mi plan de comidas</button>`:''}
+  </div>`;
+  // Lista pendiente agrupada por categoría de súper
+  if(pend.length){
+    Object.keys(SHOP_CATS).forEach(cat=>{
+      const items=pend.filter(x=>x.cat===cat);
+      if(!items.length)return;
+      const m=SHOP_CATS[cat];
+      h+=`<div style="margin-bottom:10px">
+        <div style="font-size:12px;font-weight:700;color:${m.color};margin-bottom:6px">${m.emoji} ${m.label}</div>`;
+      items.forEach(it=>{
+        h+=`<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--bg2);border:1px solid var(--border2);border-radius:var(--r-sm);margin-bottom:6px">
+          <button onclick="toggleShop('${it.id}')" style="width:22px;height:22px;border-radius:6px;border:2px solid var(--border3);background:none;flex-shrink:0"></button>
+          <div style="flex:1;font-size:13px">${esc(it.t)}</div>
+          <button onclick="delShop('${it.id}')" style="color:var(--text3);font-size:16px;flex-shrink:0">×</button>
+        </div>`;
+      });
+      h+=`</div>`;
+    });
+  } else {
+    h+=`<div class="card" style="text-align:center;padding:24px">
+      <div style="font-size:26px;margin-bottom:6px">🛒</div>
+      <div style="font-size:12px;color:var(--text2);line-height:1.5">La lista está vacía.<br>Agregá productos o generala desde tu plan de comidas.</div>
+    </div>`;
+  }
+  // En el carro (comprados)
+  if(done.length){
+    h+=`<div style="display:flex;justify-content:space-between;align-items:center;margin:16px 0 8px">
+      <div class="sec-t" style="margin:0">✓ En el carro (${done.length})</div>
+      <button class="btn b-xs b-g" onclick="clearShopDone()" style="color:var(--red)">Vaciar comprados</button>
+    </div>`;
+    done.forEach(it=>{
+      const m=SHOP_CATS[it.cat]||SHOP_CATS.otro;
+      h+=`<div style="display:flex;align-items:center;gap:10px;padding:9px 12px;background:var(--bg1);border-radius:var(--r-sm);margin-bottom:5px;opacity:.6">
+        <button onclick="toggleShop('${it.id}')" style="width:22px;height:22px;border-radius:6px;border:2px solid var(--green);background:var(--green);color:#fff;flex-shrink:0;font-size:13px">✓</button>
+        <div style="flex:1;font-size:13px;text-decoration:line-through">${esc(it.t)}</div>
+        <span style="font-size:14px">${m.emoji}</span>
+      </div>`;
+    });
+  }
+  h+=`</div>`;
+  return h;
+}
+function addShopItem(){
+  const inp=document.getElementById('shop-inp');const t=inp?.value.trim();
+  if(!t)return;
+  const cat=document.getElementById('shop-cat')?.value||'otro';
+  shopList.push({id:uid(),t,cat,done:false,ts:Date.now()});
+  S.s('shop1',shopList);
+  if(inp)inp.value='';
+  renderGastos();
+  setTimeout(()=>document.getElementById('shop-inp')?.focus(),50);
+}
+function toggleShop(id){
+  const it=shopList.find(x=>x.id===id);
+  if(it){it.done=!it.done;S.s('shop1',shopList);renderGastos();}
+}
+function delShop(id){
+  shopList=shopList.filter(x=>x.id!==id);
+  S.s('shop1',shopList);renderGastos();
+}
+function clearShopDone(){
+  shopList=shopList.filter(x=>!x.done);
+  S.s('shop1',shopList);renderGastos();
+  tst('🛒 Carro vaciado');
+}
+async function shopFromPlan(){
+  const key=aiKey();if(!key){tst('Configurá la IA');return;}
+  const plan=nutData&&nutData.weeklyPlan;
+  if(!plan){tst('Generá primero tu plan de comidas en Nutrición');return;}
+  const btn=document.querySelector('[onclick="shopFromPlan()"]');
+  if(btn){btn.textContent='⏳ Armando lista…';btn.disabled=true;}
+  try{
+    const plano=plan.replace(/<[^>]+>/g,' ').replace(/\s+/g,' ').trim().slice(0,2500);
+    const prompt='A partir de este plan de comidas semanal, armá una lista de compras de supermercado con los ingredientes necesarios, agrupados por sector. Respondé SOLO con JSON sin texto extra ni markdown, con esta forma: {"items":[{"t":"2kg de pollo","cat":"carniceria"}]}. La categoría debe ser una de: verduleria, carniceria, almacen, lacteos, limpieza, bebidas, otro. Juntá cantidades de ingredientes repetidos. Plan:\n'+plano;
+    const raw=await _aiComplete(prompt);
+    const m=raw.match(/\{[\s\S]*\}/);
+    if(!m)throw new Error('No se pudo generar la lista');
+    const obj=JSON.parse(m[0]);
+    const items=obj.items||[];
+    if(!items.length)throw new Error('La lista vino vacía');
+    let added=0;
+    items.forEach(it=>{
+      const t=(it.t||'').trim();if(!t)return;
+      const cat=SHOP_CATS[it.cat]?it.cat:'otro';
+      // evitar duplicados exactos pendientes
+      if(shopList.some(x=>!x.done&&x.t.toLowerCase()===t.toLowerCase()))return;
+      shopList.push({id:uid(),t,cat,done:false,ts:Date.now()});added++;
+    });
+    S.s('shop1',shopList);
+    renderGastos();
+    tst('🛒 '+added+' productos agregados');
+  }catch(e){tst('Error: '+e.message,4000);if(btn){btn.textContent='✨ Generar lista desde mi plan de comidas';btn.disabled=false;}}
+}
+
 // ── TAB 5: CONFIG ──
 function rConfig(){
   return`<div class="sec">
@@ -2563,6 +3270,19 @@ function rAgendaList(){
   const upcoming=events.filter(e=>e.date>=today).sort((a,b)=>a.date.localeCompare(b.date)||a.time.localeCompare(b.time));
   const past=events.filter(e=>e.date<today).sort((a,b)=>b.date.localeCompare(a.date)||b.time.localeCompare(a.time));
   let h=`<div class="sec">`;
+  // Banner de estado de notificaciones
+  const _np=("Notification" in window)?Notification.permission:'unsupported';
+  if(_np==='default'){
+    h+=`<div class="card" style="border-color:var(--gold-b);background:var(--gold-d);margin-bottom:14px;display:flex;align-items:center;gap:12px">
+      <div style="font-size:22px">🔔</div>
+      <div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:700">Activá los recordatorios</div><div style="font-size:11px;color:var(--text2);margin-top:2px">Para que te avise de tus turnos y eventos</div></div>
+      <button class="btn b-sm b-p" onclick="pedirPermisoNotif()" style="flex-shrink:0">Activar</button>
+    </div>`;
+  } else if(_np==='denied'){
+    h+=`<div class="card" style="border-color:var(--red-b);background:var(--red-d);margin-bottom:14px;font-size:11px;color:var(--text1);line-height:1.5">
+      🔕 Las notificaciones están bloqueadas. Para recibir avisos, activalas en los ajustes del navegador (candado junto a la dirección → Notificaciones → Permitir).
+    </div>`;
+  }
   const next=upcoming[0];
   if(next){
     const d=next.date===today?'Hoy':fmtDateFull(next.date);
@@ -2707,35 +3427,55 @@ function delEvent(id){
 }
 
 // ── NOTIFICACIONES ──
+function pedirPermisoNotif(){
+  if(!("Notification" in window)){tst('Tu navegador no soporta notificaciones');return;}
+  Notification.requestPermission().then(p=>{
+    if(p==='granted'){tst('🔔 Recordatorios activados');try{new Notification('MARTIN·APP',{body:'¡Listo! Te voy a avisar de tus eventos.'});}catch(e){}}
+    else if(p==='denied')tst('Quedaron bloqueadas. Activalas desde el navegador.',4000);
+    renderAgenda();
+  });
+}
 function startNotifCheck(){
   if(notifInterval)clearInterval(notifInterval);
   if(!("Notification" in window))return;
-  notifInterval=setInterval(checkEvents,15000);
+  checkEvents(); // chequeo inmediato al abrir (catch-up)
+  notifInterval=setInterval(checkEvents,10000);
+  // Al volver a la app (desbloquear/cambiar de pestaña) revisar de nuevo
+  if(!window._notifVisHook){
+    window._notifVisHook=true;
+    document.addEventListener('visibilitychange',()=>{if(!document.hidden)checkEvents();});
+  }
 }
 
 function checkEvents(){
   if(!events.length)return;
+  if(!("Notification" in window)||Notification.permission!=='granted')return;
   const now=new Date();
+  let changed=false;
   events.forEach(e=>{
     if(e.notified||!e.reminder)return;
     const [ey,em,ed]=e.date.split('-').map(Number);
     const [eh,emin]=e.time?e.time.split(':').map(Number):[0,0];
     const evTime=new Date(ey,em-1,ed,eh,emin);
-    const diff=(evTime-now)/60000;
-    if(diff>0&&diff<=e.reminder&&!e.notified){
-      e.notified=true;
+    const diff=(evTime-now)/60000; // minutos hasta el evento
+    // Avisar si estamos dentro de la ventana del recordatorio (incluye eventos
+    // que ya pasaron hace poco y no se avisaron, mientras la app estaba cerrada)
+    if(diff<=e.reminder&&diff>=-120&&!e.notified){
+      e.notified=true;changed=true;
+      const cuando=diff>=1?`en ${Math.round(diff)} min`:(diff>=-1?'ahora':`hace ${Math.abs(Math.round(diff))} min`);
       try{
-        if(Notification.permission==='granted'){new Notification('📅 Recordatorio',{body:`"${e.title}" en ${Math.round(diff)} min`,icon:'data:image/svg+xml,...'});}
-        else if(Notification.permission==='default'){Notification.requestPermission();}
-      }catch{}
-      S.s('evts1',events);
+        new Notification('📅 '+e.title,{body:`${e.time||''} hs · ${cuando}`,tag:'ev-'+e.id});
+      }catch(err){}
+      // refuerzo visible dentro de la app
+      tst('🔔 '+e.title+' · '+cuando,5000);
     }
   });
+  if(changed)S.s('evts1',events);
 }
 
 function scheduleNotif(e){
   if(!e.reminder||!("Notification" in window))return;
-  if(Notification.permission==='default')Notification.requestPermission();
+  if(Notification.permission==='default')pedirPermisoNotif();
 }
 
 // ══════════════════════════════════════════
@@ -2896,7 +3636,7 @@ function renderChat(){
     });
   }
   if(chatHist.length&&chatHist[chatHist.length-1].role==='user'){
-    h+=`<div class="cx-row a"><div class="cx-av">${SVG.spark}</div><div class="typing-dots"><span></span><span></span><span></span></div></div>`;
+    h+=`<div class="cx-row a"><div class="cx-av">${SVG.spark}</div><div class="typing-dots" id="tk-ind"><span class="tk-txt" id="tk-txt">Pensando</span><span class="tk-d"><span class="dot"></span><span class="dot"></span><span class="dot"></span></span></div></div>`;
   }
   h+='</div>';
   h+=`<div class="cx-input">
@@ -2933,6 +3673,14 @@ async function sendChat(){
   chatHist.push({role:'user',text:txt});
   saveChat();
   renderChat();
+  // Fases del indicador "pensando…" según lo que pidió el usuario
+  const _tl=txt.toLowerCase();
+  let _ph=['Pensando','Analizando tus datos','Preparando respuesta'];
+  if(/gast|plata|pag|tarjet|oca|visa|sueldo|ahorr|deuda/.test(_tl))_ph=['Pensando','Revisando tus gastos','Calculando','Preparando respuesta'];
+  else if(/comid|dieta|nutri|caloría|caloria|proteí|agua|peso/.test(_tl))_ph=['Pensando','Revisando tu nutrición','Calculando','Preparando respuesta'];
+  else if(/rutina|entren|ejercicio|músculo|musculo|serie|gym/.test(_tl))_ph=['Pensando','Revisando tu entrenamiento','Preparando respuesta'];
+  else if(/agend|event|recordá|recorda|reunión|reunion|turno|cita/.test(_tl))_ph=['Pensando','Revisando tu agenda','Preparando respuesta'];
+  startThinking(_ph);
 
   // ---- Construcción de contexto (idéntica a la original) ----
   const now=new Date();
@@ -2943,7 +3691,7 @@ async function sendChat(){
     const pagado=isPaid(c.id,m,y);
     return '{id:"'+c.id+'",n:"'+c.n+'",base:'+c.base+',fijo:'+montoCat(c,m,y)+',totalMes:'+f+(cardRef?',tarjeta:"'+cardRef+'"':'')+',pagado:'+pagado+',color:"'+c.c+'"}';
   }).join(',\n');
-  const cards=(S.g('cards1',[])||[]).map(c=>'{id:"'+c.id+'",n:"'+c.n+'",cuota:'+(getCardMonthAmt(c.id,m,y)||0)+'}').join(',');
+  const cards=(S.g('cards1',[])||[]).map(c=>'{id:"'+c.id+'",n:"'+c.n+'",cuota:'+(getCardMonthAmt(c.id)||0)+'}').join(',');
   const ultimosGastos=gastos.filter(g=>g.y>=y-1).slice(-30).map(g=>'{c:"'+g.c+'",v:'+g.v+',d:"'+(g.desc||'')+'",m:'+g.m+',y:'+g.y+',f:"'+g.f+'"}').join(',');
   const sueldosData=sueldos&&Object.keys(sueldos).length?Object.entries(sueldos).map(([k,v])=>k+':'+v).join(', '):'(sin datos)';
   const profile=gymProfile||{};
@@ -2955,28 +3703,37 @@ async function sendChat(){
   const _calToday=_foodToday.reduce((s,f)=>s+(+f.cal||0),0);
   const _calMeta=(typeof dailyCalorieGoal==='function')?dailyCalorieGoal():0;
   const nutStr='Nutrición hoy: '+waterGlasses+'/'+waterTargetScore+' vasos de agua'+(nd.dietType?' · Dieta: '+nd.dietType:'')+(nd.targetWeight?' · Peso meta: '+nd.targetWeight+'kg':'')+(_calMeta?' · Calorías: '+_calToday+'/'+_calMeta+' kcal':'')+(_foodToday.length?' · Comió hoy: '+_foodToday.map(f=>f.name).join(', '):'')+(nd.lastPlanDate===today?' · Plan de comidas generado hoy por IA':'');
-  const profileStr='Perfil físico: '+(profile.height?'Altura:'+profile.height+'cm, ':'')+(profile.weight?'Peso:'+profile.weight+'kg, ':'')+'Experiencia:'+(profile.experience||0)+'años'+(profile.goal?', Objetivo:'+profile.goal:'')+(profile.dietRestrictions?', Dieta:'+profile.dietRestrictions:'')+' '+nutStr;
+  const _sleepLog=nd.sleepLog||{};
+  const _slKeys=Object.keys(_sleepLog).sort().slice(-7);
+  const _slVals=_slKeys.map(k=>_sleepLog[k].hours).filter(x=>x>0);
+  const _slAvg=_slVals.length?(_slVals.reduce((a,b)=>a+b,0)/_slVals.length).toFixed(1):0;
+  const _slLast=_slKeys.length?_sleepLog[_slKeys[_slKeys.length-1]]:null;
+  const sleepStr=_slLast?'Sueño: última noche '+_slLast.hours+'h ('+_slLast.quality+')'+(_slLast.wakeups?', '+_slLast.wakeups+' despertares':'')+'; promedio 7 días '+_slAvg+'h':'Sueño: sin registros';
+  const profileStr='Perfil físico: '+(profile.height?'Altura:'+profile.height+'cm, ':'')+(profile.weight?'Peso:'+profile.weight+'kg, ':'')+'Experiencia:'+(profile.experience||0)+'años'+(profile.goal?', Objetivo:'+profile.goal:'')+(profile.dietRestrictions?', Dieta:'+profile.dietRestrictions:'')+' '+nutStr+' · '+sleepStr;
   const exNameMap={};
   routines.forEach(r=>{r.days.forEach(d=>{d.exercises.forEach((ex,ei)=>{exNameMap[r.id+'|'+d.id+'|'+ei]=ex.name;});});});
   const weightsArr=Object.entries(weights);
   const gymWeights=weightsArr.length?'\nPesos registrados: '+weightsArr.map(([k,v])=>(exNameMap[k]||'ej'+k.split('|').pop())+': '+v+'kg').join(', '):'';
   const gymData=routines.length?'Rutinas: '+routines.map(r=>'"'+r.name+'"('+r.days.length+' días)').join(', ')+gymWeights+(gymHist.length?'\nHistorial reciente: '+gymHist.slice(0,15).map(h=>h.rn+'-'+h.dn+':'+h.pct+'%').join('; '):''):'(sin rutinas)';
   const proxEventos=events.filter(e=>e.date>=now.toISOString().slice(0,10)).slice(0,5).map(e=>e.title+' el '+e.date+' a las '+e.time).join('; ');
+  const _cd7=cardioLog.filter(c=>_last7Keys().includes(c.date));
+  const cardioData=_cd7.length?_cd7.reduce((s,c)=>s+c.mins,0)+' min, '+_cd7.reduce((s,c)=>s+(+c.km||0),0).toFixed(1)+' km en '+_cd7.length+' sesiones ('+_cd7.map(c=>(CARDIO_TYPES[c.type]||{}).label||c.type).join(', ')+')':'sin registros esta semana';
   const dataCtx='DATOS DE LA APP (mes actual '+(m+1)+'/'+y+'):\n'+
     'Perfil y nutrición:\n'+profileStr+'\n\n'+
     'Categorías:\n'+catsInfo+'\n\n'+
     'Tarjetas:\n['+cards+']\n\n'+
     'Últimos gastos variables:\n['+ultimosGastos+']\n\n'+
     'Sueldos: '+sueldosData+'\n\n'+
-    'GYM:\n'+gymData+'\n\n'+
+    'GYM:\n'+gymData+'\n'+
+    'Cardio últimos 7 días: '+cardioData+'\n\n'+
     'Próximos eventos:\n'+(proxEventos||'ninguno');
   const _mem=S.g('userMem1',[]);
   const _dias=['domingo','lunes','martes','miércoles','jueves','viernes','sábado'];
   const _hoy='CONTEXTO TEMPORAL: hoy es '+_dias[now.getDay()]+' '+String(now.getDate()).padStart(2,'0')+'/'+String(now.getMonth()+1).padStart(2,'0')+'/'+now.getFullYear()+', '+String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0')+'hs. Para eventos sin fecha explícita usá HOY; "mañana"=día siguiente; "el viernes"=el próximo viernes. "8pm"=20:00, "8am"=08:00. Devolvé fechas como YYYY-MM-DD.\n\n';
-  const memCtx=_mem.length?('\n\nMEMORIA — lo que ya sé de la persona (usalo para personalizar y NO vuelvas a preguntar lo que ya está acá):\n- '+_mem.map(x=>x.t).join('\n- ')):'';
-  const memInstr='\n\nMEMORIA / APRENDIZAJE:\n- Si en el mensaje hay info DURADERA de la persona (preferencias, hábitos, restricciones de dieta, objetivos, días/horarios de entrenamiento, ingresos, fechas fijas, etc.), guardala vos mismo con [ACCION]{"op":"recordar","dato":"frase corta en 3ra persona","tag":"dieta|gym|finanzas|agenda|general"}[/ACCION].\n- Si te piden olvidar algo: [ACCION]{"op":"olvidar","dato":"texto a borrar"}[/ACCION].\n- NO guardes datos puntuales del día (un gasto suelto, un peso de hoy) como memoria; eso ya va a las acciones normales. Guardá solo lo que define a la persona a largo plazo.\n- No repitas en memoria algo que ya figura arriba.';
+  const memCtx=buildMemCtx(false);
+  const memInstr='\n\nMEMORIA / APRENDIZAJE:\n- Si en el mensaje hay info DURADERA de la persona (preferencias, hábitos, restricciones de dieta, objetivos, días/horarios de entrenamiento, ingresos, fechas fijas, etc.), guardala vos mismo con [ACCION]{"op":"recordar","dato":"frase corta en 3ra persona","tag":"dieta|gym|finanzas|agenda|general","importante":true|false}[/ACCION]. Poné importante:true SOLO para datos permanentes críticos (alergias, intolerancias, salud, lesiones, objetivos de fondo, familia); el resto false.\n- Si te piden olvidar algo: [ACCION]{"op":"olvidar","dato":"texto a borrar"}[/ACCION].\n- NO guardes datos puntuales del día (un gasto suelto, un peso de hoy) como memoria; eso ya va a las acciones normales. Guardá solo lo que define a la persona a largo plazo.\n- No repitas en memoria algo que ya figura arriba.';
   const ctxHist=chatHist.slice(-20).map(msg=>'['+msg.role+']: '+msg.text).join('\n');
-  const prompt='Sos MARTIN·APP AI: asistente personal con control total de los datos.\n\n'+_hoy+dataCtx+memCtx+memInstr+'\n\nREGLAS:\n- Respondé en español uruguayo, natural, amigable y con confianza.\n- Revisá los datos con cuidado. Si te preguntan por pesos o registros, verificá exactamente lo que dice el registro antes de responder. No inventes números.\n- Si el usuario pide agregar/modificar datos, usá [ACCION] al final.\n- ACCIONES DISPONIBLES:\n  * [ACCION]{"op":"gasto","cat":"id","v":monto,"desc":"...","f":"d/m"}[/ACCION]\n  * [ACCION]{"op":"pago","cat":"id","m":mes,"y":año}[/ACCION]\n  * [ACCION]{"op":"fijo","cat":"id","m":mes,"y":año,"v":monto}[/ACCION]\n  * [ACCION]{"op":"compra","cardId":"id","v":monto,"desc":"...","cuotas":1}[/ACCION]\n  * [ACCION]{"op":"crear_rutina","name":"Nombre","days":[{"label":"Día1","exercises":[{"name":"Ej1","muscle":"Pecho","series":4,"reps":"10"}]}]}[/ACCION]\n  * [ACCION]{"op":"evento","titulo":"...","fecha":"YYYY-MM-DD","hora":"HH:MM","recordatorio":15}[/ACCION]\n- NUTRICIÓN: si la persona dice qué comió, registralo con [ACCION]{"op":"comida","nombre":"...","cal":número,"prot":número}[/ACCION] (estimá calorías vos). Podés ver sus comidas y meta calórica en los datos.\n- AHORRO: no es gasto, es plata apartada en una meta. Guardar: [ACCION]{"op":"ahorro","cat":"id_meta","v":monto}[/ACCION]. Crear meta (auto/casa/viaje): [ACCION]{"op":"crear_meta","nombre":"Auto","objetivo":500000,"aporte":1500}[/ACCION].\n- muscle debe ser uno de: Pecho, Espalda, Hombros, Bíceps, Tríceps, Cuádriceps, Femoral, Gemelos, Abdomen\n- IDs son los que ves arriba. NO inventes IDs.\n- Podés ANALIZAR entrenamientos: revisá el historial gym, los pesos, y recomendá ajustes.\n- Podés dar consejos de DIETA y NUTRICIÓN según el perfil y objetivo del usuario. Recomendá comidas, horarios, colaciones.\n- Podés recomendar cuánta AGUA tomar según su peso y actividad.\n- Si te preguntan por GASTOS relacionado a comida, usá los datos de categorías para sugerir donde ahorrar.\n- Si te piden hacer algo que no sea una acción, respondé normal pero útil.\n- Siempre respondé optimista y motivador como un entrenador personal.\n\nConversación:\n'+ctxHist+'\n\n['+txt+']:';
+  const prompt='Sos MARTIN·APP AI: asistente personal con control total de los datos.\n\n'+_hoy+dataCtx+memCtx+memInstr+'\n\nREGLAS:\n- Respondé en español uruguayo, natural, amigable y con confianza.\n- Revisá los datos con cuidado. Si te preguntan por pesos o registros, verificá exactamente lo que dice el registro antes de responder. No inventes números.\n- Si el usuario pide agregar/modificar datos, usá [ACCION] al final.\n- ACCIONES DISPONIBLES:\n  * [ACCION]{"op":"gasto","cat":"id","v":monto,"desc":"...","f":"d/m"}[/ACCION]\n  * [ACCION]{"op":"pago","cat":"id","m":mes,"y":año}[/ACCION]\n  * [ACCION]{"op":"fijo","cat":"id","m":mes,"y":año,"v":monto}[/ACCION]\n  * [ACCION]{"op":"compra","cardId":"id","v":monto,"desc":"...","cuotas":1}[/ACCION]\n  * [ACCION]{"op":"crear_rutina","name":"Nombre","days":[{"label":"Día1","exercises":[{"name":"Ej1","muscle":"Pecho","series":4,"reps":"10"}]}]}[/ACCION] (si la persona entrena en CASA sin equipo, usá solo ejercicios de peso corporal y objetos de casa; no pongas máquinas ni barras)\n  * [ACCION]{"op":"evento","titulo":"...","fecha":"YYYY-MM-DD","hora":"HH:MM","recordatorio":15}[/ACCION]\n- NUTRICIÓN: si la persona dice qué comió, registralo con [ACCION]{"op":"comida","nombre":"...","cal":número,"prot":número}[/ACCION] (estimá calorías vos). Podés ver sus comidas y meta calórica en los datos. Para CARDIO (caminar/correr/bici/natación/elíptico): [ACCION]{"op":"cardio","tipo":"correr","min":30,"km":5}[/ACCION] (km opcional, las calorías se estiman solas). Podés ver el cardio de los últimos 7 días en los datos. Para SUEÑO (si la persona dice cuánto durmió): [ACCION]{"op":"sueno","horas":7.5,"calidad":"buena","despertares":0}[/ACCION] (calidad: mala|regular|buena|excelente). Podés analizar su sueño junto al entrenamiento y la comida. Para la LISTA DEL SÚPER (si la persona dice que necesita comprar algo): [ACCION]{"op":"comprar","item":"2kg de pollo","cat":"carniceria"}[/ACCION] (cat: verduleria|carniceria|almacen|lacteos|limpieza|bebidas|otro). Para ELIMINAR algo (gasto, rutina, evento, comida, cardio, ítem del súper, categoría, memoria): [ACCION]{"op":"eliminar","tipo":"gasto|rutina|evento|comida|cardio|super|categoria|memoria","desc":"texto para identificarlo"}[/ACCION]. NO borra al instante: la app le muestra al usuario una confirmación Sí/No, así que está bien proponerlo cuando lo pidan. Usá el "desc" con palabras que identifiquen el elemento (nombre del gasto, de la rutina, etc).\n- AHORRO: no es gasto, es plata apartada en una meta. Guardar: [ACCION]{"op":"ahorro","cat":"id_meta","v":monto}[/ACCION]. Crear meta (auto/casa/viaje): [ACCION]{"op":"crear_meta","nombre":"Auto","objetivo":500000,"aporte":1500}[/ACCION].\n- TARJETAS POR MES: para anotar lo pagado (o a pagar) de una tarjeta en un mes puntual, usá el op \"fijo\" con el id de la CATEGORÍA de esa tarjeta (en Categorías son las que tienen tarjeta:...). Los meses en las acciones van de 0 a 11 (enero=0, febrero=1, marzo=2, abril=3, mayo=4, junio=5, julio=6, agosto=7, septiembre=8, octubre=9, noviembre=10, diciembre=11). Ej \"anotá 1400 de OCA en abril\" -> [ACCION]{\"op\":\"fijo\",\"cat\":\"<id categoría OCA>\",\"m\":3,\"y\":<año>,\"v\":1400}[/ACCION]. Si no aclaran el año, usá el actual.\\n- muscle debe ser uno de: Pecho, Espalda, Hombros, Bíceps, Tríceps, Cuádriceps, Femoral, Gemelos, Abdomen\n- IDs son los que ves arriba. NO inventes IDs.\n- Podés ANALIZAR entrenamientos: revisá el historial gym, los pesos, y recomendá ajustes.\n- Podés dar consejos de DIETA y NUTRICIÓN según el perfil y objetivo del usuario. Recomendá comidas, horarios, colaciones.\n- Podés recomendar cuánta AGUA tomar según su peso y actividad.\n- Si te preguntan por GASTOS relacionado a comida, usá los datos de categorías para sugerir donde ahorrar.\n- Si te piden hacer algo que no sea una acción, respondé normal pero útil.\n- Siempre respondé optimista y motivador como un entrenador personal.\n\nConversación:\n'+ctxHist+'\n\n['+txt+']:';
 
   // ---- Burbuja del asistente que se va llenando en vivo ----
   chatHist.push({role:'assistant',text:'',streaming:true});
@@ -2986,6 +3743,7 @@ async function sendChat(){
 
   try{
     const full=await _geminiStream(prompt,key,(chunk,acc)=>{
+      stopThinking();
       // mientras llega, ocultamos cualquier bloque [ACCION] a medio escribir
       const visible=acc.split('[ACCION')[0];
       if(bubble){
@@ -3017,11 +3775,13 @@ async function sendChat(){
       speak(clean.slice(0,350));
     }
   }catch(e){
+    stopThinking();
     _voiceSent=false;
     tst('⚠️ Error: '+e.message,4000);
     chatHist.pop(); // saca la burbuja vacía
     saveChat();
   }
+  stopThinking();
   renderChat();
 }
 
@@ -3162,7 +3922,7 @@ function coachPrompt(userMsg){
   const p=coachProfile();
   const perfilCoach=Object.keys(p).length?('LO QUE SÉ DE LA PERSONA:\n'+COACH_Q.filter(q=>p[q.k]).map(q=>'- '+q.k+': '+p[q.k]).join('\n')):'';
   const _mem=S.g('userMem1',[]);
-  const memCtx=_mem.length?('\n\nMEMORIA:\n- '+_mem.map(x=>x.t).join('\n- ')):'';
+  const memCtx=buildMemCtx(true);
   const ctxHist=coachHist.slice(-16).map(msg=>'['+msg.role+']: '+msg.text).join('\n');
   return 'Sos un COACH DE BIENESTAR Y PRODUCTIVIDAD personal, cálido pero directo. NO sos psicólogo ni das terapia clínica: sos un acompañante que motiva, ayuda a organizarse, a moverse más y a dejar de procrastinar.\n\n'+
     perfilCoach+'\n\n'+buildAppContext()+memCtx+'\n\n'+
@@ -3209,7 +3969,7 @@ function renderCoach(){
     });
   }
   if(coachHist.length&&coachHist[coachHist.length-1].role==='user'){
-    h+=`<div class="cx-row a"><div class="cx-av" style="background:linear-gradient(135deg,#34D399,#10B981)">🌱</div><div class="typing-dots"><span></span><span></span><span></span></div></div>`;
+    h+=`<div class="cx-row a"><div class="cx-av" style="background:linear-gradient(135deg,#34D399,#10B981)">🌱</div><div class="typing-dots" id="tk-ind"><span class="tk-txt" id="tk-txt">Pensando</span><span class="tk-d"><span class="dot"></span><span class="dot"></span><span class="dot"></span></span></div></div>`;
   }
   h+='</div>';
   h+=`<div class="cx-input">
@@ -3271,6 +4031,7 @@ async function sendCoach(){
   // Conversación normal con streaming
   coachHist.push({role:'assistant',text:'',streaming:true});
   saveCoach();renderCoach();
+  startThinking(['Pensando','Reflexionando sobre lo que contás','Preparando respuesta']);
   await coachStream(txt);
 }
 
@@ -3279,6 +4040,7 @@ async function coachStream(userMsg){
   const bubble=document.getElementById('coach-live');
   try{
     const full=await _geminiStream(coachPrompt(userMsg),key,(chunk,acc)=>{
+      stopThinking();
       const visible=acc.split('[ACCION')[0];
       if(bubble){bubble.innerHTML=_mdBold(visible)+'<span class="ai-caret">▍</span>';const cont=document.querySelector('#coach-b > div:first-child');if(cont)cont.scrollTop=cont.scrollHeight;}
     });
@@ -3294,8 +4056,10 @@ async function coachStream(userMsg){
     if(resultados.length){gastos=S.g('gst4',[]);events=S.g('evts1',[]);}
     if(_voiceSent){_voiceSent=false;const clean=reply.replace(/[✅•⚠️📅📊💪🔴🟢🌱]/g,'').replace(/\*\*(.+?)\*\*/g,'$1').replace(/\n/g,' ').trim();speak(clean.slice(0,300));}
   }catch(e){
+    stopThinking();
     _voiceSent=false;tst('⚠️ Error: '+e.message,4000);coachHist.pop();saveCoach();
   }
+  stopThinking();
   renderCoach();
 }
 
@@ -3331,8 +4095,75 @@ async function generarResumenSesion(sesion, modo){
   if(modo==='coach')S.s('coachSessions',coachSessions);else S.s('chatSessions',chatSessions);
 }
 
+// ════════════════════════════════════════════
+//  ELIMINAR CON CONFIRMACIÓN (la IA propone, el usuario confirma)
+// ════════════════════════════════════════════
+// Busca el/los elementos que coinciden con la descripción y arma la confirmación.
+function solicitarEliminacion(acc){
+  const tipo=(acc.tipo||acc.que||'').toLowerCase();
+  const q=(acc.desc||acc.nombre||acc.texto||acc.item||'').toLowerCase().trim();
+  let encontrados=[];   // [{label, borrar:fn}]
+  const _match=s=>q&&String(s||'').toLowerCase().includes(q);
+
+  if(/gasto/.test(tipo)){
+    const gs=S.g('gst4',[]);
+    gs.forEach(g=>{if(_match(g.desc)||_match((cats.find(c=>c.id===g.c)||{}).n)){const cn=(cats.find(c=>c.id===g.c)||{}).n||g.c;encontrados.push({label:'Gasto: $'+fmt(g.v)+' '+(g.desc||cn)+' ('+g.f+')',borrar:()=>{const a=S.g('gst4',[]).filter(x=>x._id!==g._id);S.s('gst4',a);gastos=a;}});}});
+  } else if(/rutina/.test(tipo)){
+    routines.forEach(r=>{if(_match(r.name)){encontrados.push({label:'Rutina: '+r.name,borrar:()=>{routines=routines.filter(x=>x.id!==r.id);if(activeRid===r.id)activeRid=routines[0]?.id||null;S.s('rt2',routines);S.s('arid',activeRid);}});}});
+  } else if(/evento|agenda|turno|cita/.test(tipo)){
+    const evs=S.g('evts1',[]);
+    evs.forEach(e=>{if(_match(e.title)){encontrados.push({label:'Evento: '+e.title+' ('+e.date+')',borrar:()=>{const a=S.g('evts1',[]).filter(x=>x.id!==e.id);S.s('evts1',a);events=a;}});}});
+  } else if(/super|compra|lista/.test(tipo)){
+    shopList.forEach(it=>{if(_match(it.t)){encontrados.push({label:'Súper: '+it.t,borrar:()=>{shopList=shopList.filter(x=>x.id!==it.id);S.s('shop1',shopList);}});}});
+  } else if(/cardio/.test(tipo)){
+    cardioLog.forEach(c=>{const lbl=(CARDIO_TYPES[c.type]||{}).label||c.type;if(_match(lbl)){encontrados.push({label:'Cardio: '+lbl+' '+c.mins+'min',borrar:()=>{cardioLog=cardioLog.filter(x=>x.ts!==c.ts);S.s('cardio1',cardioLog);}});}});
+  } else if(/comida/.test(tipo)){
+    const today=todayStr();const log=(nutData.foodLog||{})[today]||[];
+    log.forEach((f,i)=>{if(_match(f.name)){encontrados.push({label:'Comida: '+f.name+' ('+f.cal+'kcal)',borrar:()=>{nutData.foodLog[today]=(nutData.foodLog[today]||[]).filter((_,j)=>j!==i);S.s('nutData',nutData);}});}});
+  } else if(/categor/.test(tipo)){
+    cats.forEach((c,i)=>{if(_match(c.n)&&!c.cardRef){encontrados.push({label:'Categoría: '+c.n,borrar:()=>{cats=cats.filter(x=>x.id!==c.id);S.s('cats4',cats);}});}});
+  } else if(/memoria|recuerdo/.test(tipo)){
+    const mem=S.g('userMem1',[]);mem.forEach(x=>{if(_match(x.t)){encontrados.push({label:'Memoria: '+x.t,borrar:()=>{const a=S.g('userMem1',[]).filter(y=>y.ts!==x.ts);S.s('userMem1',a);}});}});
+  }
+
+  if(!encontrados.length)return '⚠️ No encontré nada que coincida con "'+(q||tipo)+'" para eliminar';
+  // Guardar pendiente y mostrar confirmación
+  window._delPend=encontrados;
+  setTimeout(()=>mostrarConfirmEliminar(),120);
+  return '⏳ Esperando tu confirmación para eliminar '+encontrados.length+' elemento'+(encontrados.length>1?'s':'');
+}
+function mostrarConfirmEliminar(){
+  const items=window._delPend||[];
+  if(!items.length)return;
+  let h=`<div class="mt" style="color:var(--red)">🗑 Confirmar eliminación</div>
+    <div style="font-size:13px;color:var(--text1);margin-bottom:14px">Vas a eliminar ${items.length} elemento${items.length>1?'s':''}. Esto no se puede deshacer:</div>
+    <div style="max-height:300px;overflow-y:auto;margin-bottom:18px">`;
+  items.forEach(it=>{h+=`<div style="padding:9px 12px;background:var(--bg2);border:1px solid var(--red-b);border-radius:var(--r-sm);margin-bottom:6px;font-size:12px">${esc(it.label)}</div>`;});
+  h+=`</div>
+    <div style="display:flex;gap:8px">
+      <button class="btn b-lg b-g" style="flex:1" onclick="cOv1();window._delPend=null;tst('Cancelado, no se borró nada')">Cancelar</button>
+      <button class="btn b-lg" style="flex:1;background:var(--red);color:#fff" onclick="confirmarEliminar()">Sí, eliminar</button>
+    </div>`;
+  oOv1(h);
+}
+function confirmarEliminar(){
+  const items=window._delPend||[];
+  let n=0;
+  items.forEach(it=>{try{it.borrar();n++;}catch(e){}});
+  window._delPend=null;
+  cOv1();
+  // refrescar la pantalla activa
+  if(typeof renderGastos==='function')renderGastos();
+  if(typeof renderGym==='function')renderGym();
+  if(typeof renderAgenda==='function')renderAgenda();
+  tst('🗑 '+n+' elemento'+(n!==1?'s':'')+' eliminado'+(n!==1?'s':''));
+}
 function ejecutarAccion(acc){
   if(!acc||!acc.op)return 'Acción inválida';
+  if(acc.op==='eliminar'||acc.op==='borrar'){
+    // No borra directo: encola y pide confirmación al usuario
+    return solicitarEliminacion(acc);
+  }
   if(acc.op==='gasto'){
     const cat=cats.find(c=>c.id===acc.cat);
     if(!cat)return 'Categoría "'+acc.cat+'" no encontrada';
@@ -3407,7 +4238,9 @@ function ejecutarAccion(acc){
     const now=new Date();
     const v=parseMoney(acc.v);
     const installments=acc.cuotas||1;
-    cpurch.push({id:uid(),cardId:card.id,commerce:acc.desc||'Gasto',total:v,installments,paidInstallments:(acc.pagadas||0),category:'otro',date:now.toISOString().slice(0,10),addedM:now.getMonth(),addedY:now.getFullYear()});
+    const _paid=(acc.pagadas||0);
+    let _sm=now.getMonth()-_paid,_sy=now.getFullYear();_sy+=Math.floor(_sm/12);_sm=((_sm%12)+12)%12;
+    cpurch.push({id:uid(),cardId:card.id,commerce:acc.desc||'Gasto',total:v,instAmt:(installments>0?money(v/installments):money(v)),installments,paidInstallments:_paid,category:'otro',date:now.toISOString().slice(0,10),startM:_sm,startY:_sy,addedM:now.getMonth(),addedY:now.getFullYear()});
     S.s('cpurch1',cpurch);
     // ensure card category exists
     ensureCardCats();
@@ -3426,6 +4259,47 @@ function ejecutarAccion(acc){
   }
   if(acc.op==='responder'){
     return acc.texto||acc.text||'';
+  }
+  if(acc.op==='comprar'||acc.op==='super'){
+    const t=(acc.item||acc.producto||acc.t||'').trim();
+    if(!t)return 'No entendí qué agregar a la lista';
+    const SC=['verduleria','carniceria','almacen','lacteos','limpieza','bebidas','otro'];
+    let cat=(acc.cat||acc.categoria||'otro').toLowerCase();
+    if(!SC.includes(cat))cat='otro';
+    shopList.push({id:uid(),t,cat,done:false,ts:Date.now()});
+    S.s('shop1',shopList);
+    return '🛒 "'+t+'" agregado a la lista del súper';
+  }
+  if(acc.op==='sueno'||acc.op==='sueño'||acc.op==='dormir'){
+    const h=parseFloat(acc.horas||acc.hours||acc.h)||0;
+    if(h<=0||h>24)return 'Necesito las horas dormidas';
+    let q=(acc.calidad||acc.quality||'buena').toLowerCase();
+    if(!['mala','regular','buena','excelente'].includes(q))q='buena';
+    const today=todayStr();
+    if(!nutData.sleepLog)nutData.sleepLog={};
+    nutData.sleepLog[today]={hours:h,quality:q,wakeups:parseInt(acc.despertares||acc.wakeups,10)||0,note:acc.nota||acc.note||'',ts:Date.now()};
+    S.s('nutData',nutData);
+    return '🌙 '+h+'h de sueño registradas ('+q+')';
+  }
+  if(acc.op==='cardio'){
+    let type=(acc.tipo||acc.type||'caminar').toLowerCase();
+    // mapear sinónimos comunes
+    if(/cinta|treadmill/.test(type)&&/corr|run/.test(type))type='correr_cinta';
+    else if(/cinta|treadmill/.test(type))type='caminar_cinta';
+    else if(/bici.*fij|fij|spinning|est[aá]tic/.test(type))type='bici_fija';
+    const t=CARDIO_TYPES[type]?type:'otro';
+    const mins=parseInt(acc.min||acc.mins||acc.minutos,10)||0;
+    const km=parseFloat(acc.km||acc.distancia)||0;
+    const incline=parseFloat(acc.incline||acc.inclinacion)||0;
+    if(mins<=0)return 'Necesito la duración del cardio en minutos';
+    let cal=parseInt(acc.cal||acc.calorias,10)||0;
+    if(!cal)cal=cardioCalories(t,mins,incline);
+    const now=new Date();
+    cardioLog.unshift({ts:now.getTime(),date:now.toISOString().slice(0,10),type:t,mins,km,cal,incline});
+    if(cardioLog.length>200)cardioLog=cardioLog.slice(0,200);
+    S.s('cardio1',cardioLog);
+    const meta=CARDIO_TYPES[t];
+    return meta.emoji+' '+meta.label+' '+mins+' min'+(km?' ('+km+' km)':'')+' · '+cal+' kcal';
   }
   if(acc.op==='comida'){
     const name=acc.nombre||acc.name||acc.comida||'Comida';
@@ -3463,11 +4337,29 @@ function ejecutarAccion(acc){
     const dato=(acc.dato||acc.text||'').trim();
     if(!dato)return 'Nada para recordar';
     const mem=S.g('userMem1',[]);
-    if(mem.some(x=>x.t.toLowerCase()===dato.toLowerCase()))return '🧠 Ya lo tenía anotado';
-    mem.push({t:dato,tag:acc.tag||'general',ts:Date.now()});
-    if(mem.length>80)mem.splice(0,mem.length-80); // tope para no inflar el prompt
-    S.s('userMem1',mem);
-    return '🧠 Anotado: '+dato;
+    const _norm=s=>String(s).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9 ]/g,'').replace(/\s+/g,' ').trim();
+    const nd=_norm(dato);
+    // Dedup: exacto o muy parecido (una frase contiene a la otra)
+    const dup=mem.find(x=>{const nx=_norm(x.t);return nx===nd||nx.includes(nd)||nd.includes(nx);});
+    if(dup){
+      // si el dato nuevo es más largo/completo, lo reemplaza
+      if(nd.length>_norm(dup.t).length){dup.t=dato;dup.ts=Date.now();if(acc.tag)dup.tag=acc.tag;S.s('userMem1',mem);return '🧠 Actualicé: '+dato;}
+      return '🧠 Ya lo tenía anotado';
+    }
+    // ¿es un dato importante (permanente)? la IA puede marcarlo, o se detecta por palabras clave
+    const _impWords=/celíac|celiac|alergi|intoleran|diabet|hipertens|vegetarian|vegan|lesión|lesion|crónic|cronic|medicament|objetivo|meta|trabaj|estudia|hijo|hija|cónyuge|conyuge|pareja|cumpleaños|cumpleanos/;
+    const importante=acc.importante===true||_impWords.test(nd);
+    mem.push({t:dato,tag:acc.tag||'general',ts:Date.now(),imp:importante});
+    // Tope 80: si se pasa, descartar primero los NO importantes más viejos
+    if(mem.length>80){
+      const sobra=mem.length-80;
+      const noImp=mem.map((x,i)=>({x,i})).filter(o=>!o.x.imp).sort((a,b)=>(a.x.ts||0)-(b.x.ts||0));
+      const aBorrar=new Set(noImp.slice(0,sobra).map(o=>o.i));
+      let filtrado=mem.filter((_,i)=>!aBorrar.has(i));
+      if(filtrado.length>80)filtrado=filtrado.slice(filtrado.length-80); // por si todo era importante
+      S.s('userMem1',filtrado);
+    } else S.s('userMem1',mem);
+    return '🧠 Anotado'+(importante?' (importante)':'')+': '+dato;
   }
   if(acc.op==='olvidar'){
     const q=(acc.dato||acc.text||'').toLowerCase().trim();
@@ -3642,6 +4534,36 @@ async function _geminiStream(prompt,_key,onChunk,reintento=0){
 }
 
 // Pinta texto con **negrita** de forma segura (mismo criterio que renderChat).
+// ── Indicador "pensando…" con fases (estilo ChatGPT/Claude) ──
+let _tkTimer=null;
+function startThinking(phases){
+  stopThinking();
+  const ph=phases||['Pensando','Analizando tus datos','Preparando respuesta'];
+  let i=0;
+  const el=document.getElementById('tk-txt');
+  if(el)el.textContent=ph[0];
+  _tkTimer=setInterval(()=>{
+    i=(i+1)%ph.length;
+    const e=document.getElementById('tk-txt');
+    if(e)e.textContent=ph[i];
+  },1600);
+}
+function stopThinking(){if(_tkTimer){clearInterval(_tkTimer);_tkTimer=null;}}
+// ── Memoria formateada para el prompt: agrupada por área, importantes con ★ ──
+function buildMemCtx(short){
+  const _mem=S.g('userMem1',[]);
+  if(!_mem.length)return '';
+  const _tagName={dieta:'🍎 Nutrición',gym:'💪 Entrenamiento',finanzas:'💰 Finanzas',agenda:'📅 Agenda',general:'📝 General'};
+  const _grp={};
+  _mem.forEach(x=>{const t=_tagName[x.tag]?x.tag:'general';(_grp[t]=_grp[t]||[]).push(x);});
+  let s=short?'\n\nMEMORIA (★=importante, siempre tenelo en cuenta):'
+              :'\n\nMEMORIA — lo que ya sé de la persona (usalo para personalizar y NO vuelvas a preguntar lo que ya está acá; los marcados con ★ son datos permanentes importantes):';
+  Object.keys(_grp).forEach(tag=>{
+    s+='\n'+(_tagName[tag]||'📝 General')+':';
+    _grp[tag].forEach(x=>{s+='\n  '+(x.imp?'★ ':'- ')+x.t;});
+  });
+  return s;
+}
 function _mdBold(t){return esc(t).replace(/\*\*(.+?)\*\*/g,'<b>$1</b>');}
 
 // Extrae el primer objeto JSON COMPLETO de un texto (maneja anidación y ```fences```).
@@ -4200,7 +5122,7 @@ async function interpretVoice(txt){
   const nutStr='Nutrición hoy: '+waterGlasses+'/'+waterTargetScore+' vasos de agua'+(nd.lastPlanDate===todayVoice?' · Plan de comidas generado hoy por IA':'');
   const profileStr='Perfil físico: '+(profile.height?'Altura:'+profile.height+'cm, ':'')+(profile.weight?'Peso:'+profile.weight+'kg, ':'')+'Experiencia:'+(profile.experience||0)+'años'+(profile.goal?', Objetivo:'+profile.goal:'')+(profile.dietRestrictions?', Dieta:'+profile.dietRestrictions:'')+' '+nutStr;
   const catsInfo=cats.map(c=>'{id:"'+c.id+'",n:"'+c.n+'",base:'+c.base+',totalMes:'+totalCatMes(c.id,m,y)+',pagado:'+isPaid(c.id,m,y)+'}').join(',\n');
-  const cards=(S.g('cards1',[])||[]).map(c=>'{id:"'+c.id+'",n:"'+c.n+'",cuota:'+(getCardMonthAmt(c.id,m,y)||0)+'}').join(',');
+  const cards=(S.g('cards1',[])||[]).map(c=>'{id:"'+c.id+'",n:"'+c.n+'",cuota:'+(getCardMonthAmt(c.id)||0)+'}').join(',');
   const ultimosGastos=gastos.filter(g=>g.y>=y-1).slice(-30).map(g=>'{c:"'+g.c+'",v:'+g.v+',d:"'+(g.desc||'')+'",m:'+g.m+',y:'+g.y+'}').join(',');
   const sueldosData=sueldos&&Object.keys(sueldos).length?Object.entries(sueldos).map(([k,v])=>k+':'+v).join(', '):'(sin datos)';
   const exNameMap={};
@@ -4220,8 +5142,8 @@ async function interpretVoice(txt){
   const _mem=S.g('userMem1',[]);
   const _dias=['domingo','lunes','martes','miércoles','jueves','viernes','sábado'];
   const _hoy='CONTEXTO TEMPORAL: hoy es '+_dias[now.getDay()]+' '+String(now.getDate()).padStart(2,'0')+'/'+String(now.getMonth()+1).padStart(2,'0')+'/'+now.getFullYear()+', '+String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0')+'hs. Para eventos sin fecha explícita usá HOY; "mañana"=día siguiente; "el viernes"=el próximo viernes. "8pm"=20:00, "8am"=08:00. Devolvé fechas como YYYY-MM-DD.\n\n';
-  const memCtx=_mem.length?('\n\nMEMORIA — lo que ya sé de la persona (usalo para personalizar y NO vuelvas a preguntar lo que ya está acá):\n- '+_mem.map(x=>x.t).join('\n- ')):'';
-  const memInstr='\n\nMEMORIA / APRENDIZAJE:\n- Si en el mensaje hay info DURADERA de la persona (preferencias, hábitos, restricciones de dieta, objetivos, días/horarios de entrenamiento, ingresos, fechas fijas, etc.), guardala vos mismo con [ACCION]{"op":"recordar","dato":"frase corta en 3ra persona","tag":"dieta|gym|finanzas|agenda|general"}[/ACCION].\n- Si te piden olvidar algo: [ACCION]{"op":"olvidar","dato":"texto a borrar"}[/ACCION].\n- NO guardes datos puntuales del día (un gasto suelto, un peso de hoy) como memoria; eso ya va a las acciones normales. Guardá solo lo que define a la persona a largo plazo.\n- No repitas en memoria algo que ya figura arriba.';
+  const memCtx=buildMemCtx(false);
+  const memInstr='\n\nMEMORIA / APRENDIZAJE:\n- Si en el mensaje hay info DURADERA de la persona (preferencias, hábitos, restricciones de dieta, objetivos, días/horarios de entrenamiento, ingresos, fechas fijas, etc.), guardala vos mismo con [ACCION]{"op":"recordar","dato":"frase corta en 3ra persona","tag":"dieta|gym|finanzas|agenda|general","importante":true|false}[/ACCION]. Poné importante:true SOLO para datos permanentes críticos (alergias, intolerancias, salud, lesiones, objetivos de fondo, familia); el resto false.\n- Si te piden olvidar algo: [ACCION]{"op":"olvidar","dato":"texto a borrar"}[/ACCION].\n- NO guardes datos puntuales del día (un gasto suelto, un peso de hoy) como memoria; eso ya va a las acciones normales. Guardá solo lo que define a la persona a largo plazo.\n- No repitas en memoria algo que ya figura arriba.';
   const prompt='Sos MARTIN·APP AI: asistente personal con control total de los datos.\n\n'+_hoy+dataCtx+memCtx+memInstr+'\n\nREGLAS:\n'+
     '- Respondé en español uruguayo, natural, amigable y con confianza. Como es por voz, sé breve y conversacional.\n'+
     '- Revisá los datos con cuidado. No inventes números.\n'+
@@ -4230,6 +5152,7 @@ async function interpretVoice(txt){
     '  * [ACCION]{"op":"gasto","cat":"id","v":monto,"desc":"...","f":"d/m"}[/ACCION]\n'+
     '  * [ACCION]{"op":"pago","cat":"id","m":mes,"y":año}[/ACCION]\n'+
     '  * [ACCION]{"op":"fijo","cat":"id","m":mes,"y":año,"v":monto}[/ACCION]\n'+
+    '- TARJETAS POR MES: para anotar lo pagado de una tarjeta en un mes, usá "fijo" con el id de la categoría de esa tarjeta (las que tienen tarjeta: en Categorías). Meses 0-11 (enero=0, abril=3, diciembre=11). Ej "1400 de OCA en abril" → fijo cat=<id OCA> m=3 y=<año> v=1400.\n'+
     '  * [ACCION]{"op":"evento","titulo":"...","fecha":"YYYY-MM-DD","hora":"HH:MM","recordatorio":15}[/ACCION]\n'+
     '  * [ACCION]{"op":"crear_rutina","name":"...","days":[...]}[/ACCION]\n'+
     '  * [ACCION]{"op":"responder","texto":"texto a decir en voz alta"}[/ACCION]\n'+
@@ -4520,26 +5443,24 @@ function applySeedIfNeeded(){
 }
 
 function loadUserData(){
-  routines=S.g('rt2',[]);activeRid=S.g('arid',null);sets=S.g('sets2',{});weights=S.g('wts2',{});gymHist=S.g('ghst2',[]);
-  gastos=S.g('gst4',[]);pagosFijos=S.g('pf4',{});pagosEstado=S.g('pe4',{});sueldos=S.g('sld4',{});
+  routines=S.g('rt2',[]);activeRid=S.g('arid',null);sets=S.g('sets2',{});weights=S.g('wts2',{});gymHist=S.g('ghst2',[]);cardioLog=S.g('cardio1',[]);
+  gastos=S.g('gst4',[]);pagosFijos=S.g('pf4',{});pagosEstado=S.g('pe4',{});sueldos=S.g('sld4',{});shopList=S.g('shop1',[]);
   cats=S.g('cats4',[]);
   // Migración: asegurar que la categoría ahorro tenga ahorro:true (datos viejos)
   const _aCat=cats.find(c=>c.id==='ahorro');
   if(_aCat&&!_aCat.ahorro){_aCat.ahorro=true;S.s('cats4',cats);}
   cards=S.g('cards1',[]);cpurch=S.g('cpurch1',[]);
-  // Migración: backfill startM/startY para compras viejas
-  let _cpurchChanged=false;
+  // Migración: compras viejas sin startM/startY → estimar mes de inicio de la 1ª cuota
+  let _cpMig=false;
   cpurch.forEach(p=>{
-    if(p.startM!==undefined||p.startY!==undefined)return;
-    const inst=p.installments||1;
-    const paid=Math.min(inst,Math.max(0,p.paidInstallments||1));
-    const offset=paid-1;
-    const totalM=p.addedM-offset;
-    p.startM=((totalM%12)+12)%12;
-    p.startY=p.addedY+Math.floor(totalM/12);
-    _cpurchChanged=true;
+    if(p.startM==null){
+      let sm=(p.addedM!=null?p.addedM:new Date().getMonth())-((p.paidInstallments||1)-1);
+      let sy=(p.addedY!=null?p.addedY:new Date().getFullYear());
+      sy+=Math.floor(sm/12);sm=((sm%12)+12)%12;
+      p.startM=sm;p.startY=sy;_cpMig=true;
+    }
   });
-  if(_cpurchChanged)S.s('cpurch1',cpurch);
+  if(_cpMig)S.s('cpurch1',cpurch);
   events=S.g('evts1',[]);
   gymProfile=S.g('gymProfile',{height:0,weight:0,experience:0});
   gymWeekLog=S.g('gymWeekLog',[]);
@@ -4566,8 +5487,8 @@ function onLoginSuccess(){
 function doLogout(){
   localStorage.removeItem(AUTH_SESSION);
   currentUser=null;
-  routines=[];activeRid=null;sets={};weights={};gymHist=[];
-  gastos=[];pagosFijos={};pagosEstado={};sueldos={};cats=[...DEFAULT_CATS];
+  routines=[];activeRid=null;sets={};weights={};gymHist=[];cardioLog=[];
+  gastos=[];pagosFijos={};pagosEstado={};sueldos={};cats=[...DEFAULT_CATS];shopList=[];
   cards=[];cpurch=[];events=[];
   gymProfile={height:0,weight:0,experience:0};
   gymWeekLog=[];activeWeekId=null;
@@ -4663,22 +5584,33 @@ const CARD_COLORS=['#3B7FFF','#FF3B4E','#00C48C','#FFB347','#A855F7','#22D3EE','
 
 // ── Helpers ──
 function getCardPurchs(cardId){return cpurch.filter(p=>p.cardId===cardId);}
-function pInstAmt(p){return p.installments>0?money(p.total/p.installments):money(p.total);}
+// instAmt = monto de la CUOTA tal como figura en el estado de cuenta (NO se divide).
+// Compras viejas sin instAmt: fallback al cálculo anterior (total/installments).
+function pInstAmt(p){return p.instAmt!=null?money(p.instAmt):(p.installments>0?money(p.total/p.installments):money(p.total));}
 function pRemaining(p){return Math.max(0,(p.installments||1)-(p.paidInstallments||0));}
+function pStartM(p){return p.startM!=null?p.startM:(p.addedM!=null?p.addedM:new Date().getMonth());}
+function pStartY(p){return p.startY!=null?p.startY:(p.addedY!=null?p.addedY:new Date().getFullYear());}
+// Mes/año en que cae la cuota kk (1-based) de una compra
+function instMonthYear(p,kk){let mm=pStartM(p)+(kk-1),yy=pStartY(p);yy+=Math.floor(mm/12);mm=((mm%12)+12)%12;return {m:mm,y:yy};}
 function getCardDebt(cardId){return sumMoney(getCardPurchs(cardId),p=>pInstAmt(p)*pRemaining(p));}
+// Suma de cuotas que VENCEN en (m,y). Cuenta también la última cuota (X==N). Sin m,y => mes actual.
 function getCardMonthAmt(cardId,m,y){
-  return sumMoney(getCardPurchs(cardId).filter(p=>{
-    const stM=p.startM!==undefined?p.startM:null;
-    const stY=p.startY!==undefined?p.startY:null;
-    if(stM===null||stY===null)return false;
-    for(let c=1;c<=p.installments&&c<=p.paidInstallments;c++){
-      const total=stM+(c-1);
-      const im=((total%12)+12)%12;
-      const iy=stY+Math.floor(total/12);
-      if(im===m&&iy===y)return true;
-    }
-    return false;
-  }),p=>pInstAmt(p));
+  if(m==null||y==null){const n=new Date();m=n.getMonth();y=n.getFullYear();}
+  let t=0;
+  getCardPurchs(cardId).forEach(p=>{
+    const N=p.installments||1;
+    for(let kk=1;kk<=N;kk++){const im=instMonthYear(p,kk);if(im.m===m&&im.y===y){t=money(t+pInstAmt(p));break;}}
+  });
+  return t;
+}
+// Items (compra + nº de cuota) que vencen en (m,y), para el desglose por mes
+function getCardItemsForMonth(cardId,m,y){
+  const r=[];
+  getCardPurchs(cardId).forEach(p=>{
+    const N=p.installments||1;
+    for(let kk=1;kk<=N;kk++){const im=instMonthYear(p,kk);if(im.m===m&&im.y===y){r.push({p,cuota:kk,N});break;}}
+  });
+  return r;
 }
 
 // ── TAB TARJETAS ──
@@ -4697,10 +5629,9 @@ function rTarjetas(){
   }
 
   let totDeuda=0,totMes=0;
-  const _nd=new Date(),_nm=_nd.getMonth(),_ny=_nd.getFullYear();
   cards.forEach(card=>{
     const debt=getCardDebt(card.id);
-    const mes=getCardMonthAmt(card.id,_nm,_ny);
+    const mes=getCardMonthAmt(card.id);
     const purchs=getCardPurchs(card.id);
     const active=purchs.filter(p=>pRemaining(p)>0).length;
     totDeuda+=debt;totMes+=mes;
@@ -4735,12 +5666,13 @@ function rTarjetas(){
 }
 
 // ── DETALLE DE TARJETA ──
-function openCardDetail(cardId){
+function openCardDetail(cardId,vm,vy){
   const card=cards.find(c=>c.id===cardId);if(!card)return;
   const purchs=getCardPurchs(cardId);
   const debt=getCardDebt(cardId);
-  const _nd2=new Date(),_nm2=_nd2.getMonth(),_ny2=_nd2.getFullYear();
-  const mes=getCardMonthAmt(cardId,_nm2,_ny2);
+  const hasMonth=(vm!=null&&vy!=null);
+  const _cardCatObj=cats.find(c=>c.cardRef===cardId);
+  const mes=hasMonth?(_cardCatObj?montoCat(_cardCatObj,vm,vy):getCardMonthAmt(cardId,vm,vy)):getCardMonthAmt(cardId);
   const gemKey=S.g('gemini_key','');
 
   // Cabecera
@@ -4750,8 +5682,51 @@ function openCardDetail(cardId){
   </div>
   <div class="stats s2" style="margin-bottom:18px">
     <div class="st"><div class="sv" style="color:var(--red)">${fmtFull(debt)}</div><div class="sl">Deuda total</div></div>
-    <div class="st"><div class="sv" style="color:${card.color}">${fmtFull(mes)}</div><div class="sl">Cuota este mes</div></div>
+    <div class="st"><div class="sv" style="color:${card.color}">${fmtFull(mes)}</div><div class="sl">${hasMonth?'Pagaste en '+MONTHS[vm]:'Cuota este mes'}</div></div>
   </div>`;
+
+  // ── Desglose del mes seleccionado (todo marcado como pagado) ──
+  if(hasMonth){
+    const items=getCardItemsForMonth(cardId,vm,vy);
+    h+=`<div class="sec-t">💳 ${MONTHS[vm]} ${vy} · qué pagaste</div>`;
+    if(!items.length){
+      if(mes>0){
+        h+=`<div style="display:flex;justify-content:space-between;align-items:baseline;padding:14px;background:var(--bg1);border:1px solid var(--border);border-radius:var(--r-sm);margin-bottom:14px">
+          <div style="font-size:12px;color:var(--text2);font-weight:700">Total pagado en ${MONTHS[vm]}</div>
+          <div style="font-family:var(--fm);font-size:18px;font-weight:800;color:${card.color}">${fmtFull(mes)}</div>
+        </div>
+        <div style="font-size:11px;color:var(--text3);margin:-6px 2px 14px">Sin desglose. Cargá el PDF con ✨ IA para ver cada compra.</div>`;
+      } else {
+        h+=`<div style="text-align:center;padding:22px 0;color:var(--text2);font-size:12px">No hay compras cargadas en este resumen.<br><span style="font-size:11px;color:var(--text3)">Usá ✨ IA para cargar el estado de cuenta de ${MONTHS[vm]}.</span></div>`;
+      }
+    } else {
+      let _itemsSum=0;
+      items.forEach(({p,cuota,N})=>{
+        _itemsSum=money(_itemsSum+pInstAmt(p));
+        h+=`<div style="background:var(--bg1);border:1px solid var(--border);border-radius:var(--r-sm);padding:13px;margin-bottom:8px">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div style="flex:1;min-width:0">
+              <div style="font-size:13px;font-weight:700">${esc(p.commerce)}</div>
+              <div style="font-size:10px;color:var(--text2);margin-top:3px">${p.category||'otro'} · cuota ${cuota}/${N} · <span style="color:var(--green)">✓ pagado</span></div>
+            </div>
+            <div style="font-family:var(--fm);font-size:14px;font-weight:700;flex-shrink:0;margin-left:12px">${fmtFull(pInstAmt(p))}</div>
+          </div>
+        </div>`;
+      });
+      const _otros=money(mes-_itemsSum);
+      if(_otros>2){
+        h+=`<div style="display:flex;justify-content:space-between;align-items:center;padding:11px 13px;background:var(--bg2);border:1px dashed var(--border2);border-radius:var(--r-sm);margin-bottom:8px">
+          <div style="font-size:12px;color:var(--text2)">Otros cargos (intereses, anualidad…)</div>
+          <div style="font-family:var(--fm);font-size:13px;font-weight:700;color:var(--text1)">${fmtFull(_otros)}</div>
+        </div>`;
+      }
+      h+=`<div style="display:flex;justify-content:space-between;align-items:baseline;padding:10px 4px 2px;border-top:1px solid var(--border);margin-bottom:14px">
+        <div style="font-size:12px;color:var(--text2);font-weight:700">Total pagado en ${MONTHS[vm]}</div>
+        <div style="font-family:var(--fm);font-size:16px;font-weight:800;color:${card.color}">${fmtFull(mes)}</div>
+      </div>`;
+    }
+    h+=`<div class="sec-t" style="margin-top:6px">Todas las compras de la tarjeta</div>`;
+  }
 
   // Desglose por categoría (solo cuotas activas)
   const catTotals={};
@@ -4877,7 +5852,9 @@ function doSavePurch(){
   if(!commerce){tst('Escribí el nombre del comercio');return;}
   if(!total){tst('Ingresá el monto total');return;}
   const now=new Date();
-  cpurch.push({id:uid(),cardId,commerce,total,installments,paidInstallments,category,date,addedM:now.getMonth(),addedY:now.getFullYear()});
+  let sm=now.getMonth()-paidInstallments,sy=now.getFullYear();
+  sy+=Math.floor(sm/12);sm=((sm%12)+12)%12;
+  cpurch.push({id:uid(),cardId,commerce,total,installments,paidInstallments,category,date,startM:sm,startY:sy,addedM:now.getMonth(),addedY:now.getFullYear()});
   S.s('cpurch1',cpurch);
   cOv2();tst(`✓ ${commerce} guardado`);
   openCardDetail(cardId);
@@ -4901,21 +5878,19 @@ function markInstPaid(id){
 
 // ── ANÁLISIS CON GEMINI ──
 function openAIAnalysis(cardId){
-  const _sn=new Date();
+  const now=new Date();
+  const _mOpts=MONTHS.map((nm,i)=>`<option value="${i}"${i===now.getMonth()?' selected':''}>${nm}</option>`).join('');
+  const _yNow=now.getFullYear();
+  const _yOpts=[_yNow,_yNow-1,_yNow-2].map(yy=>`<option value="${yy}"${yy===_yNow?' selected':''}>${yy}</option>`).join('');
   oOv2(`<div class="mt">✨ Analizar con Gemini</div>
   <input type="hidden" id="ai-card-id" value="${cardId}">
   <div style="background:linear-gradient(135deg,rgba(66,133,244,.08),rgba(124,58,237,.08));border:1px solid rgba(124,58,237,.25);border-radius:var(--r-sm);padding:14px;margin-bottom:18px;font-size:12px;color:var(--text1);line-height:1.7">
-    Subí una foto o PDF de tu estado de cuenta. Gemini extraerá automáticamente las compras, cuotas y categorías.<br>
-    <span style="color:var(--text2);font-size:11px">Revisá el resultado antes de confirmar.</span>
+    Subí una foto o PDF de tu estado de cuenta. Gemini extraerá las compras, cuotas y montos.<br>
+    <span style="color:var(--text2);font-size:11px">Elegí el mes del resumen para cargarlo en su lugar. Podés cargar resúmenes viejos.</span>
   </div>
-  <div style="display:flex;align-items:center;gap:6px;margin-bottom:14px;font-size:12px">
-    <span style="color:var(--text2);flex-shrink:0">Mes del resumen:</span>
-    <select id="stmt-month" style="flex:1;padding:6px 8px;border-radius:6px;border:1px solid var(--b2);background:var(--bg2);color:var(--text1);font-size:12px">
-      ${MONTHS.map((l,i)=>`<option value="${i}"${i===_sn.getMonth()?' selected':''}>${l}</option>`).join('')}
-    </select>
-    <select id="stmt-year" style="flex-shrink:0;padding:6px 8px;border-radius:6px;border:1px solid var(--b2);background:var(--bg2);color:var(--text1);font-size:12px">
-      ${[_sn.getFullYear()-2,_sn.getFullYear()-1,_sn.getFullYear(),_sn.getFullYear()+1].map(y=>`<option value="${y}"${y===_sn.getFullYear()?' selected':''}>${y}</option>`).join('')}
-    </select>
+  <div class="inp-r" style="margin-bottom:16px">
+    <div class="fld"><label>Mes del resumen</label><select class="inp" id="ai-stmt-m">${_mOpts}</select></div>
+    <div class="fld"><label>Año</label><select class="inp" id="ai-stmt-y">${_yOpts}</select></div>
   </div>
   <div class="fld" style="margin-bottom:20px">
     <label>Imagen o PDF del estado de cuenta</label>
@@ -4944,7 +5919,7 @@ async function runGeminiAnalysis(){
     });
 
     const resp=await fetch('https://generativelanguage.googleapis.com/v1beta/models/'+GEMINI_MODEL+':generateContent',{method:'POST',headers:{'Content-Type':'application/json','X-goog-api-key':key},body:JSON.stringify({contents:[{parts:[
-      {text:'Analizá este estado de cuenta de tarjeta de crédito. Extraé cada compra con: nombre del comercio, monto en pesos uruguayos, cantidad de cuotas totales y cuota actual que SE PAGA en este resumen. ATENCIÓN CON LOS MONTOS: en Uruguay el punto separa miles y la coma es decimal. Ej: "$ 1.500" = 1500, "$ 1.500,50" = 1500.50. Convertí a número JSON sin formato: 1500 en vez de 1.500, 1500.50 en vez de 1.500,50. Si dice 3/12 significa que la cuota actual (la que vence en este resumen) es la 3 de 12 totales; cuota_actual=3. Si dice 4/4 es la cuota 4 de 4 — se paga en este resumen, NO está saldada. NO marques cuota_actual=0 ni descartes compras donde cuota_actual == cuotas_totales. Categorizá cada compra en: nafta, supermercado, farmacia, restaurante, ropa, electrónica, servicios, entretenimiento, u otro. Respondé SOLO con un array JSON sin texto extra. Formato: [{"comercio":"...","monto":1500,"cuotas_totales":4,"cuota_actual":4,"categoria":"otro"}]'},
+      {text:'Analizá este estado de cuenta de tarjeta de crédito uruguaya. Para CADA compra extraé exactamente estos campos:\n- "comercio": nombre del comercio.\n- "cuota_monto": el MONTO DE LA CUOTA de ESTE resumen en pesos uruguayos. Es el importe que figura al lado de la compra, lo que se paga este mes. NO es el precio total del producto. Devolvé solo el número, sin símbolos ni puntos de miles.\n- "cuotas_totales": cantidad total de cuotas (la N en "X/N").\n- "cuota_actual": el número de cuota de este resumen (la X en "X/N"). IMPORTANTE: si dice 4/4 es la cuota 4 de 4, se paga en ESTE resumen, NO está saldada, contala igual. Nunca pongas 0 ni descartes una compra porque X==N.\n- "categoria": una de exactamente estas: nafta, supermercado, farmacia, restaurante, ropa, electrónica, servicios, entretenimiento, otro.\nAdemás extraé "total_a_pagar": el TOTAL A PAGAR de este resumen (el número final que el cliente debe pagar este mes, en pesos uruguayos, solo el número).\nRespondé SOLO con JSON, sin texto extra ni explicaciones, con esta forma EXACTA:\n{"total_a_pagar":0,"compras":[{"comercio":"","cuota_monto":0,"cuotas_totales":1,"cuota_actual":1,"categoria":"otro"}]}'},
       {inline_data:{mime_type:file.type,data:b64}}
     ]}]})});
 
@@ -4952,20 +5927,24 @@ async function runGeminiAnalysis(){
     const data=await resp.json();
     const text=data.candidates?.[0]?.content?.parts?.[0]?.text||'';
 
-    // Extraer JSON del texto (puede venir entre ```json ... ```)
-    const jsonMatch=text.match(/\[[\s\S]*?\]/);
-    if(!jsonMatch)throw new Error('Gemini no devolvió un JSON válido. Intentá con una imagen más clara.');
-    const purchases=JSON.parse(jsonMatch[0]);
-    if(!Array.isArray(purchases)||!purchases.length)throw new Error('No se detectaron compras en el documento.');
-    // Normalizar montos en formato uruguayo (1.500 → 1500, 1.500,50 → 1500.50)
-    purchases.forEach(p=>{
-      if(typeof p.monto==='string')p.monto=parseFloat(p.monto.replace(/\./g,'').replace(',','.'))||0;
-      if(typeof p.cuotas_totales==='string')p.cuotas_totales=parseInt(p.cuotas_totales.replace(/\./g,''))||1;
-      if(typeof p.cuota_actual==='string')p.cuota_actual=parseInt(p.cuota_actual.replace(/\./g,''))||0;
-    });
+    // Parsear: objeto {total_a_pagar, compras:[...]} o, por compatibilidad, un array suelto
+    let purchases=[],declaredTotal=0;
+    const objMatch=text.match(/\{[\s\S]*\}/);
+    const arrMatch=text.match(/\[[\s\S]*\]/);
+    if(objMatch){
+      const parsed=JSON.parse(objMatch[0]);
+      purchases=parsed.compras||parsed.purchases||[];
+      declaredTotal=+parsed.total_a_pagar||+parsed.total||0;
+    } else if(arrMatch){
+      purchases=JSON.parse(arrMatch[0]);
+    }
+    if(!Array.isArray(purchases)||!purchases.length)throw new Error('No se detectaron compras en el documento. Probá con una imagen más clara.');
 
     window._aiPurchases=purchases;
+    window._aiDeclaredTotal=declaredTotal;
     window._aiCardId=document.getElementById('ai-card-id')?.value;
+    window._aiStmtM=parseInt(document.getElementById('ai-stmt-m')?.value);
+    window._aiStmtY=parseInt(document.getElementById('ai-stmt-y')?.value);
     renderAIResults(purchases);
 
   }catch(e){
@@ -4974,18 +5953,48 @@ async function runGeminiAnalysis(){
 }
 
 function renderAIResults(purchases){
-  let h=`<div class="sec-t" style="margin-top:4px">${purchases.length} compras detectadas · Revisá antes de guardar</div>`;
+  const stmtM=window._aiStmtM,stmtY=window._aiStmtY;
+  const sum=money(purchases.reduce((a,p)=>a+(+p.cuota_monto||+p.monto||0),0));
+  const decl=money(window._aiDeclaredTotal||0);
+  const diff=money(Math.abs(sum-decl));
+  const ok=decl>0&&diff<=2; // tolerancia de $2 por redondeo
+  const mesLbl=(stmtM!=null&&!isNaN(stmtM))?`${MONTHS[stmtM]} ${stmtY}`:'';
+
+  let h=`<div class="sec-t" style="margin-top:4px">${purchases.length} compras · resumen de ${esc(mesLbl)}</div>`;
+
+  // Tarjeta de validación: suma de cuotas vs total del PDF
+  if(decl>0){
+    h+=`<div style="background:${ok?'rgba(34,197,94,.10)':'rgba(239,68,68,.10)'};border:1px solid ${ok?'var(--green)':'var(--red)'}44;border-radius:var(--r-sm);padding:13px;margin-bottom:12px">
+      <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px">
+        <span style="font-size:12px;color:var(--text2)">Suma de las cuotas</span>
+        <span style="font-family:var(--fm);font-size:13px;font-weight:700">${fmtFull(sum)}</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:baseline">
+        <span style="font-size:12px;color:var(--text2)">Total a pagar del PDF</span>
+        <span style="font-family:var(--fm);font-size:13px;font-weight:700">${fmtFull(decl)}</span>
+      </div>
+      <div style="margin-top:8px;font-size:12px;font-weight:700;color:${ok?'var(--green)':'var(--red)'}">
+        ${ok?'✓ Coincide exacto con el resumen':'⚠️ No coincide · diferencia '+fmtFull(diff)+'. Revisá los montos antes de guardar.'}
+      </div>
+    </div>`;
+  } else {
+    h+=`<div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--r-sm);padding:11px;margin-bottom:12px;font-size:12px;color:var(--text2)">Suma de las cuotas: <b style="color:var(--text0)">${fmtFull(sum)}</b><br><span style="font-size:11px">No se detectó el "total a pagar" del PDF para comparar.</span></div>`;
+  }
+
   purchases.forEach((p,i)=>{
     const cuotas=p.cuotas_totales||1;
-    const pagadas=p.cuota_actual||0;
+    const actual=p.cuota_actual||1;
+    const cuotaMonto=+p.cuota_monto||+p.monto||0;
     h+=`<div class="crd" style="margin-bottom:8px">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:7px">
         <div style="flex:1;font-size:13px;font-weight:700;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(p.comercio||'Sin nombre')}</div>
-        <div style="font-family:var(--fm);font-size:13px;font-weight:700;flex-shrink:0;margin-left:10px">${fmtFull(p.monto||0)}</div>
+        <div style="text-align:right;flex-shrink:0;margin-left:10px">
+          <div style="font-family:var(--fm);font-size:13px;font-weight:700">${fmtFull(cuotaMonto)}</div>
+          <div style="font-size:9px;color:var(--text2)">cuota</div>
+        </div>
       </div>
       <div style="display:flex;gap:6px;flex-wrap:wrap">
-        <span class="chip" style="background:var(--bg3);color:var(--text2)">${cuotas} cuota${cuotas!==1?'s':''}</span>
-        <span class="chip" style="background:var(--bg3);color:var(--text2)">pagadas: ${pagadas}</span>
+        <span class="chip" style="background:var(--bg3);color:var(--text2)">cuota ${actual}/${cuotas}</span>
         <span class="chip" style="background:var(--blue-d);color:var(--blue);border:1px solid var(--blue-b)">${p.categoria||'otro'}</span>
       </div>
     </div>`;
@@ -4999,37 +6008,48 @@ function confirmAIPurchases(){
   const purchases=window._aiPurchases;
   if(!cardId||!purchases?.length)return;
   const now=new Date();
-  const f=`${String(now.getDate()).padStart(2,'0')}/${String(now.getMonth()+1).padStart(2,'0')}`;
-  const stmtSelM=document.getElementById('stmt-month');
-  const stmtSelY=document.getElementById('stmt-year');
-  const stmtM=stmtSelM?parseInt(stmtSelM.value):now.getMonth();
-  const stmtY=stmtSelY?parseInt(stmtSelY.value):now.getFullYear();
-  let added=0,omitidas=0;
+  // Mes/año del resumen elegido por el usuario (si no, mes actual)
+  let stmtM=window._aiStmtM,stmtY=window._aiStmtY;
+  if(stmtM==null||isNaN(stmtM))stmtM=now.getMonth();
+  if(stmtY==null||isNaN(stmtY))stmtY=now.getFullYear();
+  const f=`${MONTHS[stmtM]} ${stmtY}`;
+
+  let nuevas=0,actualizadas=0;
   purchases.forEach(p=>{
-    const inst=Math.max(1,p.cuotas_totales||1);
-    const paid=Math.min(inst,Math.max(0,p.cuota_actual||0));
-    const startOffset=paid-1;
-    const totalM=stmtM-startOffset;
-    const startM=((totalM%12)+12)%12;
-    const startY=stmtY+Math.floor(totalM/12);
-    const commerce=(p.comercio||'Sin nombre').trim();
-    const monto=p.monto||0;
-    // Dedup: misma tarjeta + mismo comercio + mismo monto
-    const existing=cpurch.find(x=>x.cardId===cardId&&x.commerce.toLowerCase()===commerce.toLowerCase()&&x.total===monto);
-    if(existing){
-      existing.paidInstallments=Math.max(existing.paidInstallments,paid);
-      existing.installments=Math.max(existing.installments,inst);
-      existing.startM=startM;existing.startY=startY;
-      omitidas++;
-    }else{
-      cpurch.push({id:uid(),cardId,commerce,total:monto,installments:inst,paidInstallments:paid,category:p.categoria||'otro',date:f,addedM:now.getMonth(),addedY:now.getFullYear(),startM,startY});
-      added++;
+    const inst=Math.max(1,parseInt(p.cuotas_totales)||1);
+    const actual=Math.min(inst,Math.max(1,parseInt(p.cuota_actual)||1));
+    const cuotaMonto=money(+p.cuota_monto||+p.monto||0);
+    const commerce=p.comercio||'Sin nombre';
+    // Mes/año en que cae la 1ª cuota = mes del resumen - (cuota_actual - 1)
+    let sm=stmtM-(actual-1),sy=stmtY;
+    sy+=Math.floor(sm/12);sm=((sm%12)+12)%12;
+    // Dedup: misma compra si coincide comercio (normalizado) + cuotas totales + mes de inicio
+    const ex=cpurch.find(x=>x.cardId===cardId&&(x.installments||1)===inst&&x.startM===sm&&x.startY===sy&&normStr(x.commerce)===normStr(commerce));
+    if(ex){
+      ex.paidInstallments=Math.max(ex.paidInstallments||0,actual); // avanzar, nunca retroceder
+      ex.instAmt=cuotaMonto;
+      ex.total=money(cuotaMonto*inst);
+      if(p.categoria)ex.category=p.categoria;
+      actualizadas++;
+    } else {
+      cpurch.push({id:uid(),cardId,commerce,instAmt:cuotaMonto,total:money(cuotaMonto*inst),installments:inst,paidInstallments:actual,category:p.categoria||'otro',date:f,startM:sm,startY:sy,addedM:now.getMonth(),addedY:now.getFullYear()});
+      nuevas++;
     }
   });
   S.s('cpurch1',cpurch);
-  const txt=`✓ ${added} compra${added!==1?'s':''} guardada${added!==1?'s':''}`+(omitidas?`, ${omitidas} omitida${omitidas!==1?'s':''} (ya existente${omitidas!==1?'s':''})`:'');
-  cOv2();tst(txt);
-  openCardDetail(cardId);
+  // El total del mes de ESTA tarjeta = total a pagar del resumen (lo que figura en el PDF).
+  // Se guarda como override del mes para que aparezca exacto en los gastos de ese mes.
+  const _cardCat=cats.find(c=>c.cardRef===cardId);
+  if(_cardCat){
+    const _sumItems=money(purchases.reduce((a,p)=>a+money(+p.cuota_monto||+p.monto||0),0));
+    const _decl=money(window._aiDeclaredTotal||0);
+    pagosFijos[k(_cardCat.id,stmtM,stmtY)]=_decl>0?_decl:_sumItems;
+    S.s('pf4',pagosFijos);
+  }
+  cOv2();
+  tst(`✓ ${nuevas} nueva${nuevas!==1?'s':''}, ${actualizadas} actualizada${actualizadas!==1?'s':''} en ${MONTHS[stmtM]}`);
+  renderGastos();
+  openCardDetail(cardId,stmtM,stmtY);
 }
 
 function exportData(){
@@ -5166,7 +6186,8 @@ function openMemoria(){
       h+=`<div style="margin-bottom:8px">
         <div style="font-size:12px;font-weight:700;color:${m.color};margin-bottom:4px">${m.emoji} ${m.label}</div>`;
       items.forEach(x=>{
-        h+=`<div style="display:flex;align-items:flex-start;gap:8px;padding:6px 8px;border-radius:6px;background:var(--bg3);margin-bottom:3px">
+        h+=`<div style="display:flex;align-items:flex-start;gap:8px;padding:6px 8px;border-radius:6px;background:var(--bg3);margin-bottom:3px${x.imp?';border:1px solid var(--gold-b)':''}">
+          <button class="btn b-xs" onclick="toggleImpMem(${x.ts})" title="Marcar importante" style="font-size:12px;flex-shrink:0;padding:2px 4px;color:${x.imp?'var(--gold)':'var(--text3)'}">${x.imp?'★':'☆'}</button>
           <div style="flex:1;font-size:12px;color:var(--text1);line-height:1.5">${esc(x.t)}</div>
           <button class="btn b-xs b-g" onclick="eliminarMemoria(${x.ts})" style="font-size:10px;color:var(--red);flex-shrink:0">🗑</button>
         </div>`;
@@ -5195,6 +6216,11 @@ function openMemoria(){
     if(idx>=0)mem.splice(idx,1);
     S.s('userMem1',mem);
     renderMem();
+  };
+  window.toggleImpMem=function(ts){
+    const mem=S.g('userMem1',[]);
+    const it=mem.find(x=>x.ts===ts);
+    if(it){it.imp=!it.imp;S.s('userMem1',mem);renderMem();}
   };
 }
 initAuth();
