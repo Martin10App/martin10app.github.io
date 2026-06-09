@@ -50,6 +50,15 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
 
 .pg{display:none;min-height:100%;padding-bottom:24px}
 .pg.on{display:block;animation:fi .25s ease}
+#scr.no-scroll {
+  overflow: hidden !important;
+}
+#pg-chat.on, #pg-coach.on {
+  display: flex !important;
+  flex-direction: column;
+  height: 100% !important;
+  padding-bottom: 0 !important;
+}
 @keyframes fi{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
 
 .ph{position:sticky;top:0;z-index:50;background:rgba(10,11,17,.82);backdrop-filter:blur(28px) saturate(180%);-webkit-backdrop-filter:blur(28px) saturate(180%);border-bottom:1px solid var(--border);padding:18px 20px 0}
@@ -422,7 +431,7 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
     </div>
     <div id="chat-ph-bar" style="padding:10px 20px 0"></div>
   </div>
-  <div id="chat-b" style="display:flex;flex-direction:column;height:calc(100dvh - 180px)"></div>
+  <div id="chat-b" style="display:flex;flex-direction:column;flex:1;min-height:0"></div>
 </div>
 
 <div class="pg" id="pg-coach">
@@ -436,7 +445,7 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
     </div>
     <div id="coach-ph-bar" style="padding:10px 20px 0"></div>
   </div>
-  <div id="coach-b" style="display:flex;flex-direction:column;height:calc(100dvh - 180px)"></div>
+  <div id="coach-b" style="display:flex;flex-direction:column;flex:1;min-height:0"></div>
 </div>
 
 </div>
@@ -699,6 +708,16 @@ function page(p){
   document.getElementById('pg-'+p).classList.add('on');
   document.getElementById('nb-'+p).classList.add('on');
   document.getElementById('scr').scrollTop=0;
+  
+  const scr = document.getElementById('scr');
+  if (scr) {
+    if (p === 'chat' || p === 'coach') {
+      scr.classList.add('no-scroll');
+    } else {
+      scr.classList.remove('no-scroll');
+    }
+  }
+
   if(p==='gym')renderGym();else if(p==='agenda')renderAgenda();else if(p==='chat')renderChat();else if(p==='coach')renderCoach();else renderGastos();
   const mic=document.getElementById('mic-btn');
   if(mic)mic.style.display=(p==='chat'||p==='coach')?'none':'flex';
@@ -3810,7 +3829,7 @@ async function sendChat(){
       const visible=acc.split('[ACCION')[0];
       if(bubble){
         bubble.innerHTML=_mdBold(visible)+'<span class="ai-caret">▍</span>';
-        const cont=document.querySelector('#chat-b > div:first-child');
+        const cont=document.getElementById('cx-msgs');
         if(cont)cont.scrollTop=cont.scrollHeight;
       }
     });
@@ -3839,7 +3858,9 @@ async function sendChat(){
   }catch(e){
     stopThinking();
     _voiceSent=false;
-    tst('⚠️ Error: '+e.message,4000);
+    const prov=aiProvider(), key=aiKey();
+    const maskedKey=key? (key.length>8? key.slice(0,4)+'...'+key.slice(-4) : key) : 'vacía';
+    tst('⚠️ Error ('+AI_PROVIDERS[prov].label+', key: '+maskedKey+'): '+e.message,6000);
     chatHist.pop(); // saca la burbuja vacía
     saveChat();
   }
@@ -4137,7 +4158,7 @@ async function coachStream(userMsg){
     const full=await _geminiStream(coachPrompt(userMsg, _voiceSent),key,(chunk,acc)=>{
       stopThinking();
       const visible=acc.split('[ACCION')[0];
-      if(bubble){bubble.innerHTML=_mdBold(visible)+'<span class="ai-caret">▍</span>';const cont=document.querySelector('#coach-b > div:first-child');if(cont)cont.scrollTop=cont.scrollHeight;}
+      if(bubble){bubble.innerHTML=_mdBold(visible)+'<span class="ai-caret">▍</span>';const cont=document.getElementById('coach-msgs');if(cont)cont.scrollTop=cont.scrollHeight;}
     });
     let reply=full;
     const actionRegex=/\[ACCION\]([\s\S]*?)\[\/ACCION\]/g;
@@ -4152,7 +4173,11 @@ async function coachStream(userMsg){
     if(_voiceSent){_voiceSent=false;const clean=reply.replace(/[✅•⚠️📅📊💪🔴🟢🌱]/g,'').replace(/\*\*(.+?)\*\*/g,'$1').replace(/\n/g,' ').trim();speak(clean.slice(0,300));}
   }catch(e){
     stopThinking();
-    _voiceSent=false;tst('⚠️ Error: '+e.message,4000);coachHist.pop();saveCoach();
+    _voiceSent=false;
+    const prov=aiProvider(), key=aiKey();
+    const maskedKey=key? (key.length>8? key.slice(0,4)+'...'+key.slice(-4) : key) : 'vacía';
+    tst('⚠️ Error ('+AI_PROVIDERS[prov].label+', key: '+maskedKey+'): '+e.message,6000);
+    coachHist.pop();saveCoach();
   }
   stopThinking();
   renderCoach();
@@ -4741,7 +4766,9 @@ Estructurá el reporte con:
       <button class="btn b-lg b-g" onclick="cOv1()" style="width:100%;margin-top:16px;">Entendido</button>
     </div>`);
   } catch(e) {
-    tst('❌ Error al generar análisis: ' + e.message, 5000);
+    const prov=aiProvider(), key=aiKey();
+    const maskedKey=key? (key.length>8? key.slice(0,4)+'...'+key.slice(-4) : key) : 'vacía';
+    tst('❌ Error ('+AI_PROVIDERS[prov].label+', key: '+maskedKey+'): '+(e.message||String(e)).slice(0,140),7000);
     cOv1();
   }
 }
@@ -4937,8 +4964,10 @@ async function testGeminiKey(){
     await _aiComplete('Respondé solo con la palabra: ok');
     tst('✅ '+AI_PROVIDERS[prov].label+' responde correctamente',4000);
   }catch(e){
+    const key=aiKey();
+    const maskedKey=key? (key.length>8? key.slice(0,4)+'...'+key.slice(-4) : key) : 'vacía';
     const m=(e&&e.message?e.message:String(e)).slice(0,140);
-    tst('❌ Error '+((e&&e.status)||'')+': '+m,6000);
+    tst('❌ Error ('+AI_PROVIDERS[prov].label+', key: '+maskedKey+'): '+m,7000);
   }
   if(btn){btn.textContent='🔍 Probar conexión';btn.disabled=false;}
 }
@@ -4970,6 +4999,168 @@ function startVoiceChat(){
 // ══════════════════════════════════════════
 // IMPORTACIÓN DE EXCEL
 // ══════════════════════════════════════════
+function parseCSV(text) {
+  return text.split(/\r?\n/).map(line => {
+    if (!line.trim()) return null;
+    let separator = ',';
+    if (line.includes('\t')) separator = '\t';
+    else if (line.includes(';')) separator = ';';
+    const result = [];
+    let current = '';
+    let inQuotes = false;
+    for (let i = 0; i < line.length; i++) {
+      const char = line[i];
+      if (char === '"' || char === "'") {
+        inQuotes = !inQuotes;
+      } else if (char === separator && !inQuotes) {
+        result.push(current.trim());
+        current = '';
+      } else {
+        current += char;
+      }
+    }
+    result.push(current.trim());
+    return result;
+  }).filter(r => r !== null && r.length > 0);
+}
+
+function parseAllExpensesLocally(allRows, mapping, existingCats) {
+  const gastos = [];
+  const catsMap = Object.assign({}, mapping.cats_map || {});
+  const catsList = [...existingCats];
+  
+  // Agregar categorías nuevas si no existen por nombre
+  const newCats = [];
+  if (mapping.cats_nuevas && mapping.cats_nuevas.length) {
+    mapping.cats_nuevas.forEach((nc, i) => {
+      const exists = existingCats.some(x => x.n.toLowerCase() === nc.n.toLowerCase());
+      if (!exists) {
+        const newId = 'cat_' + Date.now().toString(36) + i;
+        newCats.push({id: newId, n: nc.n, c: nc.c || '#6366F1', base: +nc.base || 0});
+        catsMap[nc.n.toLowerCase()] = newId;
+      }
+    });
+    catsList.push(...newCats);
+  }
+  
+  const findCatId = (val) => {
+    if (!val) return catsList[0]?.id;
+    const cleanVal = val.toString().trim().toLowerCase();
+    if (catsMap[cleanVal]) return catsMap[cleanVal];
+    const found = catsList.find(c => c.n.toLowerCase() === cleanVal);
+    if (found) return found.id;
+    return catsList[0]?.id || 'cat_default';
+  };
+
+  let maxId = 0;
+  const now = new Date();
+  
+  // Ignorar cabecera si no es numérica la columna de monto
+  let startRow = 0;
+  if (allRows.length > 1) {
+    const val0 = allRows[0]?.[mapping.col_monto];
+    const val1 = allRows[1]?.[mapping.col_monto];
+    if (isNaN(parseFloat(val0)) && !isNaN(parseFloat(val1))) {
+      startRow = 1;
+    }
+  }
+  
+  for (let i = startRow; i < allRows.length; i++) {
+    const row = allRows[i];
+    if (!row || row.length <= Math.max(mapping.col_monto, 0)) continue;
+    
+    let valStr = row[mapping.col_monto];
+    if (valStr === undefined || valStr === null || valStr === '') continue;
+    
+    let val = 0;
+    if (typeof valStr === 'number') {
+      val = valStr;
+    } else {
+      let cleanStr = valStr.toString().replace(/[^0-9.,-]/g, '');
+      if (cleanStr.includes(',') && cleanStr.includes('.')) {
+        if (cleanStr.indexOf('.') < cleanStr.indexOf(',')) {
+          cleanStr = cleanStr.replace(/\./g, '').replace(',', '.');
+        } else {
+          cleanStr = cleanStr.replace(/,/g, '');
+        }
+      } else if (cleanStr.includes(',')) {
+        const parts = cleanStr.split(',');
+        if (parts[1] && parts[1].length === 3) {
+          cleanStr = cleanStr.replace(/,/g, '');
+        } else {
+          cleanStr = cleanStr.replace(',', '.');
+        }
+      }
+      val = parseFloat(cleanStr) || 0;
+    }
+    if (!val) continue;
+    
+    let desc = '';
+    if (mapping.col_desc !== undefined && mapping.col_desc !== -1 && row[mapping.col_desc] !== undefined) {
+      desc = row[mapping.col_desc].toString().trim();
+    }
+    
+    let catVal = '';
+    if (mapping.col_cat !== undefined && mapping.col_cat !== -1 && row[mapping.col_cat] !== undefined) {
+      catVal = row[mapping.col_cat].toString().trim();
+    }
+    const catId = findCatId(catVal);
+    
+    let d = now.getDate();
+    let m = now.getMonth();
+    let y = now.getFullYear();
+    
+    if (mapping.col_fecha !== undefined && mapping.col_fecha !== -1 && row[mapping.col_fecha] !== undefined && row[mapping.col_fecha] !== '') {
+      const rawDate = row[mapping.col_fecha];
+      if (typeof rawDate === 'number') {
+        const dateObj = new Date((rawDate - 25569) * 86400 * 1000);
+        if (!isNaN(dateObj.getTime())) {
+          d = dateObj.getDate();
+          m = dateObj.getMonth();
+          y = dateObj.getFullYear();
+        }
+      } else {
+        const dateStr = rawDate.toString().trim();
+        const matchYMD = dateStr.match(/^(\d{4})[-/](\d{1,2})[-/](\d{1,2})/);
+        const matchDMY = dateStr.match(/^(\d{1,2})[-/](\d{1,2})[-/](\d{4})/);
+        const matchShort = dateStr.match(/^(\d{1,2})[-/](\d{1,2})/);
+        
+        if (matchYMD) {
+          y = parseInt(matchYMD[1]);
+          m = parseInt(matchYMD[2]) - 1;
+          d = parseInt(matchYMD[3]);
+        } else if (matchDMY) {
+          d = parseInt(matchDMY[1]);
+          m = parseInt(matchDMY[2]) - 1;
+          y = parseInt(matchDMY[3]);
+        } else if (matchShort) {
+          d = parseInt(matchShort[1]);
+          m = parseInt(matchShort[2]) - 1;
+        }
+      }
+    }
+    
+    maxId++;
+    gastos.push({
+      _id: maxId,
+      c: catId,
+      v: Math.abs(val),
+      desc: desc || (catVal ? catVal : 'Gasto importado'),
+      m,
+      y,
+      f: `${d}/${m+1}`
+    });
+  }
+
+  return {
+    tipo: 'gastos',
+    cats: catsList,
+    pagosFijos: {},
+    gastos,
+    pagosEstado: {}
+  };
+}
+
 async function handleExcelImport(files){
   if(!files||!files.length)return;
   const file=files[0];
@@ -4981,55 +5172,75 @@ async function handleExcelImport(files){
   const key=aiKey();
   if(!key){tst('⚠️ Configurá tu API Key de Gemini');return;}
   try{
-    // 1) Leer el archivo a texto tabular
-    let data;
+    // 1) Leer el archivo completo a filas en memoria
+    let allRows = [];
     if(file.name.endsWith('.csv')){
-      data=await file.text();
+      const text = await file.text();
+      allRows = parseCSV(text);
     } else {
       const buf=await file.arrayBuffer();
       const wb=XLSX.read(buf,{type:'array'});
-      const sheets=wb.SheetNames.map(n=>XLSX.utils.sheet_to_json(wb.Sheets[n],{header:1,defval:''})).map((rows,i)=>({name:wb.SheetNames[i],rows}));
-      data=sheets.map(s=>`--- ${s.name} ---\n`+s.rows.map(r=>r.join('\t')).join('\n')).join('\n\n');
+      const sheetName = wb.SheetNames[0];
+      const sheet = wb.Sheets[sheetName];
+      allRows = XLSX.utils.sheet_to_json(sheet, {header:1, defval:''});
     }
-    const MAX_CHARS=60000;
-    if(data.length>MAX_CHARS){tst(`⚠️ Archivo muy grande (${(data.length/1024).toFixed(0)}KB), máximo ${(MAX_CHARS/1024).toFixed(0)}KB`,4000);return;}
+
+    if(!allRows.length){tst('⚠️ El archivo está vacío',3000);return;}
 
     chatHist.push({role:'user',text:`📄 Analizá este archivo: ${esc(file.name)}`});
     saveChat();
     renderChat();
 
-    // 2) Prompt que CLASIFICA y devuelve la estructura correcta
-    const prompt=`Sos un asistente que importa datos a una app personal. Te paso el contenido de un archivo (Excel/CSV) en formato tabla.
-Decidí qué tipo de datos contiene y devolvé SOLO un objeto JSON válido, sin texto extra ni bloques de código.
+    // 2) Obtener muestra y preparar el prompt para que Gemini clasifique y devuelva la estructura de mapeo
+    const previewRows = allRows.slice(0, 20);
+    const dataPreview = previewRows.map(r => r.join('\t')).join('\n');
+    const currentCats = cats.map(c => ({id: c.id, n: c.n}));
 
-TIPOS POSIBLES:
+    const prompt=`Analizá las siguientes primeras filas de un archivo (Excel/CSV) en formato tabla.
+Determina si contiene gastos/finanzas, una rutina de gimnasio, o un plan de dieta.
 
-1) GASTOS / finanzas → {
-  "tipo":"gastos",
-  "cats":[{"id":"cat_0","n":"Nombre categoría","c":"#hex","base":0}],
-  "pagosFijos":{"catId_mes_anio": monto},
-  "gastos":[{"_id":1,"c":"catId","v":monto,"desc":"...","m":mes(0-11),"y":anio,"f":"dia/mes"}],
-  "pagosEstado":{"catId_mes_anio": true}
+Filas de muestra:
+${dataPreview}
+
+Categorías de gastos existentes en la app:
+${JSON.stringify(currentCats)}
+
+Responde ÚNICAMENTE con un JSON válido que tenga esta estructura según corresponda, sin texto extra ni bloques de código (no agregues \`\`\`json ni nada, solo el objeto raw):
+
+1) Si son GASTOS o transacciones financieras:
+{
+  "tipo": "gastos",
+  "col_fecha": <índice de columna de fecha (0-based) o -1 si no hay>,
+  "col_desc": <índice de columna de descripción/detalle (0-based) o -1 si no hay>,
+  "col_monto": <índice de columna de monto/valor (0-based)>,
+  "col_cat": <índice de columna de categoría (0-based) o -1 si no hay>,
+  "cats_map": {
+    "nombre_categoria_en_excel": "id_categoria_existente"
+  },
+  "cats_nuevas": [
+    {"n": "Nombre Categoría Nueva", "c": "#ColorHex", "base": 0}
+  ]
 }
-- Identificá categorías de los encabezados/datos, colores variados. _id secuencial. m=0-11 (Enero=0). f="d/m".
-- Si un gasto se repite todos los meses con igual monto → entrada en pagosFijos. pagosEstado:true si la fecha es anterior al mes actual.
+Nota para gastos: Determina cuál columna representa el valor/monto, cuál la fecha, cuál el detalle y cuál la categoría. Mapeá los nombres de categorías encontrados en el excel a los IDs de las categorías existentes de la app en "cats_map". Si hay categorías en el excel que no encajan en las existentes, agrégalas en "cats_nuevas" (asígnales un color hex variado y base 0).
 
-2) RUTINA de gimnasio → {
-  "tipo":"rutina",
-  "name":"Nombre de la rutina",
-  "days":[{"label":"Día 1 - Pecho","exercises":[{"name":"Press banca","muscle":"Pecho","series":4,"reps":"10"}]}]
-}
-- muscle DEBE ser uno de: Pecho, Espalda, Hombros, Bíceps, Tríceps, Cuádriceps, Femoral, Gemelos, Abdomen.
-
-3) DIETA / plan de comidas → {
-  "tipo":"dieta",
-  "comidas":[{"momento":"Desayuno","comida":"descripción","calorias":0,"proteinas":0}]
+2) Si es una RUTINA de gimnasio:
+{
+  "tipo": "rutina",
+  "name": "Nombre de la rutina",
+  "days": [{"label": "Día 1 - Pecho", "exercises": [{"name": "Press banca", "muscle": "Pecho", "series": 4, "reps": "10"}]}]
 }
 
-4) Si no entendés o hay muy pocos datos → {"tipo":"error","error":"mensaje breve"}
+3) Si es una DIETA / plan de comidas:
+{
+  "tipo": "dieta",
+  "comidas": [{"momento": "Desayuno", "comida": "descripción", "calorias": 0, "proteinas": 0}]
+}
 
-DATOS DEL ARCHIVO:
-`+data.slice(0,50000);
+4) Si no coincide con ninguno:
+{
+  "tipo": "error",
+  "error": "Explicación de por qué no se pudo interpretar"
+}`;
 
     const res=await _gemini(prompt,key);
     if(!res.ok){const e=await res.text().catch(()=>'');tst('⚠️ Gemini: '+res.status+' '+e.slice(0,80),4000);chatHist.pop();saveChat();renderChat();return;}
@@ -5049,12 +5260,14 @@ DATOS DEL ARCHIVO:
     }
 
     if(tipo==='gastos'){
-      const nCats=obj.cats?.length||0, nGastos=obj.gastos?.length||0, nPF=Object.keys(obj.pagosFijos||{}).length;
-      const years=[...new Set((obj.gastos||[]).map(g=>g.y).filter(Boolean))].sort();
-      chatHist[chatHist.length-1]={role:'user',text:`📄 ${esc(file.name)}: ${nCats} categorías, ${nGastos} gastos, ${nPF} fijos. Años: ${years.join(', ')||'—'}`};
-      chatHist.push({role:'assistant',text:`📊 **Gastos detectados**\n\nEncontré **${nCats} categorías**, **${nGastos} movimientos** y **${nPF} pagos fijos** (${years.join(', ')||'—'}).\n\nUsá el botón de abajo para importar. Se **fusiona** con lo que ya tenés.\n\n⚠️ Revisá antes de confirmar.`});
+      // Procesar todas las filas localmente
+      const parsedObj = parseAllExpensesLocally(allRows, obj, cats);
+      const nCats=parsedObj.cats?.length||0, nGastos=parsedObj.gastos?.length||0;
+      const years=[...new Set((parsedObj.gastos||[]).map(g=>g.y).filter(Boolean))].sort();
+      chatHist[chatHist.length-1]={role:'user',text:`📄 ${esc(file.name)}: ${nCats} categorías, ${nGastos} gastos. Años: ${years.join(', ')||'—'}`};
+      chatHist.push({role:'assistant',text:`📊 **Gastos detectados**\n\nEncontré **${nCats} categorías** y **${nGastos} movimientos** (&Aacute;reas/años: ${years.join(', ')||'—'}) procesando el archivo completo localmente.\n\nUsá el botón de abajo para importar. Se **fusiona** con lo que ya tenés.\n\n⚠️ Revisá antes de confirmar.`});
       saveChat();
-      _pendingImport=obj; // mismo mecanismo de siempre → renderChat dibuja los botones
+      _pendingImport=parsedObj; // Guardar el objeto analizado completo para la confirmación
       renderChat();
       return;
     }
