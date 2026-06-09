@@ -6052,7 +6052,7 @@ function confirmAIPurchases(){
   openCardDetail(cardId,stmtM,stmtY);
 }
 
-function exportData(){
+async function exportData(){
   try{
     const data={};
     for(let i=0;i<localStorage.length;i++){
@@ -6060,15 +6060,38 @@ function exportData(){
       try{data[k]=JSON.parse(localStorage.getItem(k));}catch{data[k]=localStorage.getItem(k);}
     }
     const json=JSON.stringify(data,null,2);
-    const blob=new Blob([json],{type:'application/json'});
     const date=new Date();
     const fname=`app-backup-${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}.json`;
-    if(navigator.canShare&&navigator.canShare({files:[new File([blob],fname,{type:'application/json'})]})){
-      navigator.share({files:[new File([blob],fname,{type:'application/json'})],title:'App Backup'}).catch(()=>{});
-    }else{
-      const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=fname;document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(a.href);
+    
+    if(window.showSaveFilePicker){
+      try {
+        const handle = await window.showSaveFilePicker({
+          suggestedName: fname,
+          types: [{
+            description: 'JSON Backup',
+            accept: { 'application/json': ['.json'] }
+          }]
+        });
+        const writable = await handle.createWritable();
+        await writable.write(json);
+        await writable.close();
+        tst('✓ Datos guardados con éxito');
+        return;
+      } catch(err) {
+        if(err.name === 'AbortError') return; // Canceló el diálogo
+      }
     }
-    tst('✓ Datos exportados');
+    
+    // Fallback: Descarga directa tradicional
+    const blob=new Blob([json],{type:'application/json'});
+    const a=document.createElement('a');
+    a.href=URL.createObjectURL(blob);
+    a.download=fname;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(a.href);
+    tst('✓ Descarga iniciada');
   }catch(e){tst('Error al exportar: '+e.message);}
 }
 
