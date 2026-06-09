@@ -21,21 +21,22 @@ input[type=number]{-moz-appearance:textfield}
 input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
 
 :root{
-  --bg0:#0A0B11;--bg1:#11131C;--bg2:#171A26;--bg3:#1F2433;--bg4:#2A3042;
-  --border:#ffffff0d;--border2:#ffffff17;--border3:#ffffff28;
+  --bg0:#070709;--bg1:#0D0E13;--bg2:#14161E;--bg3:#1A1D27;--bg4:#222633;
+  --border:rgba(255,255,255,.04);--border2:rgba(255,255,255,.08);--border3:rgba(255,255,255,.15);
   --text0:#F4F5FA;--text1:#AFB2C4;--text2:#71748A;--text3:#454960;
-  --accent:#6E5BFF;--accent2:#8E7BFF;--accent-d:rgba(110,91,255,.13);--accent-b:rgba(110,91,255,.34);
-  --red:#FF4D5E;--red-d:rgba(255,77,94,.12);--red-b:rgba(255,77,94,.26);
+  --accent:#6366F1;--accent2:#818CF8;--accent-d:rgba(99,102,241,.12);--accent-b:rgba(99,102,241,.32);
+  --red:#FF4D5E;--red-d:rgba(255,77,94,.1);--red-b:rgba(255,77,94,.28);
   --green:#10D29B;--green-d:rgba(16,210,155,.1);--green-b:rgba(16,210,155,.28);
-  --blue:#4D8DFF;--blue-d:rgba(77,141,255,.1);--blue-b:rgba(77,141,255,.26);
-  --gold:#FFC062;--gold-d:rgba(255,192,98,.1);--gold-b:rgba(255,192,98,.28);
-  --purple:#A855F7;--cyan:#22D3EE;--lime:#84CC16;--rose:#FB7185;--teal:#14B8A6;--orange:#F97316;
+  --blue:#3B82F6;--blue-d:rgba(59,130,246,.10);--blue-b:rgba(59,130,246,.28);
+  --gold:#FFB347;--gold-d:rgba(255,179,71,.1);--gold-b:rgba(255,179,71,.28);
+  --purple:#A855F7;--purple-d:rgba(168,85,247,.1);--purple-b:rgba(168,85,247,.28);
+  --cyan:#22D3EE;--lime:#84CC16;--rose:#FB7185;--teal:#14B8A6;--orange:#F97316;
   --r:18px;--r-sm:13px;--r-xs:8px;
   --fd:'Syne',sans-serif;--fm:'JetBrains Mono',monospace;
-  --shadow-sm:0 1px 2px rgba(0,0,0,.32);
-  --shadow:0 8px 24px -8px rgba(0,0,0,.55);
-  --shadow-lg:0 22px 56px -14px rgba(0,0,0,.65);
-  --glow:0 0 28px -6px var(--accent-b);
+  --shadow-sm:0 2px 4px rgba(0,0,0,.4);
+  --shadow:0 10px 30px -10px rgba(0,0,0,.6);
+  --shadow-lg:0 24px 60px -15px rgba(0,0,0,.8);
+  --glow:0 0 30px -8px var(--accent-b);
 }
 
 #app{display:flex;flex-direction:column;height:100dvh;max-width:480px;margin:0 auto}
@@ -250,6 +251,13 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
 .cx-send{width:42px;height:42px;border-radius:50%;background:var(--red);color:#fff;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:transform .15s,opacity .2s}
 .cx-send:active{transform:scale(.9)}
 .cx-send svg{width:20px;height:20px}
+
+/* Recent switchers and premium classes */
+.recent-bar{display:flex;gap:8px;overflow-x:auto;padding:8px 14px;border-bottom:1px solid var(--border);background:var(--bg1);align-items:center;scrollbar-width:none}
+.recent-bar::-webkit-scrollbar{display:none}
+.recent-pill{display:inline-flex;align-items:center;gap:5px;padding:6px 12px;border-radius:14px;font-size:11px;font-weight:600;color:var(--text2);background:var(--bg2);border:1px solid var(--border);transition:all .18s;white-space:nowrap;max-width:130px;overflow:hidden;text-overflow:ellipsis}
+.recent-pill:active{transform:scale(.95);background:var(--bg3)}
+.recent-label{font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;white-space:nowrap;margin-right:2px}
 </style>
 <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
 </head>
@@ -259,6 +267,26 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
 <div id="login-screen">
   <div class="login-card">
     <div class="login-logo">
+      <svg class="login-logo-svg" viewBox="0 0 100 100" width="80" height="80" style="margin: 0 auto 16px; display: block; filter: drop-shadow(0 0 15px rgba(99, 102, 241, 0.45));">
+        <defs>
+          <linearGradient id="logoGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="var(--accent)" />
+            <stop offset="100%" stop-color="var(--accent2)" />
+          </linearGradient>
+          <linearGradient id="logoGrad2" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="var(--cyan)" />
+            <stop offset="100%" stop-color="var(--accent)" />
+          </linearGradient>
+        </defs>
+        <!-- Isometric outline box -->
+        <path d="M50 15 L85 35 L85 70 L50 90 L15 70 L15 35 Z" fill="rgba(13,14,19,0.7)" stroke="url(#logoGrad)" stroke-width="3" stroke-linejoin="round" />
+        <!-- Inner accents -->
+        <path d="M50 15 L50 90" stroke="rgba(99,102,241,0.2)" stroke-width="1" />
+        <path d="M15 35 L85 70" stroke="rgba(99,102,241,0.2)" stroke-width="1" />
+        <path d="M85 35 L15 70" stroke="rgba(99,102,241,0.2)" stroke-width="1" />
+        <!-- Inner checkmark / monogram 'M' -->
+        <path d="M35 50 L48 63 L68 37" fill="none" stroke="url(#logoGrad2)" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round" />
+      </svg>
       <div class="login-logo-t">MARTIN<span style="color:var(--accent2)">·</span>APP</div>
       <div class="login-logo-s">Acceso privado</div>
     </div>
@@ -360,7 +388,6 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
       <button class="tab" id="xt-4" onclick="xTab(4)">Tarjetas</button>
       <button class="tab" id="xt-5" onclick="xTab(5)">+ Gasto</button>
       <button class="tab" id="xt-7" onclick="xTab(7)">🛒 Súper</button>
-      <button class="tab" id="xt-6" onclick="xTab(6)">Config</button>
     </div>
   </div>
   <div id="gastos-b"></div>
@@ -853,7 +880,7 @@ function openDay(rid,did){
     const allDone=Array.from({length:ex.series},(_,si)=>sets[`${rid}|${did}|${ei}|${si}`]).every(Boolean);
     const wk=`${rid}|${did}|${ei}`;const mcl=MC[ex.muscle]||'#aaa';
     h+=`<div id="er-${ei}" style="background:${allDone?'rgba(0,196,140,.04)':'var(--bg2)'};border:1px solid ${allDone?'rgba(0,196,140,.2)':'var(--border)'};border-radius:var(--r-sm);padding:14px;margin-bottom:9px;transition:all .3s">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
         <div style="flex:1">
           <button style="padding:0;text-align:left" onclick="openExInfo(${JSON.stringify(JSON.stringify(ex))})">
             <div style="font-size:14px;font-weight:700;color:${allDone?'var(--text2)':'var(--text0)'};${allDone?'text-decoration:line-through':''}">${esc(ex.name)}</div>
@@ -864,13 +891,23 @@ function openDay(rid,did){
           </div>
         </div>
         <div style="display:flex;align-items:center;gap:4px;margin-left:10px">
-          <input type="number" placeholder="—" value="${weights[wk]||''}" oninput="saveW('${rid}','${did}','${ei}',this.value)" style="width:52px;padding:7px 8px;border-radius:9px;background:rgba(255,255,255,.06);border:1px solid var(--border2);color:#fff;font-size:13px;font-weight:700;text-align:center;outline:none;font-family:var(--fm)">
+          <input type="number" placeholder="—" value="${weights[wk]||''}" oninput="saveW('${rid}','${did}','${ei}',this.value)" style="width:52px;padding:7px 8px;border-radius:9px;background:rgba(255,255,255,.06);border:1px solid var(--border2);color:#fff;font-size:13px;font-weight:700;text-align:center;outline:none;font-family:var(--fm)" title="Peso general">
           <span style="font-size:9px;color:var(--text2);font-weight:700">KG</span>
         </div>
       </div>
-      <div class="sets">
-        ${Array.from({length:ex.series},(_,si)=>{const dn=sets[`${rid}|${did}|${ei}|${si}`];return`<button class="sb${dn?' ck':''}" style="${dn?`border-color:${col};background:${col}22;color:${col}`:''}" onclick="tSet('${rid}','${did}','${ei}','${si}','${col}')">${dn?'✓':si+1}</button>`;}).join('')}
-        <button class="sb" style="border-color:var(--border2);color:var(--text3);font-size:18px;font-weight:400" onclick="addSet('${rid}','${did}','${ei}','${col}')">+</button>
+      <div class="sets" style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:8px">
+        ${Array.from({length:ex.series},(_,si)=>{
+          const dn=sets[`${rid}|${did}|${ei}|${si}`];
+          const setWKey = `${rid}|${did}|${ei}|${si}`;
+          const swVal = weights[setWKey] || weights[wk] || '';
+          return `
+            <div style="display:flex;flex-direction:column;align-items:center;gap:4px">
+              <button class="sb${dn?' ck':''}" style="${dn?`border-color:${col};background:${col}22;color:${col}`:''}" onclick="tSet('${rid}','${did}','${ei}','${si}','${col}')">${dn?'✓':si+1}</button>
+              <input type="number" placeholder="—" value="${swVal}" oninput="saveSetW('${rid}','${did}','${ei}','${si}',this.value)" style="width:38px;padding:4px 2px;border-radius:6px;background:rgba(255,255,255,.05);border:1px solid var(--border2);color:#fff;font-size:10px;font-weight:700;text-align:center;outline:none;font-family:var(--fm)" title="Peso serie ${si+1}">
+            </div>
+          `;
+        }).join('')}
+        <button class="sb" style="border-color:var(--border2);color:var(--text3);font-size:18px;font-weight:400;align-self:flex-start" onclick="addSet('${rid}','${did}','${ei}','${col}')">+</button>
       </div></div>`;
   });
   h+=`<button class="btn b-lg ${pct>0?'b-p':'b-g'}" onclick="saveSess('${rid}','${did}')" style="${pct>0?`background:${col}`:''}">${pct===100?'✓ Guardar sesión completa':`Guardar progreso · ${pct}%`}</button>`;
@@ -890,6 +927,7 @@ function tSet(rid,did,ei,si,col){
   const pct=getDayPct(rid,did);ring('dr',pct,col,pct+'%',52);updWring();
 }
 function saveW(rid,did,ei,v){weights[`${rid}|${did}|${ei}`]=v;S.s('wts2',weights);updateWeekLogFromCurrent();}
+function saveSetW(rid,did,ei,si,v){weights[`${rid}|${did}|${ei}|${si}`]=v;S.s('wts2',weights);updateWeekLogFromCurrent();}
 function saveSess(rid,did){const pct=getDayPct(rid,did);if(!pct){tst('Completá al menos 1 serie');return;}const r=routines.find(x=>x.id===rid);const d=r?.days.find(x=>x.id===did);gymHist=[{d:new Date().toLocaleDateString('es-ES',{day:'numeric',month:'short'}),rn:r?.name,dn:d?.label,pct,ts:Date.now()},...gymHist].slice(0,80);S.s('ghst2',gymHist);updateWeekLogFromCurrent();tst(`✓ ${d?.label} — ${pct}%`);cOv1();updWring();}
 
 function addSet(rid,did,ei,col){
@@ -900,15 +938,7 @@ function addSet(rid,did,ei,col){
   updateWeekLogFromCurrent();
   const si=ex.series-1;
   sets[`${rid}|${did}|${ei}|${si}`]=false;
-  const container=event?.currentTarget?.parentElement;
-  if(container){
-    const btn=document.createElement('button');
-    btn.className='sb';
-    btn.textContent=String(si+1);
-    btn.style.cssText='border-color:rgba(255,255,255,.1);background:rgba(255,255,255,.03);color:rgba(255,255,255,.3);font-size:13px;font-weight:700';
-    btn.onclick=function(){tSet(rid,did,ei,si,col);};
-    container.insertBefore(btn,container.lastElementChild);
-  }
+  openDay(rid, did);
   tst(`+1 serie (total: ${ex.series})`);
 }
 
@@ -998,6 +1028,7 @@ function rGymWeeks(){
 
   h+=`<div style="display:flex;gap:8px;margin-bottom:16px">
     <button class="btn b-md b-p" style="flex:1" onclick="startNewWeek()">🔄 Nueva semana</button>
+    <button class="btn b-md b-blu" style="flex:1" onclick="generarAnalisisSobrecargaIA()">📊 Análisis Rendimiento IA</button>
   </div>`;
 
   // Past weeks
@@ -1333,7 +1364,8 @@ function rGymCardio(){
   h+=`<div style="display:flex;gap:8px;margin-bottom:8px">
     <button class="btn b-lg b-p" style="flex:1" onclick="openCardioModal()">+ Registrar</button>
     <button class="btn b-lg b-grn" style="flex:1" onclick="openGPS()">📍 Salida GPS</button>
-  </div>`;
+  </div>
+  <button class="btn b-lg b-blu" style="width:100%;margin-bottom:8px" onclick="generarAnalisisSobrecargaIA()">📊 Análisis de Rendimiento & Cardio IA</button>`;
   if(_gk){
     h+=`<div style="margin-bottom:14px">
       <button class="btn b-lg b-blu" style="width:100%" onclick="cardioFromPhoto()">📷 Foto del reloj (cardio o sueño)</button>
@@ -3140,10 +3172,7 @@ async function shopFromPlan(){
 
 // ── TAB 5: CONFIG ──
 function rConfig(){
-  return`<div class="sec">
-    <div class="sec-t">Cuenta</div>
-    <button class="btn b-md b-g" style="width:100%;margin-bottom:24px" onclick="openUserMgmt()">👤 Gestionar usuarios / Cerrar sesión</button>
-    <div class="div"></div>
+  return`<div class="sec" style="padding:0">
     <div class="sec-t">Inteligencia Artificial</div>
     <div style="font-size:11px;color:var(--text2);margin-bottom:12px;line-height:1.6">Elegí el proveedor de IA y pegá tu API key. Podés cambiar entre ellos cuando quieras.</div>
     <div style="display:flex;gap:6px;margin-bottom:14px">
@@ -3203,7 +3232,7 @@ function rConfig(){
     <input id="import-file" type="file" accept=".json" style="display:none" onchange="importData(event)">
   </div>`;
 }
-function delCat(i){const c=cats[i];if(!c||c.cardRef){tst('Las tarjetas se eliminan desde Tarjetas');return;}if(!confirm(`¿Eliminar "${c.n}"?`))return;cats.splice(i,1);S.s('cats4',cats);renderGastos();}
+function delCat(i){const c=cats[i];if(!c||c.cardRef){tst('Las tarjetas se eliminan desde Tarjetas');return;}if(!confirm(`¿Eliminar "${c.n}"?`))return;cats.splice(i,1);S.s('cats4',cats);if(activeProfileTab==='config'){openUserMgmt();}renderGastos();}
 function addCatModal(){const colors=['#FF3B4E','#3B7FFF','#00C48C','#FFB347','#A855F7','#22D3EE','#F97316','#84CC16','#14B8A6','#E879F9','#FB7185','#38BDF8'];window._ncc='#FF3B4E';
   oOv1(`<div class="mt">Nueva categoría</div>
   <div class="fld"><label>Nombre</label><input class="inp" id="nc-n" placeholder="Netflix, Gimnasio…"></div>
@@ -3213,7 +3242,7 @@ function addCatModal(){const colors=['#FF3B4E','#3B7FFF','#00C48C','#FFB347','#A
   </div></div>
   <button class="btn b-lg b-p" onclick="confNC()">Crear categoría</button>`);}
 function selNC(col){window._ncc=col;document.querySelectorAll('[id^="nc-c-"]').forEach(el=>el.style.borderColor='transparent');document.getElementById('nc-c-'+col.slice(1))?.style.setProperty('border-color','white');}
-function confNC(){const n=document.getElementById('nc-n')?.value.trim();const p=parseMoney(document.getElementById('nc-p')?.value);if(!n){tst('Escribí el nombre');return;}cats.push({id:uid(),n,c:window._ncc||'#aaa',base:p});S.s('cats4',cats);cOv1();tst('✓ Categoría creada');renderGastos();}
+function confNC(){const n=document.getElementById('nc-n')?.value.trim();const p=parseMoney(document.getElementById('nc-p')?.value);if(!n){tst('Escribí el nombre');return;}cats.push({id:uid(),n,c:window._ncc||'#aaa',base:p});S.s('cats4',cats);cOv1();tst('✓ Categoría creada');if(activeProfileTab==='config'){openUserMgmt();}renderGastos();}
 function editMetaModal(catId){
   const c=cats.find(x=>x.id===catId);if(!c)return;
   const acum=ahorroAcumCat(c.id);
@@ -3596,31 +3625,61 @@ function renderChat(){
     send:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg>'
   };
   const bar=document.getElementById('chat-ph-bar');
-  if(bar)bar.innerHTML=`<button class="btn b-xs ${key?'b-grn':'b-red'}" onclick="xTab(6);page('gastos')" style="font-size:10px">${key?('✓ '+provLabel+' conectado'):'⚙️ Configurar IA'}</button>
+  if(bar)bar.innerHTML=`<button class="btn b-xs ${key?'b-grn':'b-red'}" onclick="openUserMgmt()" style="font-size:10px">${key?('✓ '+provLabel+' conectado'):'⚙️ Configurar IA'}</button>
     <button class="btn b-xs b-p" onclick="newSession()" style="font-size:10px;margin-left:6px">✏️ Nueva</button>
     <button class="btn b-xs b-g" onclick="openBuscador()" style="font-size:10px;margin-left:6px">🔍 Buscar</button>
     <button class="btn b-xs b-g" onclick="openMemoria()" style="font-size:10px;margin-left:6px">🧠 Memoria</button>
     <button class="btn b-xs b-g" onclick="showSessionsList()" style="font-size:10px;margin-left:6px">📋 Sesiones</button>
-    <button class="btn b-xs b-g" onclick="if(confirm('¿Borrar esta conversación?')){deleteSession(activeChatId)}" style="font-size:10px;margin-left:6px">🗑 Borrar</button>${aiProvider()==='free'?`<div style="margin-top:8px;font-size:10px;color:var(--text2);background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:7px 10px;line-height:1.5">⚡ <b>Modo gratis activo</b> — funciona sin configurar nada. Para mejor calidad y privacidad, agregá tu propia API key (Gemini es gratis) en <span style="color:var(--blue);cursor:pointer" onclick="xTab(6);page('gastos')">Configuración</span>.</div>`:''}`;
+    <button class="btn b-xs b-g" onclick="if(confirm('¿Borrar esta conversación?')){deleteSession(activeChatId)}" style="font-size:10px;margin-left:6px">🗑 Borrar</button>${aiProvider()==='free'?`<div style="margin-top:8px;font-size:10px;color:var(--text2);background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:7px 10px;line-height:1.5">⚡ <b>Modo gratis activo</b> — funciona sin configurar nada. Para mejor calidad y privacidad, agregá tu propia API key (Gemini es gratis) en <span style="color:var(--blue);cursor:pointer" onclick="openUserMgmt()">Configuración</span>.</div>`:''}`;
 
   if(!key){
     el.innerHTML=`<div class="cx-empty">
       <div style="font-size:32px;margin-bottom:12px">💬</div>
       <div style="font-size:14px;font-weight:600;margin-bottom:6px">Necesitás una API Key de IA</div>
-      <div style="font-size:12px;color:var(--text3);margin-bottom:16px">Configurala en Gastos → Configuración</div>
-      <button class="btn b-lg b-p" onclick="xTab(6);page('gastos')">Ir a Configuración</button>
+      <div style="font-size:12px;color:var(--text3);margin-bottom:16px">Configurala desde tu Perfil (arriba a la derecha)</div>
+      <button class="btn b-lg b-p" onclick="openUserMgmt()">Configurar IA</button>
     </div>`;
     const gm0=document.getElementById('mic-btn');if(gm0)gm0.style.display='none';
     return;
   }
 
+  // Horizontal recent bar switcher
+  const sorted = [...chatSessions].filter(s => s.id !== activeChatId && s.mensajes.length > 0).sort((a,b) => b.updatedAt - a.updatedAt);
+  let recentBar = '';
+  if (sorted.length > 0) {
+    recentBar = `<div class="recent-bar">
+      <span class="recent-label">⏱️ Recientes:</span>
+      ${sorted.slice(0, 4).map(s => `
+        <button class="recent-pill" onclick="switchSession('${s.id}')">
+          <span>💬</span>
+          <span>${esc(s.titulo)}</span>
+        </button>
+      `).join('')}
+    </div>`;
+  }
+
   const fmt=t=>esc(t).replace(/\*\*(.+?)\*\*/g,'<b>$1</b>');
   let h='<div class="cx-msgs" id="cx-msgs">';
   if(!chatHist.length){
+    const prevSessions = [...chatSessions].filter(s => s.id !== activeChatId && s.mensajes.length > 0).sort((a, b) => b.updatedAt - a.updatedAt);
+    let continueBtn = '';
+    if (prevSessions.length > 0) {
+      const lastS = prevSessions[0];
+      continueBtn = `
+        <div class="card" style="margin: 16px 20px 0; background: linear-gradient(135deg, rgba(99,102,241,0.08), rgba(20,22,32,0.6)); border: 1px solid var(--accent-b); text-align: left; padding: 12px 14px; box-shadow: var(--shadow);">
+          <div style="font-size: 11px; font-weight: 700; color: var(--accent2); text-transform: uppercase; letter-spacing: 1.2px; margin-bottom: 5px; display: flex; align-items: center; gap: 4px;">⚡ Continuar conversación anterior</div>
+          <div style="font-size: 13px; font-weight: 700; color: var(--text0); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-bottom: 2px;">${esc(lastS.titulo)}</div>
+          <div style="font-size: 11px; color: var(--text2); margin-bottom: 12px;">${lastS.mensajes.length} mensajes · ${new Date(lastS.updatedAt).toLocaleDateString('es-UY')}</div>
+          <button class="btn b-sm b-p" onclick="switchSession('${lastS.id}')" style="width: 100%; border-radius: 9px; padding: 10px;">Cargar última conversación</button>
+        </div>
+      `;
+    }
+
     h+=`<div class="cx-empty">
       <div style="width:48px;height:48px;border-radius:50%;background:var(--red);display:flex;align-items:center;justify-content:center;margin:0 auto 12px;color:#fff">${SVG.spark}</div>
       <div style="font-size:14px;font-weight:600;color:var(--text1)">Asistente personal</div>
       <div style="font-size:11px;color:var(--text3);margin-top:6px;line-height:1.6">Hablame, escribime, o pasame una foto/PDF 📎<br>de tus gastos y los cargo solos.</div>
+      ${continueBtn}
     </div>`;
   } else {
     chatHist.forEach((msg,i)=>{
@@ -3648,7 +3707,7 @@ function renderChat(){
     <button class="cx-ibtn" id="chat-mic-btn" aria-label="Hablar" onclick="startVoiceChat()">${SVG.mic}</button>
     <button class="cx-send" aria-label="Enviar" onclick="sendChat()">${SVG.send}</button>
   </div>`;
-  el.innerHTML=h;
+  el.innerHTML=recentBar+h;
 
   const gmic=document.getElementById('mic-btn');
   if(gmic)gmic.style.display='none';
@@ -3735,7 +3794,8 @@ async function sendChat(){
   const memCtx=buildMemCtx(false);
   const memInstr='\n\nMEMORIA / APRENDIZAJE:\n- Si en el mensaje hay info DURADERA de la persona (preferencias, hábitos, restricciones de dieta, objetivos, días/horarios de entrenamiento, ingresos, fechas fijas, etc.), guardala vos mismo con [ACCION]{"op":"recordar","dato":"frase corta en 3ra persona","tag":"dieta|gym|finanzas|agenda|general","importante":true|false}[/ACCION]. Poné importante:true SOLO para datos permanentes críticos (alergias, intolerancias, salud, lesiones, objetivos de fondo, familia); el resto false.\n- Si te piden olvidar algo: [ACCION]{"op":"olvidar","dato":"texto a borrar"}[/ACCION].\n- NO guardes datos puntuales del día (un gasto suelto, un peso de hoy) como memoria; eso ya va a las acciones normales. Guardá solo lo que define a la persona a largo plazo.\n- No repitas en memoria algo que ya figura arriba.';
   const ctxHist=chatHist.slice(-20).map(msg=>'['+msg.role+']: '+msg.text).join('\n');
-  const prompt='Sos MARTIN·APP AI: asistente personal con control total de los datos.\n\n'+_hoy+dataCtx+memCtx+memInstr+'\n\nREGLAS:\n- Respondé en español uruguayo, natural, amigable y con confianza.\n- Revisá los datos con cuidado. Si te preguntan por pesos o registros, verificá exactamente lo que dice el registro antes de responder. No inventes números.\n- Si el usuario pide agregar/modificar datos, usá [ACCION] al final.\n- ACCIONES DISPONIBLES:\n  * [ACCION]{"op":"gasto","cat":"id","v":monto,"desc":"...","f":"d/m"}[/ACCION]\n  * [ACCION]{"op":"pago","cat":"id","m":mes,"y":año}[/ACCION]\n  * [ACCION]{"op":"fijo","cat":"id","m":mes,"y":año,"v":monto}[/ACCION]\n  * [ACCION]{"op":"compra","cardId":"id","v":monto,"desc":"...","cuotas":1}[/ACCION]\n  * [ACCION]{"op":"crear_rutina","name":"Nombre","days":[{"label":"Día1","exercises":[{"name":"Ej1","muscle":"Pecho","series":4,"reps":"10"}]}]}[/ACCION] (si la persona entrena en CASA sin equipo, usá solo ejercicios de peso corporal y objetos de casa; no pongas máquinas ni barras)\n  * [ACCION]{"op":"evento","titulo":"...","fecha":"YYYY-MM-DD","hora":"HH:MM","recordatorio":15}[/ACCION]\n- NUTRICIÓN: si la persona dice qué comió, registralo con [ACCION]{"op":"comida","nombre":"...","cal":número,"prot":número}[/ACCION] (estimá calorías vos). Podés ver sus comidas y meta calórica en los datos. Para CARDIO (caminar/correr/bici/natación/elíptico): [ACCION]{"op":"cardio","tipo":"correr","min":30,"km":5}[/ACCION] (km opcional, las calorías se estiman solas). Podés ver el cardio de los últimos 7 días en los datos. Para SUEÑO (si la persona dice cuánto durmió): [ACCION]{"op":"sueno","horas":7.5,"calidad":"buena","despertares":0}[/ACCION] (calidad: mala|regular|buena|excelente). Podés analizar su sueño junto al entrenamiento y la comida. Para la LISTA DEL SÚPER (si la persona dice que necesita comprar algo): [ACCION]{"op":"comprar","item":"2kg de pollo","cat":"carniceria"}[/ACCION] (cat: verduleria|carniceria|almacen|lacteos|limpieza|bebidas|otro). Para ELIMINAR algo (gasto, rutina, evento, comida, cardio, ítem del súper, categoría, memoria): [ACCION]{"op":"eliminar","tipo":"gasto|rutina|evento|comida|cardio|super|categoria|memoria","desc":"texto para identificarlo"}[/ACCION]. NO borra al instante: la app le muestra al usuario una confirmación Sí/No, así que está bien proponerlo cuando lo pidan. Usá el "desc" con palabras que identifiquen el elemento (nombre del gasto, de la rutina, etc).\n- AHORRO: no es gasto, es plata apartada en una meta. Guardar: [ACCION]{"op":"ahorro","cat":"id_meta","v":monto}[/ACCION]. Crear meta (auto/casa/viaje): [ACCION]{"op":"crear_meta","nombre":"Auto","objetivo":500000,"aporte":1500}[/ACCION].\n- TARJETAS POR MES: para anotar lo pagado (o a pagar) de una tarjeta en un mes puntual, usá el op \"fijo\" con el id de la CATEGORÍA de esa tarjeta (en Categorías son las que tienen tarjeta:...). Los meses en las acciones van de 0 a 11 (enero=0, febrero=1, marzo=2, abril=3, mayo=4, junio=5, julio=6, agosto=7, septiembre=8, octubre=9, noviembre=10, diciembre=11). Ej \"anotá 1400 de OCA en abril\" -> [ACCION]{\"op\":\"fijo\",\"cat\":\"<id categoría OCA>\",\"m\":3,\"y\":<año>,\"v\":1400}[/ACCION]. Si no aclaran el año, usá el actual.\\n- muscle debe ser uno de: Pecho, Espalda, Hombros, Bíceps, Tríceps, Cuádriceps, Femoral, Gemelos, Abdomen\n- IDs son los que ves arriba. NO inventes IDs.\n- Podés ANALIZAR entrenamientos: revisá el historial gym, los pesos, y recomendá ajustes.\n- Podés dar consejos de DIETA y NUTRICIÓN según el perfil y objetivo del usuario. Recomendá comidas, horarios, colaciones.\n- Podés recomendar cuánta AGUA tomar según su peso y actividad.\n- Si te preguntan por GASTOS relacionado a comida, usá los datos de categorías para sugerir donde ahorrar.\n- Si te piden hacer algo que no sea una acción, respondé normal pero útil.\n- Siempre respondé optimista y motivador como un entrenador personal.\n\nConversación:\n'+ctxHist+'\n\n['+txt+']:';
+  const voiceGuide = _voiceSent ? '\n\nIMPORTANTE: El usuario te está hablando por voz. Respondé de forma muy corta (máximo 2 o 3 oraciones breves), directa y conversacional en español uruguayo, sin usar viñetas, listas ni formato markdown largo.' : '';
+  const prompt='Sos MARTIN·APP AI: asistente personal con control total de los datos.\n\n'+_hoy+dataCtx+memCtx+memInstr+voiceGuide+'\n\nREGLAS:\n- Respondé en español uruguayo, natural, amigable y con confianza.\n- Revisá los datos con cuidado. Si te preguntan por pesos o registros, verificá exactamente lo que dice el registro antes de responder. No inventes números.\n- Si el usuario pide agregar/modificar datos, usá [ACCION] al final.\n- ACCIONES DISPONIBLES:\n  * [ACCION]{"op":"gasto","cat":"id","v":monto,"desc":"...","f":"d/m"}[/ACCION]\n  * [ACCION]{"op":"pago","cat":"id","m":mes,"y":año}[/ACCION]\n  * [ACCION]{"op":"fijo","cat":"id","m":mes,"y":año,"v":monto}[/ACCION]\n  * [ACCION]{"op":"compra","cardId":"id","v":monto,"desc":"...","cuotas":1}[/ACCION]\n  * [ACCION]{"op":"crear_rutina","name":"Nombre","days":[{"label":"Día1","exercises":[{"name":"Ej1","muscle":"Pecho","series":4,"reps":"10"}]}]}[/ACCION]\n  * [ACCION]{"op":"modificar_ejercicio","dia":"Lunes","nombre_original":"press banca","nombre_nuevo":"press banca con mancuernas","series":4,"reps":"10","musculo":"Pecho"}[/ACCION] (usá esto para cambiar ejercicios existentes de rutinas)\n  * [ACCION]{"op":"evento","titulo":"...","fecha":"YYYY-MM-DD","hora":"HH:MM","recordatorio":15}[/ACCION]\n- NUTRICIÓN: si la persona dice qué comió, registralo con [ACCION]{"op":"comida","nombre":"...","cal":número,"prot":número}[/ACCION] (estimá calorías vos). Para CARDIO: [ACCION]{"op":"cardio","tipo":"correr","min":30,"km":5}[/ACCION]. Para SUEÑO: [ACCION]{"op":"sueno","horas":7.5,"calidad":"buena"}[/ACCION]. Para la LISTA DEL SÚPER: [ACCION]{"op":"comprar","item":"2kg de pollo","cat":"carniceria"}[/ACCION]. Para ELIMINAR algo: [ACCION]{"op":"eliminar","tipo":"gasto|rutina|evento|comida|cardio|super|categoria|memoria","desc":"texto para identificarlo"}[/ACCION].\n- AHORRO: [ACCION]{"op":"ahorro","cat":"id_meta","v":monto}[/ACCION]. Crear meta: [ACCION]{"op":"crear_meta","nombre":"Auto","objetivo":500000,"aporte":1500}[/ACCION].\n- TARJETAS POR MES: op \"fijo\" con el id de la CATEGORÍA de esa tarjeta. Meses de 0 a 11. Ej \"anotá 1400 de OCA en abril\" -> [ACCION]{\"op\":\"fijo\",\"cat\":\"<id categoría OCA>\",\"m\":3,\"y\":<año>,\"v\":1400}[/ACCION].\n- muscle debe ser uno de: Pecho, Espalda, Hombros, Bíceps, Tríceps, Cuádriceps, Femoral, Gemelos, Abdomen\n- IDs son los que ves arriba. NO inventes IDs.\n- Podés ANALIZAR entrenamientos: y recomendar ajustes.\n- Podés dar consejos de DIETA y NUTRICIÓN según el perfil y objetivo del usuario.\n- Si te piden hacer algo que no sea una acción, respondé normal pero útil.\n- Siempre respondé optimista y motivador como un entrenador personal.\n\nConversación:\n'+ctxHist+'\n\n['+txt+']:';
 
   // ---- Burbuja del asistente que se va llenando en vivo ----
   chatHist.push({role:'assistant',text:'',streaming:true});
@@ -3920,14 +3980,15 @@ function buildAppContext(){
     '- Próximos eventos: '+(proxEventos||'ninguno')+'.';
 }
 
-function coachPrompt(userMsg){
+function coachPrompt(userMsg, isVoice){
   const p=coachProfile();
   const perfilCoach=Object.keys(p).length?('LO QUE SÉ DE LA PERSONA:\n'+COACH_Q.filter(q=>p[q.k]).map(q=>'- '+q.k+': '+p[q.k]).join('\n')):'';
   const _mem=S.g('userMem1',[]);
   const memCtx=buildMemCtx(true);
   const ctxHist=coachHist.slice(-16).map(msg=>'['+msg.role+']: '+msg.text).join('\n');
+  const voiceGuide = isVoice ? '\n\nIMPORTANTE: El usuario te está hablando por voz. Respondé de forma muy corta (máximo 2 o 3 oraciones breves), directa y conversacional en español uruguayo, sin usar viñetas, listas ni formato markdown largo.' : '';
   return 'Sos un COACH DE BIENESTAR Y PRODUCTIVIDAD personal, cálido pero directo. NO sos psicólogo ni das terapia clínica: sos un acompañante que motiva, ayuda a organizarse, a moverse más y a dejar de procrastinar.\n\n'+
-    perfilCoach+'\n\n'+buildAppContext()+memCtx+'\n\n'+
+    perfilCoach+'\n\n'+buildAppContext()+memCtx+voiceGuide+'\n\n'+
     'CÓMO ACTUÁS:\n'+
     '- Hablás en español uruguayo, cercano, humano. Tuteo. Ni robótico ni acartonado.\n'+
     '- Hacés preguntas abiertas para entender antes de aconsejar. Una pregunta por vez, no interrogatorio.\n'+
@@ -3952,14 +4013,46 @@ function renderCoach(){
     <button class="btn b-xs b-g" onclick="showCoachSessionsList()" style="font-size:10px;margin-left:6px">📋 Charlas</button>
     <button class="btn b-xs b-g" onclick="deleteCoachSession(activeCoachId)" style="font-size:10px;margin-left:6px">🗑 Borrar</button>`;
   if(!key){
-    el.innerHTML=`<div class="cx-empty"><div style="font-size:32px;margin-bottom:12px">🌱</div><div style="font-size:14px;font-weight:600;margin-bottom:6px">Necesitás una IA configurada</div><div style="font-size:12px;color:var(--text3);margin-bottom:16px">Tu coach usa la misma IA del chat</div><button class="btn b-lg b-p" onclick="page('chat')">Ir a configurar</button></div>`;
+    el.innerHTML=`<div class="cx-empty"><div style="font-size:32px;margin-bottom:12px">🌱</div><div style="font-size:14px;font-weight:600;margin-bottom:6px">Necesitás una IA configurada</div><div style="font-size:12px;color:var(--text3);margin-bottom:16px">Tu coach usa la misma IA del chat</div><button class="btn b-lg b-p" onclick="openUserMgmt()">Configurar IA</button></div>`;
     const gm=document.getElementById('mic-btn');if(gm)gm.style.display='none';
     return;
   }
+
+  // Horizontal recent bar switcher
+  const sorted = [...coachSessions].filter(s => s.id !== activeCoachId && s.mensajes.length > 0).sort((a,b) => b.updatedAt - a.updatedAt);
+  let recentBar = '';
+  if (sorted.length > 0) {
+    recentBar = `<div class="recent-bar">
+      <span class="recent-label">⏱️ Recientes:</span>
+      ${sorted.slice(0, 4).map(s => `
+        <button class="recent-pill" onclick="switchCoachSession('${s.id}')">
+          <span>🌱</span>
+          <span>${esc(s.titulo)}</span>
+        </button>
+      `).join('')}
+    </div>`;
+  }
+
   const fmtB=t=>esc(t).replace(/\*\*(.+?)\*\*/g,'<b>$1</b>');
   let h='<div class="cx-msgs" id="coach-msgs">';
   if(!coachHist.length){
-    h+=`<div class="cx-empty" style="padding:30px 20px"><div style="width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,#34D399,#10B981);display:flex;align-items:center;justify-content:center;margin:0 auto 14px;font-size:26px">🌱</div><div style="font-size:15px;font-weight:700;color:var(--text1)">Tu coach personal</div><div style="font-size:11px;color:var(--text3);margin-top:8px;line-height:1.6">Te ayudo a organizarte, moverte más<br>y dejar de postergar. Empecemos 👇</div><button class="btn b-lg b-p" style="margin-top:18px;background:#10B981" onclick="coachStart()">Empezar</button></div>`;
+    const prevSessions = [...coachSessions].filter(s => s.id !== activeCoachId && s.mensajes.length > 0).sort((a, b) => b.updatedAt - a.updatedAt);
+    let continueBtn = '';
+    if (prevSessions.length > 0) {
+      const lastS = prevSessions[0];
+      continueBtn = `
+        <div class="card" style="margin: 16px 20px 0; background: linear-gradient(135deg, rgba(52,211,153,0.08), rgba(20,22,32,0.6)); border: 1px solid rgba(52,211,153,0.25); text-align: left; padding: 12px 14px; box-shadow: var(--shadow);">
+          <div style="font-size: 11px; font-weight: 700; color: #34D399; text-transform: uppercase; letter-spacing: 1.2px; margin-bottom: 5px; display: flex; align-items: center; gap: 4px;">⚡ Continuar charla anterior</div>
+          <div style="font-size: 13px; font-weight: 700; color: var(--text0); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-bottom: 2px;">${esc(lastS.titulo)}</div>
+          <div style="font-size: 11px; color: var(--text2); margin-bottom: 12px;">${lastS.mensajes.length} mensajes · ${new Date(lastS.updatedAt).toLocaleDateString('es-UY')}</div>
+          <button class="btn b-sm b-p" onclick="switchCoachSession('${lastS.id}')" style="width: 100%; border-radius: 9px; padding: 10px; background: #10B981;">Cargar última charla</button>
+        </div>
+      `;
+    }
+
+    h+=`<div class="cx-empty" style="padding:30px 20px"><div style="width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,#34D399,#10B981);display:flex;align-items:center;justify-content:center;margin:0 auto 14px;font-size:26px">🌱</div><div style="font-size:15px;font-weight:700;color:var(--text1)">Tu coach personal</div><div style="font-size:11px;color:var(--text3);margin-top:8px;line-height:1.6">Te ayudo a organizarte, moverte más<br>y dejar de postergar. Empecemos 👇</div><button class="btn b-lg b-p" style="margin-top:18px;background:#10B981" onclick="coachStart()">Empezar</button>
+    ${continueBtn}
+    </div>`;
   } else {
     coachHist.forEach((msg,i)=>{
       const isUser=msg.role==='user';
@@ -3979,7 +4072,7 @@ function renderCoach(){
     <button class="cx-ibtn" id="coach-mic-btn" aria-label="Hablar" onclick="startVoiceCoach()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></button>
     <button class="cx-send" style="background:#10B981" aria-label="Enviar" onclick="sendCoach()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg></button>
   </div>`;
-  el.innerHTML=h;
+  el.innerHTML=recentBar+h;
   const gm=document.getElementById('mic-btn');if(gm)gm.style.display='none';
   const msgs=document.getElementById('coach-msgs');if(msgs)msgs.scrollTop=msgs.scrollHeight;
   setTimeout(()=>document.getElementById('coach-inp')?.focus(),100);
@@ -4041,7 +4134,7 @@ async function coachStream(userMsg){
   const key=aiKey();
   const bubble=document.getElementById('coach-live');
   try{
-    const full=await _geminiStream(coachPrompt(userMsg),key,(chunk,acc)=>{
+    const full=await _geminiStream(coachPrompt(userMsg, _voiceSent),key,(chunk,acc)=>{
       stopThinking();
       const visible=acc.split('[ACCION')[0];
       if(bubble){bubble.innerHTML=_mdBold(visible)+'<span class="ai-caret">▍</span>';const cont=document.querySelector('#coach-b > div:first-child');if(cont)cont.scrollTop=cont.scrollHeight;}
@@ -4232,6 +4325,39 @@ function ejecutarAccion(acc){
     S.s('arid',rid);
     return 'Rutina "'+acc.name+'" creada con '+days.length+' días y '+(days.reduce((s,d)=>s+d.exercises.length,0))+' ejercicios';
   }
+  if(acc.op==='modificar_ejercicio'||acc.op==='cambiar_ejercicio'){
+    const rs=S.g('rt2',[]);
+    if(!rs.length)return 'No hay rutinas creadas';
+    let r = rs.find(x=>x.id===activeRid);
+    if(acc.rutina){
+      const query=acc.rutina.toLowerCase();
+      r = rs.find(x=>x.id===acc.rutina || x.name.toLowerCase().includes(query)) || r;
+    }
+    if(!r)return 'Rutina no encontrada';
+    if(!acc.dia)return 'Falta indicar el día de la rutina';
+    const dayQuery = acc.dia.toLowerCase();
+    const day = r.days.find(d => d.id === acc.dia || d.label.toLowerCase().includes(dayQuery) || dayQuery.includes(d.label.toLowerCase()));
+    if(!day)return 'Día "'+acc.dia+'" no encontrado en la rutina "'+r.name+'"';
+    if(!acc.nombre_original)return 'Falta indicar el nombre del ejercicio a modificar';
+    const exOrig = (acc.nombre_original).toLowerCase();
+    const exIndex = day.exercises.findIndex(e => e.name.toLowerCase().includes(exOrig) || exOrig.includes(e.name.toLowerCase()));
+    if(exIndex===-1)return 'Ejercicio "'+acc.nombre_original+'" no encontrado en el día "'+day.label+'"';
+    const ex = day.exercises[exIndex];
+    const oldName = ex.name;
+    const oldSeries = ex.series;
+    const oldReps = ex.reps;
+    if(acc.nombre_nuevo) ex.name = acc.nombre_nuevo;
+    if(acc.series) ex.series = parseInt(acc.series, 10);
+    if(acc.reps) ex.reps = String(acc.reps);
+    if(acc.musculo) ex.muscle = acc.musculo;
+    S.s('rt2', rs);
+    routines = rs;
+    const prefix = `${r.id}|${day.id}|${exIndex}|`;
+    Object.keys(sets).forEach(k=>{ if(k.startsWith(prefix)) delete sets[k]; });
+    S.s('sets2', sets);
+    if(typeof renderGym==='function')renderGym();
+    return '💪 Modificado en '+day.label+': "'+oldName+'" ('+oldSeries+'x'+oldReps+') ➔ "'+ex.name+'" ('+ex.series+'x'+ex.reps+')';
+  }
   if(acc.op==='compra'){
     const cards=(S.g('cards1',[])||[]);
     const card=cards.find(c=>c.id===acc.cardId)||cards.find(c=>c.n.toLowerCase()===((acc.n||'').toLowerCase()))||cards.find(c=>cats.some(cat=>cat.cardRef===c.id&&cat.id===acc.cat));
@@ -4389,8 +4515,8 @@ const AI_PROVIDERS={
   },
   gemini:{
     label:'Google Gemini', keyStore:'gemini_key', modelStore:'ai_model_gemini',
-    defaultModel:'gemini-flash-latest',
-    models:['gemini-flash-latest','gemini-3.5-flash','gemini-3.1-flash-lite','gemini-2.5-flash','gemini-3.1-pro-preview'],
+    defaultModel:'gemini-2.5-pro',
+    models:['gemini-2.5-pro','gemini-2.5-flash','gemini-1.5-pro-latest','gemini-1.5-flash-latest','gemini-flash-latest'],
     hint:'AIza…', url:'aistudio.google.com/apikey'
   },
   openai:{
@@ -4415,7 +4541,7 @@ const AI_PROVIDERS={
 function aiProvider(){const p=S.g('ai_provider','free');return AI_PROVIDERS[p]?p:'free';}
 function aiKey(){const c=AI_PROVIDERS[aiProvider()];if(c.nokey)return 'free';return (S.g(c.keyStore,'')||'').trim();}
 function aiModel(){const c=AI_PROVIDERS[aiProvider()];return (S.g(c.modelStore,'')||'').trim()||c.defaultModel;}
-function setAIProvider(p){if(!AI_PROVIDERS[p])return;S.s('ai_provider',p);if(typeof renderGastos==='function')renderGastos();}
+function setAIProvider(p){if(!AI_PROVIDERS[p])return;S.s('ai_provider',p);if(activeProfileTab==='config'){openUserMgmt();}if(typeof renderGastos==='function')renderGastos();}
 
 async function _fetchT(url,opts,ms){
   const ctrl=new AbortController();
@@ -4460,7 +4586,165 @@ async function _aiComplete(prompt){
   throw {status:0,message:'Proveedor desconocido'};
 }
 
-const GEMINI_MODEL='gemini-flash-latest';
+const GEMINI_MODEL='gemini-2.5-flash';
+
+async function consolidarMemoriaDiaria(){
+  const today = todayStr();
+  const lastCompile = S.g('last_mem_compile','');
+  if(!lastCompile){
+    S.s('last_mem_compile', today);
+    return;
+  }
+  if(lastCompile === today) return;
+  
+  const now = new Date();
+  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+  let contentToAnalyze = [];
+  
+  chatSessions.forEach(s => {
+    const oldMsgs = (s.mensajes || []).filter(m => m.ts && m.ts < startOfToday && !m.processedForMem);
+    if(oldMsgs.length > 0) contentToAnalyze.push({ label: 'Asistente', msgs: oldMsgs });
+  });
+  
+  coachSessions.forEach(s => {
+    const oldMsgs = (s.mensajes || []).filter(m => m.ts && m.ts < startOfToday && !m.processedForMem);
+    if(oldMsgs.length > 0) contentToAnalyze.push({ label: 'Coach', msgs: oldMsgs });
+  });
+  
+  if(!contentToAnalyze.length){
+    S.s('last_mem_compile', today);
+    return;
+  }
+  
+  const gkey = (S.g('gemini_key','')||'').trim();
+  if(!gkey) return;
+  
+  console.log('🧠 Consolidando memoria diaria en segundo plano...');
+  let textBlock = '';
+  contentToAnalyze.forEach(item => {
+    textBlock += `\n--- Sesión de ${item.label} ---\n`;
+    item.msgs.forEach(m => {
+      textBlock += `[${m.role === 'user' ? 'Usuario' : 'Asistente'}]: ${m.text}\n`;
+    });
+  });
+  
+  const prompt = `Analizá la siguiente conversación del usuario con su asistente y extraé datos duraderos sobre él (gustos, hábitos, objetivos, restricciones de dieta, días de gimnasio, datos de su familia, trabajo, preferencias o hechos permanentes).
+Respondé estrictamente con un array de strings en formato JSON con frases cortas en tercera persona y en español rioplatense/uruguayo, sin formato markdown ni explicaciones adicionales. 
+Ejemplo de salida: ["Trabaja como desarrollador independiente", "Entrena por la tarde", "Tiene dolor en la rodilla derecha"].
+Si no hay nada duradero que recordar, devolvé únicamente un array vacío [].
+
+Conversación:
+${textBlock}`;
+  
+  try {
+    const raw = await _aiComplete(prompt);
+    const extracted = JSON.parse(_extractJSON(raw) || '[]');
+    let nuevos = 0;
+    if(Array.isArray(extracted) && extracted.length > 0){
+      extracted.forEach(dato => {
+        const res = ejecutarAccion({op: 'recordar', dato: String(dato).trim(), tag: 'general'});
+        if(res.includes('Anotado') || res.includes('Actualicé')) nuevos++;
+      });
+    }
+    contentToAnalyze.forEach(item => {
+      item.msgs.forEach(m => { m.processedForMem = true; });
+    });
+    S.s('chatSessions', chatSessions);
+    S.s('coachSessions', coachSessions);
+    S.s('last_mem_compile', today);
+    if(nuevos > 0) tst(`🧠 Memoria consolidada: Recordé ${nuevos} detalles nuevos sobre vos de tus días anteriores`, 5000);
+    console.log(`🧠 Memoria consolidada con éxito. ${nuevos} datos recordados.`);
+  } catch(e) {
+    console.error('Error al consolidar memoria diaria:', e);
+  }
+}
+
+async function generarAnalisisSobrecargaIA() {
+  const gkey = (S.g('gemini_key','')||'').trim();
+  if(!gkey){
+    tst('⚠️ Necesitás configurar tu API Key de Gemini en tu Perfil primero.', 5000);
+    return;
+  }
+  
+  oOv1(`<div class="sec" style="text-align:center;padding:40px 20px;">
+    <div class="typing-dots" style="align-self:center;margin-bottom:18px;">
+      <span class="tk-txt">IA Analizando tu Progreso</span>
+      <span class="tk-d"><span class="dot"></span><span class="dot"></span><span class="dot"></span></span>
+    </div>
+    <div style="font-size:12px;color:var(--text2);">Revisando pesos serie por serie, historial de gym y cardio...</div>
+  </div>`);
+
+  const p = gymProfile || {};
+  const _diasEntreno = gymHist.length;
+  const weightsArr = Object.entries(weights);
+  
+  const exNameMap = {};
+  routines.forEach(r => {
+    r.days.forEach(d => {
+      d.exercises.forEach((ex, ei) => {
+        exNameMap[r.id + '|' + d.id + '|' + ei] = ex.name;
+      });
+    });
+  });
+
+  const weightsStr = weightsArr.length 
+    ? weightsArr.map(([k, v]) => {
+        const parts = k.split('|');
+        const exName = exNameMap[parts[0]+'|'+parts[1]+'|'+parts[2]] || 'ejercicio';
+        const setNum = parts[3] ? ` (Serie ${parseInt(parts[3])+1})` : '';
+        return `${exName}${setNum}: ${v}kg`;
+      }).join(', ')
+    : 'sin registros';
+
+  const cardioStr = cardioLog.length
+    ? cardioLog.slice(0, 15).map(c => `${c.date} (${c.type}): ${c.mins} min, ${c.km || 0} km, ${c.cal || 0} kcal`).join('; ')
+    : 'sin registros';
+
+  const prompt = `Actuá como un Fisiólogo del Ejercicio y Entrenador Senior altamente profesional.
+Analizá el rendimiento y datos de entrenamiento de esta persona y generá un reporte de sobrecarga progresiva y cardio para las próximas semanas.
+
+DATOS FÍSICOS Y OBJETIVO:
+- Peso: ${p.weight || 'no especificado'}kg
+- Altura: ${p.height || 'no especificada'}cm
+- Experiencia: ${p.experience || 0} años
+- Meta: ${p.goal || 'hipertrofia/salud'}
+- Restricciones: ${p.dietRestrictions || 'ninguna'}
+
+HISTORIAL DE SESIONES COMPLETADAS (Gimnasio):
+- Total entrenamientos: ${_diasEntreno}
+- Sesiones recientes: ${gymHist.slice(0, 8).map(h => `${h.dn} (${h.pct}% completado)`).join(', ') || 'sin historial'}
+
+EVOLUCIÓN DE PESOS REGISTRADOS (Gimnasio):
+${weightsStr}
+
+REGISTRO DE CARDIO:
+${cardioStr}
+
+INSTRUCCIONES DEL REPORTE:
+1. Sé motivador, profesional y directo. Hablá en español uruguayo (tuteo rioplatense).
+2. Analizá si está aplicando sobrecarga progresiva (subiendo pesos, series o repeticiones) y dale indicaciones específicas en base a sus números reales.
+3. Analizá el cardio semanal y si se alinea con su objetivo físico principal.
+4. Respondé formateado con HTML limpio y elegante (usá contenedores div clase "card" y "crd", negritas b, y colores inline con variables como var(--accent2), var(--green) o var(--blue)). No uses markdown en absoluto.
+
+Estructurá el reporte con:
+- Un título principal: "📊 Reporte de Rendimiento & Sobrecarga"
+- Sección 1: Análisis de Fuerza y Sobrecarga Progresiva (con consejos para ejercicios puntuales de sus rutinas si hay datos).
+- Sección 2: Análisis de Cardio (frecuencia, volumen y sugerencia según su objetivo).
+- Sección 3: Plan de Acción Científico para las próximas 3-4 semanas.`;
+
+  try {
+    const raw = await _aiComplete(prompt);
+    const cleanHTML = raw.replace(/```html?/gi, '').replace(/```/g, '').trim();
+    oOv1(`<div class="sec" style="max-height:85dvh;overflow-y:auto">
+      <div style="font-family:var(--fd);font-size:18px;font-weight:800;margin-bottom:14px;color:var(--accent2);display:flex;align-items:center;gap:6px">📊 Análisis de Rendimiento</div>
+      <div style="font-size:13px;line-height:1.6;color:var(--text1);">${cleanHTML}</div>
+      <button class="btn b-lg b-g" onclick="cOv1()" style="width:100%;margin-top:16px;">Entendido</button>
+    </div>`);
+  } catch(e) {
+    tst('❌ Error al generar análisis: ' + e.message, 5000);
+    cOv1();
+  }
+}
 async function _gemini(prompt,_key,reintento=0){
   try{
     const text=await _aiComplete(prompt);
@@ -4590,6 +4874,40 @@ function _extractJSON(text){
   return null;
 }
 
+let _loadedVoices = [];
+function _loadVoices() {
+  if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+    _loadedVoices = window.speechSynthesis.getVoices();
+  }
+}
+if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+  _loadVoices();
+  if (window.speechSynthesis.onvoiceschanged !== undefined) {
+    window.speechSynthesis.onvoiceschanged = _loadVoices;
+  }
+}
+
+function findBestSpanishVoice(voices) {
+  if (!voices || !voices.length) return null;
+  const esVoices = voices.filter(v => v.lang.toLowerCase().startsWith('es'));
+  if (!esVoices.length) return null;
+  
+  const scored = esVoices.map(v => {
+    let score = 0;
+    const name = v.name.toLowerCase();
+    const lang = v.lang.toLowerCase();
+    if (lang.includes('es-uy') || lang.includes('es-ar')) score += 100;
+    else if (lang.includes('419') || lang.includes('es-mx') || lang.includes('es-us') || lang.includes('es-co')) score += 50;
+    else if (lang.includes('es-es')) score += 20;
+    
+    if (name.includes('natural') || name.includes('neural')) score += 150;
+    if (name.includes('google') || name.includes('microsoft') || name.includes('premium')) score += 30;
+    return { voice: v, score };
+  });
+  scored.sort((a, b) => b.score - a.score);
+  return scored[0].voice;
+}
+
 function speak(txt,cb){
   if(!('speechSynthesis' in window)){if(cb)cb();return;}
   window.speechSynthesis.cancel();
@@ -4597,10 +4915,9 @@ function speak(txt,cb){
   u.lang='es-UY';
   u.rate=1.05;
   u.pitch=1;
-  // Prefer Spanish voice if available
-  const voices=window.speechSynthesis.getVoices();
-  const esVoice=voices.find(v=>v.lang.startsWith('es')&&v.lang.includes('419'))||voices.find(v=>v.lang.startsWith('es'));
-  if(esVoice)u.voice=esVoice;
+  const voices = _loadedVoices.length ? _loadedVoices : window.speechSynthesis.getVoices();
+  const esVoice = findBestSpanishVoice(voices);
+  if(esVoice) u.voice=esVoice;
   u.onend=()=>{if(cb)cb();};
   u.onerror=()=>{if(cb)cb();};
   window.speechSynthesis.speak(u);
@@ -5484,6 +5801,7 @@ function onLoginSuccess(){
   updateUserAvatars();
   renderGym();
   startNotifCheck();
+  consolidarMemoriaDiaria();
 }
 
 function doLogout(){
@@ -5500,34 +5818,49 @@ function doLogout(){
   showLoginScreen();
 }
 
+var activeProfileTab = 'cuenta';
+function setProfileTab(tab){
+  activeProfileTab = tab;
+  openUserMgmt();
+}
+
 function openUserMgmt(){
   if(!currentUser)return;
   const users=getUsers();
-  let h=`<div class="mt">Mi cuenta</div>
-  <div style="background:var(--bg3);border-radius:var(--r-sm);padding:14px;margin-bottom:18px;display:flex;align-items:center;gap:12px">
-    <div style="width:44px;height:44px;border-radius:50%;background:var(--red);display:flex;align-items:center;justify-content:center;font-family:var(--fd);font-weight:800;font-size:19px;flex-shrink:0;color:#fff">${currentUser.name[0].toUpperCase()}</div>
-    <div>
-      <div style="font-weight:700;font-size:15px">${esc(currentUser.name)}</div>
-      <div style="font-size:11px;color:${currentUser.isAdmin?'var(--gold)':'var(--text2)'};margin-top:3px">${currentUser.isAdmin?'✦ Administrador':'Usuario'}</div>
-    </div>
+  let h=`<div class="mt">Perfil y Ajustes</div>`;
+  h+=`<div class="tabs" style="margin-bottom:16px; border-bottom:1px solid var(--border)">
+    <button class="tab ${activeProfileTab==='cuenta'?'on':''}" onclick="setProfileTab('cuenta')" style="padding:10px 20px; font-size:13px">👤 Cuenta</button>
+    <button class="tab ${activeProfileTab==='config'?'on':''}" onclick="setProfileTab('config')" style="padding:10px 20px; font-size:13px">⚙️ Configuración</button>
   </div>`;
-  if(currentUser.isAdmin){
-    h+=`<div class="sec-t">Usuarios (${users.length})</div>`;
-    users.forEach(u=>{
-      const isSelf=u.id===currentUser.id;
-      h+=`<div style="display:flex;align-items:center;gap:10px;padding:11px 0;border-bottom:1px solid var(--border)">
-        <div style="width:34px;height:34px;border-radius:50%;background:${u.isAdmin?'var(--gold-d)':'var(--bg3)'};border:1px solid ${u.isAdmin?'var(--gold-b)':'var(--border2)'};display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;flex-shrink:0;color:${u.isAdmin?'var(--gold)':'var(--text1)'}">${u.name[0].toUpperCase()}</div>
-        <div style="flex:1;min-width:0">
-          <div style="font-size:13px;font-weight:600">${esc(u.name)}${isSelf?` <span style="color:var(--text2);font-weight:400;font-size:11px">(vos)</span>`:''}</div>
-          <div style="font-size:10px;color:${u.isAdmin?'var(--gold)':'var(--text2)'};margin-top:2px">${u.isAdmin?'Administrador':'Usuario'}</div>
-        </div>
-        ${!isSelf?`<button class="btn b-xs b-red" onclick="deleteUser('${u.id}')">Borrar</button>`:''}
-      </div>`;
-    });
-    h+=`<button class="btn b-md b-g" style="width:100%;margin-top:16px;margin-bottom:20px" onclick="showCreateUser()">+ Crear usuario</button>
-    <div class="div"></div>`;
+  
+  if(activeProfileTab === 'cuenta'){
+    h+=`<div style="background:var(--bg3);border-radius:var(--r-sm);padding:14px;margin-bottom:18px;display:flex;align-items:center;gap:12px">
+      <div style="width:44px;height:44px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;font-family:var(--fd);font-weight:800;font-size:19px;flex-shrink:0;color:#fff">${currentUser.name[0].toUpperCase()}</div>
+      <div>
+        <div style="font-weight:700;font-size:15px">${esc(currentUser.name)}</div>
+        <div style="font-size:11px;color:${currentUser.isAdmin?'var(--gold)':'var(--text2)'};margin-top:3px">${currentUser.isAdmin?'✦ Administrador':'Usuario'}</div>
+      </div>
+    </div>`;
+    if(currentUser.isAdmin){
+      h+=`<div class="sec-t">Usuarios (${users.length})</div>`;
+      users.forEach(u=>{
+        const isSelf=u.id===currentUser.id;
+        h+=`<div style="display:flex;align-items:center;gap:10px;padding:11px 0;border-bottom:1px solid var(--border)">
+          <div style="width:34px;height:34px;border-radius:50%;background:${u.isAdmin?'var(--gold-d)':'var(--bg3)'};border:1px solid ${u.isAdmin?'var(--gold-b)':'var(--border2)'};display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;flex-shrink:0;color:${u.isAdmin?'var(--gold)':'var(--text1)'}">${u.name[0].toUpperCase()}</div>
+          <div style="flex:1;min-width:0">
+            <div style="font-size:13px;font-weight:600">${esc(u.name)}${isSelf?` <span style="color:var(--text2);font-weight:400;font-size:11px">(vos)</span>`:''}</div>
+            <div style="font-size:10px;color:${u.isAdmin?'var(--gold)':'var(--text2)'};margin-top:2px">${u.isAdmin?'Administrador':'Usuario'}</div>
+          </div>
+          ${!isSelf?`<button class="btn b-xs b-red" onclick="deleteUser('${u.id}')">Borrar</button>`:''}
+        </div>`;
+      });
+      h+=`<button class="btn b-md b-g" style="width:100%;margin-top:16px;margin-bottom:20px" onclick="showCreateUser()">+ Crear usuario</button>
+      <div class="div"></div>`;
+    }
+    h+=`<button class="btn b-lg b-g" style="color:var(--red);border-color:var(--red-b);margin-top:4px" onclick="doLogout()">Cerrar sesión</button>`;
+  } else {
+    h+=rConfig();
   }
-  h+=`<button class="btn b-lg b-g" style="color:var(--red);border-color:var(--red-b);margin-top:4px" onclick="doLogout()">Cerrar sesión</button>`;
   oOv1(h);
 }
 
