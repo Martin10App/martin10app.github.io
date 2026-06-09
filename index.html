@@ -61,7 +61,7 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
 }
 @keyframes fi{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
 
-.ph{position:sticky;top:0;z-index:50;background:rgba(10,11,17,.82);backdrop-filter:blur(28px) saturate(180%);-webkit-backdrop-filter:blur(28px) saturate(180%);border-bottom:1px solid var(--border);padding:18px 20px 0}
+.ph{position:sticky;top:0;z-index:50;background:rgba(10,11,17,.82);backdrop-filter:blur(28px) saturate(180%);-webkit-backdrop-filter:blur(28px) saturate(180%);border-bottom:1px solid var(--border);padding:calc(16px + env(safe-area-inset-top, 24px)) 20px 0}
 .ph-r{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px}
 .ph-t{font-family:var(--fd);font-size:23px;font-weight:800;letter-spacing:-.6px;line-height:1.05}
 .ph-s{font-size:10px;color:var(--text2);letter-spacing:2.5px;font-weight:600;margin-top:3px;text-transform:uppercase}
@@ -219,7 +219,7 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
 .user-avatar:active{opacity:.75}
 
 /* ── MICRÓFONO VOZ ── */
-#mic-btn{position:fixed;bottom:74px;right:16px;width:54px;height:54px;border-radius:50%;background:var(--red);color:#fff;font-size:22px;z-index:150;box-shadow:0 4px 22px rgba(255,59,78,.45);display:none;align-items:center;justify-content:center;cursor:pointer;border:none;transition:transform .18s}
+#mic-btn{position:fixed;bottom:calc(85px + env(safe-area-inset-bottom, 0px));right:16px;width:48px;height:48px;border-radius:50%;background:var(--red);color:#fff;font-size:18px;z-index:150;box-shadow:0 4px 22px rgba(255,59,78,.45);display:none;align-items:center;justify-content:center;cursor:pointer;border:none;transition:transform .18s}
 #mic-btn:active{transform:scale(.9)}
 #mic-btn.recording{animation:mic-pulse 1.2s ease-in-out infinite}
 @keyframes mic-pulse{0%,100%{box-shadow:0 4px 22px rgba(255,59,78,.45);transform:scale(1)}50%{box-shadow:0 0 0 10px rgba(255,59,78,.15),0 4px 22px rgba(255,59,78,.6);transform:scale(1.08)}}
