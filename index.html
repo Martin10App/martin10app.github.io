@@ -2233,7 +2233,9 @@ function ensureCardCats(){
       changed=true;
     }
   });
-  cats.forEach(c=>{if(c.cardRef&&!cards.find(crd=>crd.id===c.cardRef)){cats=cats.filter(x=>x.id!==c.id);changed=true;}});
+  const beforeLen=cats.length;
+  cats=cats.filter(c=>!c.cardRef||cards.some(crd=>crd.id===c.cardRef));
+  if(cats.length!==beforeLen)changed=true;
   if(changed)S.s('cats4',cats);
 }
 
@@ -4858,7 +4860,7 @@ function confirmExcelImport(){
     if(newCats.length)existingCats.push(...newCats);
     S.s('cats4',existingCats);
     // merge pagosFijos (remap ids)
-    const pf=S.g('pagosFijos4',{});
+    const pf=S.g('pf4',{});
     Object.entries(obj.pagosFijos||{}).forEach(([k,v])=>{
       const parts=k.split('_');
       const oldId=parts.slice(0,-2).join('_');
@@ -4868,9 +4870,9 @@ function confirmExcelImport(){
       const nk=newId+'_'+m+'_'+y;
       if(pf[nk]===undefined)pf[nk]=parseMoney(v);
     });
-    S.s('pagosFijos4',pf);
+    S.s('pf4',pf);
     // merge pagosEstado
-    const pe=S.g('pagosEstado4',{});
+    const pe=S.g('pe4',{});
     Object.entries(obj.pagosEstado||{}).forEach(([k,v])=>{
       const parts=k.split('_');
       const oldId=parts.slice(0,-2).join('_');
@@ -4880,7 +4882,7 @@ function confirmExcelImport(){
       const nk=newId+'_'+m+'_'+y;
       if(pe[nk]===undefined)pe[nk]=v;
     });
-    S.s('pagosEstado4',pe);
+    S.s('pe4',pe);
     // merge gastos (find max existing _id)
     const existingGastos=S.g('gst4',[]);
     const maxId=existingGastos.reduce((mx,g)=>Math.max(mx,g._id||0),0);
@@ -4892,8 +4894,8 @@ function confirmExcelImport(){
     S.s('gst4',existingGastos);
     // reload local vars
     cats=S.g('cats4',[]);
-    pagosFijos=S.g('pagosFijos4',{});
-    pagosEstado=S.g('pagosEstado4',{});
+    pagosFijos=S.g('pf4',{});
+    pagosEstado=S.g('pe4',{});
     gastos=S.g('gst4',[]);
     _pendingImport=null;
     const total=(obj.gastos||[]).length+Object.keys(obj.pagosFijos||{}).length;
