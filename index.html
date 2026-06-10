@@ -2326,6 +2326,8 @@ function totalAhorroMes(m,y){
 }
 function ahorroAcumCat(catId){
   let t=0;
+  const c=cats.find(x=>x.id===catId);
+  if(c) t+=money(c.base||0);
   const prefix=catId+'_';
   Object.keys(pagosFijos).forEach(key=>{
     if(!key.startsWith(prefix))return;
@@ -3554,15 +3556,17 @@ var chatHist=[];
     S.s('activeChatId',activeChatId);
   }
   // Apuntar chatHist a la sesión activa
-  const s=chatSessions.find(s=>s.id===activeChatId);
-  if(s) chatHist=s.mensajes;
-  else {
-    // fallback a la más reciente
-    const last=chatSessions[chatSessions.length-1];
-    activeChatId=last.id;
-    chatHist=last.mensajes;
-    S.s('activeChatId',activeChatId);
+  let s=chatSessions.find(s=>s.id===activeChatId);
+  if(!s) s=chatSessions[chatSessions.length-1];
+
+  if(s.mensajes.length===0){
+    const conMsgs=[...chatSessions].filter(x=>x.mensajes.length>0).sort((a,b)=>b.updatedAt-a.updatedAt);
+    if(conMsgs.length>0) s=conMsgs[0];
   }
+
+  activeChatId=s.id;
+  chatHist=s.mensajes;
+  S.s('activeChatId',activeChatId);
 })();
 var _pendingImport=null;
 var _voiceSent=false;
@@ -3811,10 +3815,10 @@ async function sendChat(){
   const _dias=['domingo','lunes','martes','miércoles','jueves','viernes','sábado'];
   const _hoy='CONTEXTO TEMPORAL: hoy es '+_dias[now.getDay()]+' '+String(now.getDate()).padStart(2,'0')+'/'+String(now.getMonth()+1).padStart(2,'0')+'/'+now.getFullYear()+', '+String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0')+'hs. Para eventos sin fecha explícita usá HOY; "mañana"=día siguiente; "el viernes"=el próximo viernes. "8pm"=20:00, "8am"=08:00. Devolvé fechas como YYYY-MM-DD.\n\n';
   const memCtx=buildMemCtx(false);
-  const memInstr='\n\nMEMORIA / APRENDIZAJE:\n- Si en el mensaje hay info DURADERA de la persona (preferencias, hábitos, restricciones de dieta, objetivos, días/horarios de entrenamiento, ingresos, fechas fijas, etc.), guardala vos mismo con [ACCION]{"op":"recordar","dato":"frase corta en 3ra persona","tag":"dieta|gym|finanzas|agenda|general","importante":true|false}[/ACCION]. Poné importante:true SOLO para datos permanentes críticos (alergias, intolerancias, salud, lesiones, objetivos de fondo, familia); el resto false.\n- Si te piden olvidar algo: [ACCION]{"op":"olvidar","dato":"texto a borrar"}[/ACCION].\n- NO guardes datos puntuales del día (un gasto suelto, un peso de hoy) como memoria; eso ya va a las acciones normales. Guardá solo lo que define a la persona a largo plazo.\n- No repitas en memoria algo que ya figura arriba.';
+  const memInstr='\n\nMEMORIA / APRENDIZAJE:\n- ESTO ES CRÍTICO: Si en el mensaje hay CUALQUIER info DURADERA de la persona (preferencias, hábitos, restricciones, objetivos, pesos levantados habitualmente, fechas fijas, etc.), TENÉS QUE GUARDARLA vos mismo usando [ACCION]{"op":"recordar","dato":"frase en 3ra persona","tag":"dieta|gym|finanzas|agenda|general","importante":true|false}[/ACCION]. Poné importante:true SOLO para datos permanentes de fondo (alergias, lesiones, objetivos de vida); el resto false.\n- Si te piden olvidar algo: [ACCION]{"op":"olvidar","dato":"texto a borrar"}[/ACCION].\n- NO te olvides de guardar las cosas importantes, o tu memoria fallará.\n- No repitas en memoria algo que ya figura arriba.';
   const ctxHist=chatHist.slice(-20).map(msg=>'['+msg.role+']: '+msg.text).join('\n');
   const voiceGuide = _voiceSent ? '\n\nIMPORTANTE: El usuario te está hablando por voz. Respondé de forma muy corta (máximo 2 o 3 oraciones breves), directa y conversacional en español uruguayo, sin usar viñetas, listas ni formato markdown largo.' : '';
-  const prompt='Sos MARTIN·APP AI: asistente personal con control total de los datos.\n\n'+_hoy+dataCtx+memCtx+memInstr+voiceGuide+'\n\nREGLAS:\n- Respondé en español uruguayo, natural, amigable y con confianza.\n- Revisá los datos con cuidado. Si te preguntan por pesos o registros, verificá exactamente lo que dice el registro antes de responder. No inventes números.\n- Si el usuario pide agregar/modificar datos, usá [ACCION] al final.\n- ACCIONES DISPONIBLES:\n  * [ACCION]{"op":"gasto","cat":"id","v":monto,"desc":"...","f":"d/m"}[/ACCION]\n  * [ACCION]{"op":"pago","cat":"id","m":mes,"y":año}[/ACCION]\n  * [ACCION]{"op":"fijo","cat":"id","m":mes,"y":año,"v":monto}[/ACCION]\n  * [ACCION]{"op":"compra","cardId":"id","v":monto,"desc":"...","cuotas":1}[/ACCION]\n  * [ACCION]{"op":"crear_rutina","name":"Nombre","days":[{"label":"Día1","exercises":[{"name":"Ej1","muscle":"Pecho","series":4,"reps":"10"}]}]}[/ACCION]\n  * [ACCION]{"op":"modificar_ejercicio","dia":"Lunes","nombre_original":"press banca","nombre_nuevo":"press banca con mancuernas","series":4,"reps":"10","musculo":"Pecho"}[/ACCION] (usá esto para cambiar ejercicios existentes de rutinas)\n  * [ACCION]{"op":"evento","titulo":"...","fecha":"YYYY-MM-DD","hora":"HH:MM","recordatorio":15}[/ACCION]\n- NUTRICIÓN: si la persona dice qué comió, registralo con [ACCION]{"op":"comida","nombre":"...","cal":número,"prot":número}[/ACCION] (estimá calorías vos). Para CARDIO: [ACCION]{"op":"cardio","tipo":"correr","min":30,"km":5}[/ACCION]. Para SUEÑO: [ACCION]{"op":"sueno","horas":7.5,"calidad":"buena"}[/ACCION]. Para la LISTA DEL SÚPER: [ACCION]{"op":"comprar","item":"2kg de pollo","cat":"carniceria"}[/ACCION]. Para ELIMINAR algo: [ACCION]{"op":"eliminar","tipo":"gasto|rutina|evento|comida|cardio|super|categoria|memoria","desc":"texto para identificarlo"}[/ACCION].\n- AHORRO: [ACCION]{"op":"ahorro","cat":"id_meta","v":monto}[/ACCION]. Crear meta: [ACCION]{"op":"crear_meta","nombre":"Auto","objetivo":500000,"aporte":1500}[/ACCION].\n- TARJETAS POR MES: op \"fijo\" con el id de la CATEGORÍA de esa tarjeta. Meses de 0 a 11. Ej \"anotá 1400 de OCA en abril\" -> [ACCION]{\"op\":\"fijo\",\"cat\":\"<id categoría OCA>\",\"m\":3,\"y\":<año>,\"v\":1400}[/ACCION].\n- muscle debe ser uno de: Pecho, Espalda, Hombros, Bíceps, Tríceps, Cuádriceps, Femoral, Gemelos, Abdomen\n- IDs son los que ves arriba. NO inventes IDs.\n- Podés ANALIZAR entrenamientos: y recomendar ajustes.\n- Podés dar consejos de DIETA y NUTRICIÓN según el perfil y objetivo del usuario.\n- Si te piden hacer algo que no sea una acción, respondé normal pero útil.\n- Siempre respondé optimista y motivador como un entrenador personal.\n\nConversación:\n'+ctxHist+'\n\n['+txt+']:';
+  const prompt='Sos MARTIN·APP AI: asistente personal con control total de los datos.\n\n'+_hoy+dataCtx+memCtx+memInstr+voiceGuide+'\n\nREGLAS:\n- Respondé en español uruguayo, natural, amigable y con confianza.\n- Revisá los datos con cuidado. Si te preguntan por pesos o registros, verificá exactamente lo que dice el registro antes de responder. No inventes números.\n- Si el usuario pide agregar/modificar datos, usá [ACCION] al final.\n- ACCIONES DISPONIBLES:\n  * [ACCION]{"op":"gasto","cat":"id","v":monto,"desc":"...","f":"d/m"}[/ACCION]\n  * [ACCION]{"op":"pago","cat":"id","m":mes,"y":año}[/ACCION]\n  * [ACCION]{"op":"fijo","cat":"id","m":mes,"y":año,"v":monto}[/ACCION]\n  * [ACCION]{"op":"compra","cardId":"id","v":monto,"desc":"...","cuotas":1}[/ACCION]\n  * [ACCION]{"op":"crear_rutina","name":"Nombre","days":[{"label":"Día1","exercises":[{"name":"Ej1","muscle":"Pecho","series":4,"reps":"10"}]}]}[/ACCION]\n  * [ACCION]{"op":"modificar_ejercicio","dia":"Lunes","nombre_original":"press banca","nombre_nuevo":"press banca con mancuernas","series":4,"reps":"10","musculo":"Pecho"}[/ACCION] (usá esto para cambiar ejercicios existentes de rutinas)\n  * [ACCION]{"op":"registrar_serie","ejercicio":"aperturas","serie":3,"peso":30,"reps":10}[/ACCION] (usá esto para registrar tu peso en una serie específica)\n  * [ACCION]{"op":"completar_ejercicio","ejercicio":"aperturas"}[/ACCION] (usá esto para marcar todas las series de un ejercicio como hechas)\n  * [ACCION]{"op":"evento","titulo":"...","fecha":"YYYY-MM-DD","hora":"HH:MM","recordatorio":15}[/ACCION]\n- NUTRICIÓN: si la persona dice qué comió, registralo con [ACCION]{"op":"comida","nombre":"...","cal":número,"prot":número}[/ACCION] (estimá calorías vos). Para CARDIO: [ACCION]{"op":"cardio","tipo":"correr","min":30,"km":5}[/ACCION]. Para SUEÑO: [ACCION]{"op":"sueno","horas":7.5,"calidad":"buena"}[/ACCION]. Para la LISTA DEL SÚPER: [ACCION]{"op":"comprar","item":"2kg de pollo","cat":"carniceria"}[/ACCION]. Para ELIMINAR algo: [ACCION]{"op":"eliminar","tipo":"gasto|rutina|evento|comida|cardio|super|categoria|memoria","desc":"texto para identificarlo"}[/ACCION].\n- AHORRO MENSUAL: [ACCION]{"op":"ahorro","cat":"id_meta","v":monto}[/ACCION] (para sumar al mes).\n- AHORRO TOTAL: Si la persona dice que tiene un saldo TOTAL acumulado de X (ej. "tengo 2000 ahorrados"): [ACCION]{"op":"set_saldo_ahorro","cat":"id_meta","v":monto}[/ACCION].\n- Crear meta: [ACCION]{"op":"crear_meta","nombre":"Auto","objetivo":500000,"aporte":1500}[/ACCION].\n- TARJETAS POR MES: op \"fijo\" con el id de la CATEGORÍA de esa tarjeta. Meses de 0 a 11. Ej \"anotá 1400 de OCA en abril\" -> [ACCION]{\"op\":\"fijo\",\"cat\":\"<id categoría OCA>\",\"m\":3,\"y\":<año>,\"v\":1400}[/ACCION].\n- muscle debe ser uno de: Pecho, Espalda, Hombros, Bíceps, Tríceps, Cuádriceps, Femoral, Gemelos, Abdomen\n- IDs son los que ves arriba. NO inventes IDs.\n- Podés ANALIZAR entrenamientos: y recomendar ajustes.\n- Podés dar consejos de DIETA y NUTRICIÓN según el perfil y objetivo del usuario.\n- Si te piden hacer algo que no sea una acción, respondé normal pero útil.\n- Siempre respondé optimista y motivador como un entrenador personal.\n\nConversación:\n'+ctxHist+'\n\n['+txt+']:';
 
   // ---- Burbuja del asistente que se va llenando en vivo ----
   chatHist.push({role:'assistant',text:'',streaming:true});
@@ -3891,14 +3895,17 @@ var coachHist=[];
     S.s('coachSessions',coachSessions);
     S.s('activeCoachId',activeCoachId);
   }
-  const s=coachSessions.find(s=>s.id===activeCoachId);
-  if(s) coachHist=s.mensajes;
-  else {
-    const last=coachSessions[coachSessions.length-1];
-    activeCoachId=last.id;
-    coachHist=last.mensajes;
-    S.s('activeCoachId',activeCoachId);
+  let s=coachSessions.find(s=>s.id===activeCoachId);
+  if(!s) s=coachSessions[coachSessions.length-1];
+
+  if(s.mensajes.length===0){
+    const conMsgs=[...coachSessions].filter(x=>x.mensajes.length>0).sort((a,b)=>b.updatedAt-a.updatedAt);
+    if(conMsgs.length>0) s=conMsgs[0];
   }
+
+  activeCoachId=s.id;
+  coachHist=s.mensajes;
+  S.s('activeCoachId',activeCoachId);
 })();
 function saveCoach(){
   const s=coachSessions.find(s=>s.id===activeCoachId);
@@ -3984,7 +3991,13 @@ function buildAppContext(){
   const ahorroMes=(typeof totalAhorroMes==='function')?totalAhorroMes(m,y):0;
   const disponible=money(sueldo-totalGasto-ahorroMes);
   const topGastos=cats.filter(c=>!c.cardRef&&!c.ahorro).map(c=>({n:c.n,v:totalCatMes(c.id,m,y)+montoCat(c,m,y)})).filter(x=>x.v>0).sort((a,b)=>b.v-a.v).slice(0,5);
-  const metas=cats.filter(c=>c.ahorro).map(c=>{const ac=(typeof ahorroAcumCat==='function')?ahorroAcumCat(c.id):0;return c.n+': '+fmtFull(ac)+(c.objetivo?'/'+fmtFull(c.objetivo):'');}).join('; ');
+  const metas=cats.filter(c=>c.ahorro).map(c=>{
+    const ac=(typeof ahorroAcumCat==='function')?ahorroAcumCat(c.id):0;
+    const obj=c.objetivo||0;
+    let s=c.n+': Ahorrado '+fmtFull(ac);
+    if(obj>0) s+=', Objetivo '+fmtFull(obj)+', Falta '+fmtFull(Math.max(0,obj-ac));
+    return s;
+  }).join('; ');
   const profile=gymProfile||{};
   const nd=nutData||{};
   const today=todayStr();
@@ -4018,7 +4031,8 @@ function coachPrompt(userMsg, isVoice){
     '- Motivás de verdad, sin frases vacías. Reconocés el esfuerzo, no solo el resultado.\n'+
     '- Sos honesto: si algo no va bien (gasta de más, no entrena, no avanza), se lo decís con respeto y cariño, no le mentís para caer bien.\n'+
     '- Respuestas breves y conversacionales (2-5 frases). Esto es un chat, no un ensayo.\n'+
-    '- Podés sugerir acciones concretas: agendar algo, recordar un dato. Si querés agendar usá [ACCION]{"op":"evento","titulo":"...","fecha":"YYYY-MM-DD","hora":"HH:MM","recordatorio":15}[/ACCION]. Si la persona te cuenta algo duradero, recordalo con [ACCION]{"op":"recordar","dato":"...","tag":"general"}[/ACCION].\n'+
+    '- Podés sugerir acciones concretas: agendar algo, recordar un dato. Si querés agendar usá [ACCION]{"op":"evento","titulo":"...","fecha":"YYYY-MM-DD","hora":"HH:MM","recordatorio":15}[/ACCION]. ESTO ES MUY IMPORTANTE: Si la persona te cuenta algo duradero (hábitos, metas, gustos, historial), TENÉS QUE GUARDARLO con [ACCION]{"op":"recordar","dato":"...","tag":"general"}[/ACCION] o si no se te olvidará en el futuro.\n'+
+    '- Para registrar un ejercicio de gimnasio: [ACCION]{"op":"registrar_serie","ejercicio":"nombre","serie":3,"peso":30,"reps":10}[/ACCION] o si te dice que lo terminó: [ACCION]{"op":"completar_ejercicio","ejercicio":"nombre"}[/ACCION]\n'+
     'LÍMITE IMPORTANTE DE SEGURIDAD:\n'+
     '- Si la persona expresa angustia profunda, desesperanza, o cualquier señal de querer lastimarse, NO intentes hacer de terapeuta. Respondé con calidez, validá lo que siente, y sugerile con suavidad hablar con un profesional de salud mental o alguien de confianza. En Uruguay puede llamar a la Línea Vida 0800 0767 o al 911 si es urgente. Tomátelo siempre en serio.\n\n'+
     'Conversación hasta ahora:\n'+ctxHist+'\n\n[usuario]: '+userMsg;
@@ -4337,6 +4351,18 @@ function ejecutarAccion(acc){
     cats.push(nueva);S.s('cats4',cats);
     return '🎯 Meta "'+nombre+'" creada'+(nueva.objetivo>0?' (objetivo $'+fmt(nueva.objetivo)+')':'');
   }
+  if(acc.op==='set_saldo_ahorro'){
+    const cat=cats.find(c=>c.id===acc.cat&&c.ahorro)||cats.find(c=>c.ahorro);
+    if(!cat)return 'No hay ninguna meta de ahorro. Creá una primero.';
+    const pf=S.g('pf4',{});
+    const prefix=cat.id+'_';
+    Object.keys(pf).forEach(k=>{ if(k.startsWith(prefix)) delete pf[k]; });
+    cat.base = parseMoney(acc.v);
+    S.s('cats4', cats);
+    S.s('pf4', pf);
+    pagosFijos=pf;
+    return '🐷 El saldo total de "'+cat.n+'" se ajustó a $'+fmt(cat.base)+'.';
+  }
   if(acc.op==='crear_rutina'){
     if(!acc.name||!acc.days||!acc.days.length)return 'Faltan datos para crear la rutina';
     const rid=uid();
@@ -4382,6 +4408,39 @@ function ejecutarAccion(acc){
     S.s('sets2', sets);
     if(typeof renderGym==='function')renderGym();
     return '💪 Modificado en '+day.label+': "'+oldName+'" ('+oldSeries+'x'+oldReps+') ➔ "'+ex.name+'" ('+ex.series+'x'+ex.reps+')';
+  }
+  if(acc.op==='registrar_serie' || acc.op==='completar_ejercicio'){
+    const rs=S.g('rt2',[]);
+    if(!rs.length)return 'No hay rutinas creadas';
+    const r=rs.find(x=>x.id===activeRid) || rs[0];
+    let foundEx=null, foundDid=null, foundEi=null;
+    const exQuery = (acc.ejercicio||'').toLowerCase();
+    for(const d of r.days){
+      const ei = d.exercises.findIndex(e=>e.name.toLowerCase().includes(exQuery) || exQuery.includes(e.name.toLowerCase()));
+      if(ei!==-1){ foundEx=d.exercises[ei]; foundDid=d.id; foundEi=ei; break; }
+    }
+    if(!foundEx)return 'Ejercicio "'+acc.ejercicio+'" no encontrado en la rutina "'+r.name+'"';
+    
+    if(acc.op==='completar_ejercicio'){
+      for(let s=0; s<foundEx.series; s++){ sets[`${r.id}|${foundDid}|${foundEi}|${s}`]=true; }
+      S.s('sets2', sets);
+      if(typeof renderGym==='function')renderGym();
+      return '💪 Ejercicio "'+foundEx.name+'" marcado como completamente realizado.';
+    }
+
+    const sIndex = acc.serie ? (acc.serie - 1) : 0;
+    if(sIndex < 0 || sIndex >= foundEx.series) return 'Serie inválida (el ejercicio tiene '+foundEx.series+' series)';
+    
+    if(acc.peso!==undefined) {
+      weights[`${r.id}|${foundDid}|${foundEi}|${sIndex}`] = String(acc.peso);
+      weights[`${r.id}|${foundDid}|${foundEi}`] = String(acc.peso);
+      S.s('wts2', weights);
+      if(typeof updateWeekLogFromCurrent === 'function') updateWeekLogFromCurrent();
+    }
+    sets[`${r.id}|${foundDid}|${foundEi}|${sIndex}`]=true;
+    S.s('sets2', sets);
+    if(typeof renderGym==='function')renderGym();
+    return '💪 Serie '+(sIndex+1)+' de "'+foundEx.name+'" anotada'+(acc.peso?' con '+acc.peso+'kg':'')+'.';
   }
   if(acc.op==='compra'){
     const cards=(S.g('cards1',[])||[]);
@@ -6243,9 +6302,9 @@ function openCardDetail(cardId,vm,vy){
           <div style="font-size:12px;color:var(--text2);font-weight:700">Total pagado en ${MONTHS[vm]}</div>
           <div style="font-family:var(--fm);font-size:18px;font-weight:800;color:${card.color}">${fmtFull(mes)}</div>
         </div>
-        <div style="font-size:11px;color:var(--text3);margin:-6px 2px 14px">Sin desglose. Cargá el PDF con ✨ IA para ver cada compra.</div>`;
+        <div style="font-size:11px;color:var(--text3);margin:-6px 2px 14px">Sin desglose. Cargá el PDF del resumen para ver cada compra.</div>`;
       } else {
-        h+=`<div style="text-align:center;padding:22px 0;color:var(--text2);font-size:12px">No hay compras cargadas en este resumen.<br><span style="font-size:11px;color:var(--text3)">Usá ✨ IA para cargar el estado de cuenta de ${MONTHS[vm]}.</span></div>`;
+        h+=`<div style="text-align:center;padding:22px 0;color:var(--text2);font-size:12px">No hay compras cargadas en este resumen.<br><span style="font-size:11px;color:var(--text3)">Usá el botón de subir resumen de abajo para cargar el estado de cuenta de ${MONTHS[vm]}.</span></div>`;
       }
     } else {
       let _itemsSum=0;
@@ -6297,10 +6356,12 @@ function openCardDetail(cardId,vm,vy){
   h+=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
     <div class="sec-t" style="margin:0">Compras (${purchs.length})</div>
     <div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end">
-      ${gemKey?`<button class="btn b-xs" style="background:linear-gradient(135deg,#4285F4,#7C3AED);color:#fff;border:none" onclick="openAIAnalysis('${cardId}')">✨ IA</button>`:''}
-      <button class="btn b-xs b-p" onclick="openAddPurch('${cardId}')">+ Compra</button>
+      <button class="btn b-xs b-p" onclick="openAddPurch('${cardId}')">+ Manual</button>
     </div>
   </div>`;
+  if(gemKey){
+    h+=`<button class="btn b-lg" style="width:100%;background:linear-gradient(135deg,#4285F4,#7C3AED);color:#fff;border:none;margin-bottom:18px;font-size:13px" onclick="openAIAnalysis('${cardId}')">📄 Subir PDF/Foto del Estado de Cuenta</button>`;
+  }
 
   if(!purchs.length){
     h+=`<div style="text-align:center;padding:28px 0;color:var(--text2);font-size:12px">Sin compras registradas</div>`;
@@ -6324,10 +6385,13 @@ function openCardDetail(cardId,vm,vy){
             <div style="font-size:10px;color:var(--text2)">por cuota</div>
           </div>
         </div>
+        <div style="font-size:11.5px;color:var(--text1);margin-bottom:10px;background:var(--bg0);padding:6px 10px;border-radius:4px;border-left:3px solid ${done?'var(--green)':card.color}">
+          ${done?'✅ Ya saldaste esta compra':`Pagaste <b>${p.paidInstallments}</b> de <b>${p.installments}</b> cuotas.<br>Restan pagar <b>${p.installments - p.paidInstallments} cuotas</b> (Total restante a futuro: <b style="font-family:var(--fm)">${fmtFull(rem)}</b>)`}
+        </div>
         <div style="display:flex;align-items:center;gap:8px">
           <div style="flex:1"><div class="pbar"><div class="pfill" style="width:${pct}%;background:${done?'var(--green)':card.color}"></div></div></div>
           <div style="font-size:10px;color:var(--text2);font-family:var(--fm);white-space:nowrap;flex-shrink:0">${p.paidInstallments}/${p.installments}</div>
-          ${!done?`<button class="btn b-xs b-grn" onclick="markInstPaid('${p.id}')" style="flex-shrink:0">✓ Pagar</button>`:''}
+          ${!done?`<button class="btn b-xs b-grn" onclick="markInstPaid('${p.id}')" style="flex-shrink:0">✓ Pagar 1</button>`:''}
           <button onclick="delPurch('${p.id}')" style="color:var(--text3);font-size:13px;padding:2px 5px;flex-shrink:0">✕</button>
         </div>
       </div>`;
