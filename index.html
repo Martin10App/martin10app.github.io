@@ -4726,15 +4726,9 @@ const AI_PROVIDERS={
     defaultModel:'deepseek-flash-thinking',
     models:['deepseek-flash-thinking','deepseek-thinking','deepseek-v4-pro','deepseek-v4-pro-thinking','deepseek-v4-flash'],
     hint:'sk-no-key-required', url:'localhost:3000'
-  },
-  wallasapi:{
-    label:'WallasAPI · Router', keyStore:'wallasapi_key', modelStore:'ai_model_wallasapi',
-    defaultModel:'auto',
-    models:['auto','fast','standard','reasoning'],
-    hint:'API Key si requiere', url:'localhost:8001'
   }
 };
-function aiProvider(){const p=S.g('ai_provider','free');return AI_PROVIDERS[p]?p:'free';}
+function aiProvider(){const p=S.g('ai_provider','deepseek_local');return AI_PROVIDERS[p]?p:'deepseek_local';}
 function aiKey(){const c=AI_PROVIDERS[aiProvider()];if(c.nokey)return 'free';return (S.g(c.keyStore,'')||'').trim();}
 function aiModel(){const c=AI_PROVIDERS[aiProvider()];return (S.g(c.modelStore,'')||'').trim()||c.defaultModel;}
 function aiKeyForProvider(p){const c=AI_PROVIDERS[p];if(!c)return '';if(c.nokey)return 'free';return (S.g(c.keyStore,'')||'').trim();}
@@ -4768,12 +4762,11 @@ async function _aiComplete(prompt, forcedProv=null){
       const d=await r.json();
       return d?.candidates?.[0]?.content?.parts?.[0]?.text||'';
     }
-    if(prov==='openai'||prov==='grok'||prov==='deepseek_local'||prov==='wallasapi'){
+    if(prov==='openai'||prov==='grok'||prov==='deepseek_local'){
       let _url = '';
       if(prov==='grok') _url='https://api.x.ai/v1/chat/completions';
       else if(prov==='openai') _url='https://api.openai.com/v1/chat/completions';
       else if(prov==='deepseek_local') _url='http://localhost:3000/v1/chat/completions';
-      else if(prov==='wallasapi') _url='http://localhost:8001/v1/chat/completions';
       
       const r=await _fetchT(_url,
         {method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},body:JSON.stringify({model,messages:[{role:'user',content:prompt}]})});
@@ -4990,21 +4983,25 @@ async function _gemini(prompt,_key,reintento=0){
 async function _geminiStream(prompt,_key,onChunk,reintento=0,forcedProv=null){
   const prov=forcedProv || aiProvider(), key=aiKeyForProvider(prov), model=aiModelForProvider(prov);
   if(!key)throw new Error('Falta la API key de '+AI_PROVIDERS[prov].label);
+  if(prov==='free'){
+    try{
+      const full=await _aiComplete(prompt, 'free');
+      if(onChunk&&full)onChunk(full,full);
+      return full;
+    }catch(e){throw new Error((e&&e.message)||'Error IA gratis');}
+  }
   let url,headers,body,parse;
   if(prov==='gemini'){
     url='https://generativelanguage.googleapis.com/v1beta/models/'+model+':streamGenerateContent?alt=sse';
     headers={'Content-Type':'application/json','X-goog-api-key':key};
     body={contents:[{parts:[{text:prompt}]}]};
     parse=j=>j?.candidates?.[0]?.content?.parts?.[0]?.text||'';
-  }else if(prov==='openai'||prov==='grok'||prov==='deepseek_local'||prov==='wallasapi'||prov==='free'){
+  }else if(prov==='openai'||prov==='grok'||prov==='deepseek_local'){
     if(prov==='grok') url='https://api.x.ai/v1/chat/completions';
     else if(prov==='openai') url='https://api.openai.com/v1/chat/completions';
     else if(prov==='deepseek_local') url='http://localhost:3000/v1/chat/completions';
-    else if(prov==='wallasapi') url='http://localhost:8001/v1/chat/completions';
-    else if(prov==='free') url='https://text.pollinations.ai/openai';
     
-    headers={'Content-Type':'application/json'};
-    if(prov!=='free') headers['Authorization']='Bearer '+key;
+    headers={'Content-Type':'application/json','Authorization':'Bearer '+key};
     body={model,stream:true,messages:[{role:'user',content:prompt}]};
     parse=j=>j?.choices?.[0]?.delta?.content||'';
   }else{ // anthropic
