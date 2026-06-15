@@ -5007,14 +5007,6 @@ async function _geminiStream(prompt,_key,onChunk,reintento=0,forcedProv=null){
     if(prov!=='free') headers['Authorization']='Bearer '+key;
     body={model,stream:true,messages:[{role:'user',content:prompt}]};
     parse=j=>j?.choices?.[0]?.delta?.content||'';
-    if(prov==='grok') url='https://api.x.ai/v1/chat/completions';
-    else if(prov==='openai') url='https://api.openai.com/v1/chat/completions';
-    else if(prov==='deepseek_local') url='http://localhost:3000/v1/chat/completions';
-    else if(prov==='wallasapi') url='http://localhost:8001/v1/chat/completions';
-    
-    headers={'Content-Type':'application/json','Authorization':'Bearer '+key};
-    body={model,stream:true,messages:[{role:'user',content:prompt}]};
-    parse=j=>j?.choices?.[0]?.delta?.content||'';
   }else{ // anthropic
     url='https://api.anthropic.com/v1/messages';
     headers={'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'};
