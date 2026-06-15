@@ -4751,7 +4751,13 @@ async function _aiComplete(prompt, forcedProv=null){
   try {
     if(prov==='free'){
       const r=await _fetchT(FREE_AI_ENDPOINT,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:model||FREE_AI_MODEL,messages:[{role:'user',content:prompt}]})},45000);
-      if(!r.ok)throw {status:r.status,message:(await r.text().catch(()=>'')).slice(0,160)};
+      if(!r.ok) {
+        const errText = await r.text().catch(()=>'');
+        if(errText.includes('Queue full') || r.status === 429) {
+          throw {status:429, message:'El servidor gratuito está saturado. Configura una API key válida.'};
+        }
+        throw {status:r.status,message:errText.slice(0,160)};
+      }
       const ct=(r.headers.get('content-type')||'');
       if(ct.indexOf('application/json')>=0){const d=await r.json();return d?.choices?.[0]?.message?.content||d?.choices?.[0]?.text||'';}
       return (await r.text())||'';
@@ -4759,7 +4765,13 @@ async function _aiComplete(prompt, forcedProv=null){
     if(prov==='gemini'){
       const r=await _fetchT('https://generativelanguage.googleapis.com/v1beta/models/'+model+':generateContent',
         {method:'POST',headers:{'Content-Type':'application/json','X-goog-api-key':key},body:JSON.stringify({contents:[{parts:[{text:prompt}]}]})});
-      if(!r.ok)throw {status:r.status,message:(await r.text().catch(()=>'')).slice(0,160)};
+      if(!r.ok) {
+        const errText = await r.text().catch(()=>'');
+        if(r.status === 400 || r.status === 403) {
+          throw {status:r.status, message:'API Key de Gemini inválida o sin permisos.'};
+        }
+        throw {status:r.status,message:errText.slice(0,160)};
+      }
       const d=await r.json();
       return d?.candidates?.[0]?.content?.parts?.[0]?.text||'';
     }
@@ -4769,8 +4781,9 @@ async function _aiComplete(prompt, forcedProv=null){
       else if(prov==='openai') _url='https://api.openai.com/v1/chat/completions';
       else if(prov==='deepseek_local') _url='http://localhost:3000/v1/chat/completions';
       
+      const timeout = (prov === 'deepseek_local') ? 2500 : 35000;
       const r=await _fetchT(_url,
-        {method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},body:JSON.stringify({model,messages:[{role:'user',content:prompt}]})});
+        {method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},body:JSON.stringify({model,messages:[{role:'user',content:prompt}]})}, timeout);
       if(!r.ok)throw {status:r.status,message:(await r.text().catch(()=>'')).slice(0,160)};
       const d=await r.json();
       return d?.choices?.[0]?.message?.content||'';
@@ -4989,7 +5002,13 @@ async function _geminiStream(prompt,_key,onChunk,reintento=0,forcedProv=null){
       const full=await _aiComplete(prompt, 'free');
       if(onChunk&&full)onChunk(full,full);
       return full;
-    }catch(e){throw new Error((e&&e.message)||'Error IA gratis');}
+    }catch(e){
+      const msg = e && e.message ? e.message : String(e);
+      if (msg.includes('Queue full') || msg.includes('429')) {
+        throw new Error('El servidor gratuito está saturado. Configura una API key válida.');
+      }
+      throw new Error(msg || 'Error IA gratis');
+    }
   }
   let url,headers,body,parse;
   if(prov==='gemini'){
@@ -5012,8 +5031,12 @@ async function _geminiStream(prompt,_key,onChunk,reintento=0,forcedProv=null){
     parse=j=>(j?.type==='content_block_delta'&&j?.delta?.text)?j.delta.text:'';
   }
   try{
-    const res=await _fetchT(url,{method:'POST',headers,body:JSON.stringify(body)},90000);
+    const timeout = (prov === 'deepseek_local') ? 2500 : 90000;
+    const res=await _fetchT(url,{method:'POST',headers,body:JSON.stringify(body)},timeout);
     if(!res.ok){
+      if(res.status === 400 || res.status === 403){
+        throw new Error('API Key de ' + AI_PROVIDERS[prov].label + ' inválida o sin permisos.');
+      }
       if(reintento<2){await new Promise(r=>setTimeout(r,1500));return _geminiStream(prompt,_key,onChunk,reintento+1,forcedProv);}
       const err=await res.text().catch(()=>'');
       throw new Error('HTTP '+res.status+' '+err.slice(0,140));
@@ -5066,6 +5089,7 @@ async function _geminiStream(prompt,_key,onChunk,reintento=0,forcedProv=null){
         return await _geminiStream(prompt, _key, onChunk, 0, 'free');
       }
     }
+    throw e;
   }
 }
 
