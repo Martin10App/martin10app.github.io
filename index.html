@@ -3197,7 +3197,7 @@ function rConfig(){
     <div class="sec-t">Inteligencia Artificial</div>
     <div style="font-size:11px;color:var(--text2);margin-bottom:12px;line-height:1.6">Elegí el proveedor de IA y pegá tu API key. Podés cambiar entre ellos cuando quieras.</div>
     <div style="display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap">
-      ${Object.keys(AI_PROVIDERS).map(p=>`<button class="btn b-sm ${aiProvider()===p?'b-p':'b-g'}" style="flex:1;min-width:80px;font-size:11px;padding:9px 4px" onclick="setAIProvider('${p}')">${AI_PROVIDERS[p].label.split('·')[1]?.trim()||AI_PROVIDERS[p].label}</button>`).join('')}
+      ${Object.keys(AI_PROVIDERS).filter(p=>p!=='free').map(p=>`<button class="btn b-sm ${aiProvider()===p?'b-p':'b-g'}" style="flex:1;min-width:80px;font-size:11px;padding:9px 4px" onclick="setAIProvider('${p}')">${AI_PROVIDERS[p].label.split('·')[1]?.trim()||AI_PROVIDERS[p].label}</button>`).join('')}
     </div>
     ${(()=>{const c=AI_PROVIDERS[aiProvider()];return `
       <div style="font-size:11px;color:var(--text2);margin-bottom:8px;line-height:1.6">API key de <strong style="color:var(--blue)">${c.label}</strong> · obtenela en <strong style="color:var(--blue)">${c.url}</strong></div>
@@ -3765,7 +3765,7 @@ function renderChat(){
 async function sendChat(){
   const inp=document.getElementById('chat-inp');if(!inp||!inp.value.trim())return;
   const key=aiKey();
-  if(!key){tst('⚠️ Configurá tu API Key de Gemini');return;}
+  if(!key){tst('⚠️ Configurá la API key de '+AI_PROVIDERS[aiProvider()].label);return;}
   const txt=inp.value.trim();inp.value='';
   chatHist.push({role:'user',text:txt});
   saveChat();
@@ -4152,7 +4152,7 @@ function coachStart(){
 
 async function sendCoach(){
   const inp=document.getElementById('coach-inp');if(!inp||!inp.value.trim())return;
-  const key=aiKey();if(!key){tst('⚠️ Configurá la IA en el chat');return;}
+  const key=aiKey();if(!key && !S.g('ai_free',false)){tst('⚠️ Configurá la IA en el chat');return;}
   const txt=inp.value.trim();inp.value='';
   coachHist.push({role:'user',text:txt});
   saveCoach();
@@ -4278,10 +4278,9 @@ async function startVoiceCoach(){
   };
   
   _coachVoiceRec.onend=()=>{
-    const wasActive = _coachVoiceActive;
     stopFn();
     const txt=finalTxt.trim();
-    if(txt && wasActive){
+    if(txt){
       const inp=document.getElementById('coach-inp');
       if(inp){
         inp.value=txt;
@@ -4690,6 +4689,12 @@ function ejecutarAccion(acc){
 //  PROVEEDORES DE IA (multi-API)
 // ════════════════════════════════════════════
 const AI_PROVIDERS={
+  free:{
+    label:'IA Gratis', keyStore:'free_key', modelStore:'ai_model_free',
+    defaultModel:'openai', nokey:true,
+    models:['openai','openai-large','mistral'],
+    hint:'(no necesita key)', url:'pollinations.ai'
+  },
   gemini:{
     label:'Google Gemini', keyStore:'gemini_key', modelStore:'ai_model_gemini',
     defaultModel:'gemini-2.5-flash',
@@ -4698,7 +4703,7 @@ const AI_PROVIDERS={
   },
   deepseek_local:{
     label:'DeepSeek · Proxy', keyStore:'deepseek_local_key', modelStore:'ai_model_deepseek_local',
-    defaultModel:'deepseek-flash-thinking',
+    defaultModel:'deepseek-flash-thinking', nokey:true,
     models:['deepseek-flash-thinking','deepseek-thinking','deepseek-v4-pro','deepseek-v4-pro-thinking','deepseek-v4-flash'],
     hint:'sk-no-key-required', url:'localhost:3000'
   }
@@ -4717,12 +4722,24 @@ async function _fetchT(url,opts,ms){
   finally{clearTimeout(t);}
 }
 
-// Llamada NO-streaming. Devuelve el texto o lanza {status,message}.
 async function _aiComplete(prompt, forcedProv=null){
   const prov=forcedProv || aiProvider(), key=aiKeyForProvider(prov), model=aiModelForProvider(prov);
   if(!key)throw {status:0,message:'Falta la API key de '+AI_PROVIDERS[prov].label};
   
   try {
+    if(prov==='free'){
+      const r=await _fetchT('https://text.pollinations.ai/openai',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:model||'openai',messages:[{role:'user',content:prompt}]})},45000);
+      if(!r.ok) {
+        const errText = await r.text().catch(()=>'');
+        if(errText.includes('Queue full') || r.status === 429) {
+          throw {status:429, message:'El servidor gratuito está saturado. Configura una API key válida.'};
+        }
+        throw {status:r.status,message:errText.slice(0,160)};
+      }
+      const ct=(r.headers.get('content-type')||'');
+      if(ct.indexOf('application/json')>=0){const d=await r.json();return d?.choices?.[0]?.message?.content||d?.choices?.[0]?.text||'';}
+      return (await r.text())||'';
+    }
     if(prov==='gemini'){
       const r=await _fetchT('https://generativelanguage.googleapis.com/v1beta/models/'+model+':generateContent',
         {method:'POST',headers:{'Content-Type':'application/json','X-goog-api-key':key},body:JSON.stringify({contents:[{parts:[{text:prompt}]}]})});
@@ -4752,10 +4769,20 @@ async function _aiComplete(prompt, forcedProv=null){
     // Fallback automático
     if (prov === 'gemini') {
       console.warn('Gemini falló, intentando con DeepSeek Local...', e);
-      return await _aiComplete(prompt, 'deepseek_local');
+      try {
+        return await _aiComplete(prompt, 'deepseek_local');
+      } catch (err2) {
+        console.warn('DeepSeek Local también falló. Usando IA Gratis de respaldo...', err2);
+        return await _aiComplete(prompt, 'free');
+      }
     } else if (prov === 'deepseek_local') {
       console.warn('DeepSeek Local falló, intentando con Gemini...', e);
-      return await _aiComplete(prompt, 'gemini');
+      try {
+        return await _aiComplete(prompt, 'gemini');
+      } catch (err2) {
+        console.warn('Gemini también falló. Usando IA Gratis de respaldo...', err2);
+        return await _aiComplete(prompt, 'free');
+      }
     }
     throw e;
   }
@@ -4938,6 +4965,20 @@ async function _geminiStream(prompt,_key,onChunk,reintento=0,forcedProv=null){
   const prov=forcedProv || aiProvider(), key=aiKeyForProvider(prov), model=aiModelForProvider(prov);
   if(!key)throw new Error('Falta la API key de '+AI_PROVIDERS[prov].label);
   
+  if(prov==='free'){
+    try{
+      const full=await _aiComplete(prompt, 'free');
+      if(onChunk&&full)onChunk(full,full);
+      return full;
+    }catch(e){
+      const msg = e && e.message ? e.message : String(e);
+      if (msg.includes('Queue full') || msg.includes('429')) {
+        throw new Error('El servidor gratuito está saturado. Configura una API key válida.');
+      }
+      throw new Error(msg || 'Error IA gratis');
+    }
+  }
+  
   let url,headers,body,parse;
   if(prov==='gemini'){
     url='https://generativelanguage.googleapis.com/v1beta/models/'+model+':streamGenerateContent?alt=sse';
@@ -4990,16 +5031,27 @@ async function _geminiStream(prompt,_key,onChunk,reintento=0,forcedProv=null){
         }catch(_){}
       }
     }
+    return full;
   }catch(e){
     if (forcedProv) throw e;
     
     // Auto-fallback en stream
     if (prov === 'gemini') {
       console.warn('Gemini Stream falló, reintentando con DeepSeek Local...', e);
-      return await _geminiStream(prompt, _key, onChunk, 0, 'deepseek_local');
+      try {
+        return await _geminiStream(prompt, _key, onChunk, 0, 'deepseek_local');
+      } catch (err2) {
+        console.warn('DeepSeek Local Stream también falló. Usando IA Gratis...', err2);
+        return await _geminiStream(prompt, _key, onChunk, 0, 'free');
+      }
     } else if (prov === 'deepseek_local') {
       console.warn('DeepSeek Local Stream falló, reintentando con Gemini...', e);
-      return await _geminiStream(prompt, _key, onChunk, 0, 'gemini');
+      try {
+        return await _geminiStream(prompt, _key, onChunk, 0, 'gemini');
+      } catch (err2) {
+        console.warn('Gemini Stream también falló. Usando IA Gratis...', err2);
+        return await _geminiStream(prompt, _key, onChunk, 0, 'free');
+      }
     }
     throw e;
   }
@@ -5178,7 +5230,7 @@ async function testGeminiKey(){
   const btn=document.querySelector('[onclick="testGeminiKey()"]');
   if(btn){btn.textContent='⏳ Probando…';btn.disabled=true;}
   try{
-    await _aiComplete('Respondé solo con la palabra: ok');
+    await _aiComplete('Respondé solo con la palabra: ok', prov);
     tst('✅ '+AI_PROVIDERS[prov].label+' responde correctamente',4000);
   }catch(e){
     const key=aiKey();
@@ -5196,6 +5248,16 @@ async function startVoiceChat(){
   }
   const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
   if(!SR){tst('🎤 Usá Chrome o Edge',3000);return;}
+  
+  if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      stream.getTracks().forEach(track => track.stop());
+    } catch(err) {
+      tst('🎤 Permiso de micrófono denegado', 3000);
+      return;
+    }
+  }
 
   const btn=document.getElementById('chat-mic-btn');
   _chatVoiceRec=new SR();
@@ -5440,7 +5502,7 @@ async function handleExcelImport(files){
   if(_ft.startsWith('image/')||/\.(png|jpe?g|webp|heic|heif|gif)$/.test(_fn))return analyzeExpenseFile(file,false);
   if(_ft==='application/pdf'||_fn.endsWith('.pdf'))return analyzeExpenseFile(file,true);
   const key=aiKey();
-  if(!key){tst('⚠️ Configurá tu API Key de Gemini');return;}
+  if(!key){tst('⚠️ Configurá la API key de '+AI_PROVIDERS[aiProvider()].label);return;}
   try{
     // 1) Leer el archivo completo a filas en memoria
     let allRows = [];
@@ -5914,7 +5976,7 @@ function _stopVoice(){
 
 async function interpretVoice(txt){
   const key=aiKey();
-  if(!key){tst('Configurá Gemini en Config → IA',3500);return;}
+  if(!key){tst('Configurá '+AI_PROVIDERS[aiProvider()].label+' en Config → IA',3500);return;}
   tst('🧠 Procesando…',2000);
   const now=new Date();
   const m=now.getMonth(),y=now.getFullYear();
