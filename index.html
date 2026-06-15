@@ -4975,7 +4975,7 @@ async function _geminiStream(prompt,_key,onChunk,reintento=0,forcedProv=null){
       if (msg.includes('Queue full') || msg.includes('429')) {
         throw new Error('El servidor gratuito está saturado. Configura una API key válida.');
       }
-      throw new Error(msg || 'Error IA gratis');
+      throw new Error(msg || 'Error IA');
     }
   }
   
@@ -5093,44 +5093,80 @@ function _mdBold(t){return esc(t).replace(/\*\*(.+?)\*\*/g,'<b>$1</b>');}
 function _mdHtml(t) {
   if (!t) return '';
   let html = esc(t);
+  html = html.replace(/```([\s\S]*?)```/g, (match, code) => {
+    return `<pre style="background:var(--bg4);padding:10px;border-radius:6px;font-family:var(--fm);font-size:11.5px;overflow-x:auto;margin:8px 0;border:1px solid var(--border)"><code style="color:var(--accent2)">${code.trim()}</code></pre>`;
+  });
+  html = html.replace(/`([^`\n]+)`/g, '<code style="font-family:var(--fm);background:var(--bg4);padding:2px 4px;border-radius:4px;font-size:0.9em;color:var(--accent2)">$1</code>');
   html = html.replace(/\*\*(.+?)\*\*/g, '<b>$1</b>');
-  html = html.replace(/`([^`]+)`/g, '<code style="font-family:var(--fm);background:var(--bg4);padding:2px 4px;border-radius:4px;font-size:0.9em;color:var(--accent2)">$1</code>');
+  
   const lines = html.split('\n');
-  let inList = false;
-  let inNumList = false;
-  let formatted = [];
+  let result = [];
+  let currentList = null;
+  let currentPara = [];
+  
+  const closePara = () => {
+    if (currentPara.length > 0) {
+      result.push(`<p style="margin-bottom:8px;line-height:1.5">${currentPara.join('<br>')}</p>`);
+      currentPara = [];
+    }
+  };
+  
+  const closeList = () => {
+    if (currentList) {
+      result.push(currentList === 'ul' ? '</ul>' : '</ol>');
+      currentList = null;
+    }
+  };
+  
   for (let i = 0; i < lines.length; i++) {
-    let line = lines[i].trim();
-    if (line.startsWith('- ') || line.startsWith('* ') || line.startsWith('• ')) {
-      if (!inList) {
-        if (inNumList) { formatted.push('</ol>'); inNumList = false; }
-        formatted.push('<ul style="margin-left:20px;margin-bottom:8px;padding-left:0;list-style-type:disc">');
-        inList = true;
+    const line = lines[i];
+    const trimmed = line.trim();
+    
+    if (trimmed === '') {
+      closePara();
+      closeList();
+      result.push('<div style="height:8px"></div>');
+      continue;
+    }
+    
+    if (trimmed.startsWith('<pre') && trimmed.endsWith('</pre>')) {
+      closePara();
+      closeList();
+      result.push(line);
+      continue;
+    }
+    
+    if (trimmed.startsWith('- ') || trimmed.startsWith('* ') || trimmed.startsWith('• ') || trimmed.startsWith('\u2022 ')) {
+      closePara();
+      if (currentList !== 'ul') {
+        closeList();
+        result.push('<ul style="margin-left:20px;margin-bottom:8px;padding-left:0;list-style-type:disc">');
+        currentList = 'ul';
       }
-      const content = line.substring(2).trim();
-      formatted.push(`<li style="margin-bottom:4px;line-height:1.5">${content}</li>`);
-    } else if (/^\d+\.\s+/.test(line)) {
-      if (!inNumList) {
-        if (inList) { formatted.push('</ul>'); inList = false; }
-        formatted.push('<ol style="margin-left:20px;margin-bottom:8px;padding-left:0;list-style-type:decimal">');
-        inNumList = true;
+      const content = trimmed.replace(/^[-*•\u2022]\s+/, '').trim();
+      result.push(`<li style="margin-bottom:4px;line-height:1.5">${content}</li>`);
+    } else if (/^\d+\.\s+/.test(trimmed)) {
+      closePara();
+      if (currentList !== 'ol') {
+        closeList();
+        result.push('<ol style="margin-left:20px;margin-bottom:8px;padding-left:0;list-style-type:decimal">');
+        currentList = 'ol';
       }
-      const content = line.replace(/^\d+\.\s+/, '').trim();
-      formatted.push(`<li style="margin-bottom:4px;line-height:1.5">${content}</li>`);
+      const content = trimmed.replace(/^\d+\.\s+/, '').trim();
+      result.push(`<li style="margin-bottom:4px;line-height:1.5">${content}</li>`);
     } else {
-      if (inList) { formatted.push('</ul>'); inList = false; }
-      if (inNumList) { formatted.push('</ol>'); inNumList = false; }
-      if (line === '') {
-        formatted.push('<div style="height:8px"></div>');
-      } else {
-        formatted.push(`<p style="margin-bottom:8px;line-height:1.5">${line}</p>`);
-      }
+      closeList();
+      currentPara.push(line);
     }
   }
-  if (inList) formatted.push('</ul>');
-  if (inNumList) formatted.push('</ol>');
-  return formatted.join('');
+  
+  closePara();
+  closeList();
+  
+  return result.join('');
 }
+
+
 
 // Extrae el primer objeto JSON COMPLETO de un texto (maneja anidación y ```fences```).
 function _extractJSON(text){
@@ -5191,16 +5227,18 @@ function findBestSpanishVoice(voices) {
 function speak(txt,cb){
   if(!('speechSynthesis' in window)){if(cb)cb();return;}
   window.speechSynthesis.cancel();
-  const u=new SpeechSynthesisUtterance(txt);
-  u.lang='es-UY';
-  u.rate=1.05;
-  u.pitch=1;
-  const voices = _loadedVoices.length ? _loadedVoices : window.speechSynthesis.getVoices();
-  const esVoice = findBestSpanishVoice(voices);
-  if(esVoice) u.voice=esVoice;
-  u.onend=()=>{if(cb)cb();};
-  u.onerror=()=>{if(cb)cb();};
-  window.speechSynthesis.speak(u);
+  setTimeout(()=>{
+    const u=new SpeechSynthesisUtterance(txt);
+    u.lang='es-UY';
+    u.rate=1.05;
+    u.pitch=1;
+    const voices = _loadedVoices.length ? _loadedVoices : window.speechSynthesis.getVoices();
+    const esVoice = findBestSpanishVoice(voices);
+    if(esVoice) u.voice=esVoice;
+    u.onend=()=>{if(cb)cb();};
+    u.onerror=()=>{if(cb)cb();};
+    window.speechSynthesis.speak(u);
+  }, 100);
 }
 
 function speakBubble(index){
