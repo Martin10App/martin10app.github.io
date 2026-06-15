@@ -4689,38 +4689,12 @@ function ejecutarAccion(acc){
 // ════════════════════════════════════════════
 //  PROVEEDORES DE IA (multi-API)
 // ════════════════════════════════════════════
-const FREE_AI_ENDPOINT='https://text.pollinations.ai/openai';
-const FREE_AI_MODEL='openai';
 const AI_PROVIDERS={
-  free:{
-    label:'IA Gratis', keyStore:'free_key', modelStore:'ai_model_free',
-    defaultModel:FREE_AI_MODEL, nokey:true,
-    models:[FREE_AI_MODEL,'openai-large','mistral'],
-    hint:'(no necesita key)', url:'pollinations.ai'
-  },
   gemini:{
     label:'Google Gemini', keyStore:'gemini_key', modelStore:'ai_model_gemini',
     defaultModel:'gemini-2.5-flash',
     models:['gemini-2.5-flash','gemini-2.5-pro','gemini-1.5-pro-latest','gemini-1.5-flash-latest','gemini-flash-latest'],
     hint:'AIza…', url:'aistudio.google.com/apikey'
-  },
-  openai:{
-    label:'OpenAI · ChatGPT', keyStore:'openai_key', modelStore:'ai_model_openai',
-    defaultModel:'gpt-5.4-mini',
-    models:['gpt-5.4-mini','gpt-5.5','gpt-5.4','gpt-5.4-nano'],
-    hint:'sk-…', url:'platform.openai.com/api-keys'
-  },
-  anthropic:{
-    label:'Anthropic · Claude', keyStore:'anthropic_key', modelStore:'ai_model_anthropic',
-    defaultModel:'claude-haiku-4-5-20251001',
-    models:['claude-haiku-4-5-20251001','claude-sonnet-4-6','claude-opus-4-6'],
-    hint:'sk-ant-…', url:'console.anthropic.com/settings/keys'
-  },
-  grok:{
-    label:'xAI · Grok', keyStore:'grok_key', modelStore:'ai_model_grok',
-    defaultModel:'grok-4.3',
-    models:['grok-4.3','grok-4-fast-reasoning','grok-3-mini'],
-    hint:'xai-…', url:'console.x.ai'
   },
   deepseek_local:{
     label:'DeepSeek · Proxy', keyStore:'deepseek_local_key', modelStore:'ai_model_deepseek_local',
@@ -4749,19 +4723,6 @@ async function _aiComplete(prompt, forcedProv=null){
   if(!key)throw {status:0,message:'Falta la API key de '+AI_PROVIDERS[prov].label};
   
   try {
-    if(prov==='free'){
-      const r=await _fetchT(FREE_AI_ENDPOINT,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:model||FREE_AI_MODEL,messages:[{role:'user',content:prompt}]})},45000);
-      if(!r.ok) {
-        const errText = await r.text().catch(()=>'');
-        if(errText.includes('Queue full') || r.status === 429) {
-          throw {status:429, message:'El servidor gratuito está saturado. Configura una API key válida.'};
-        }
-        throw {status:r.status,message:errText.slice(0,160)};
-      }
-      const ct=(r.headers.get('content-type')||'');
-      if(ct.indexOf('application/json')>=0){const d=await r.json();return d?.choices?.[0]?.message?.content||d?.choices?.[0]?.text||'';}
-      return (await r.text())||'';
-    }
     if(prov==='gemini'){
       const r=await _fetchT('https://generativelanguage.googleapis.com/v1beta/models/'+model+':generateContent',
         {method:'POST',headers:{'Content-Type':'application/json','X-goog-api-key':key},body:JSON.stringify({contents:[{parts:[{text:prompt}]}]})});
@@ -4775,25 +4736,14 @@ async function _aiComplete(prompt, forcedProv=null){
       const d=await r.json();
       return d?.candidates?.[0]?.content?.parts?.[0]?.text||'';
     }
-    if(prov==='openai'||prov==='grok'||prov==='deepseek_local'){
-      let _url = '';
-      if(prov==='grok') _url='https://api.x.ai/v1/chat/completions';
-      else if(prov==='openai') _url='https://api.openai.com/v1/chat/completions';
-      else if(prov==='deepseek_local') _url='http://localhost:3000/v1/chat/completions';
-      
-      const timeout = (prov === 'deepseek_local') ? 2500 : 35000;
+    if(prov==='deepseek_local'){
+      const _url = 'http://localhost:3000/v1/chat/completions';
+      const timeout = 2500;
       const r=await _fetchT(_url,
         {method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},body:JSON.stringify({model,messages:[{role:'user',content:prompt}]})}, timeout);
       if(!r.ok)throw {status:r.status,message:(await r.text().catch(()=>'')).slice(0,160)};
       const d=await r.json();
       return d?.choices?.[0]?.message?.content||'';
-    }
-    if(prov==='anthropic'){
-      const r=await _fetchT('https://api.anthropic.com/v1/messages',
-        {method:'POST',headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model,max_tokens:2048,messages:[{role:'user',content:prompt}]})});
-      if(!r.ok)throw {status:r.status,message:(await r.text().catch(()=>'')).slice(0,160)};
-      const d=await r.json();
-      return (d?.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('')||'';
     }
     throw {status:0,message:'Proveedor desconocido'};
   } catch (e) {
@@ -4802,20 +4752,10 @@ async function _aiComplete(prompt, forcedProv=null){
     // Fallback automático
     if (prov === 'gemini') {
       console.warn('Gemini falló, intentando con DeepSeek Local...', e);
-      try {
-        return await _aiComplete(prompt, 'deepseek_local');
-      } catch (err2) {
-        console.warn('DeepSeek Local también falló. Usando IA Gratis de respaldo...', err2);
-        return await _aiComplete(prompt, 'free');
-      }
+      return await _aiComplete(prompt, 'deepseek_local');
     } else if (prov === 'deepseek_local') {
       console.warn('DeepSeek Local falló, intentando con Gemini...', e);
-      try {
-        return await _aiComplete(prompt, 'gemini');
-      } catch (err2) {
-        console.warn('Gemini también falló. Usando IA Gratis de respaldo...', err2);
-        return await _aiComplete(prompt, 'free');
-      }
+      return await _aiComplete(prompt, 'gemini');
     }
     throw e;
   }
@@ -4997,38 +4937,20 @@ async function _gemini(prompt,_key,reintento=0){
 async function _geminiStream(prompt,_key,onChunk,reintento=0,forcedProv=null){
   const prov=forcedProv || aiProvider(), key=aiKeyForProvider(prov), model=aiModelForProvider(prov);
   if(!key)throw new Error('Falta la API key de '+AI_PROVIDERS[prov].label);
-  if(prov==='free'){
-    try{
-      const full=await _aiComplete(prompt, 'free');
-      if(onChunk&&full)onChunk(full,full);
-      return full;
-    }catch(e){
-      const msg = e && e.message ? e.message : String(e);
-      if (msg.includes('Queue full') || msg.includes('429')) {
-        throw new Error('El servidor gratuito está saturado. Configura una API key válida.');
-      }
-      throw new Error(msg || 'Error IA gratis');
-    }
-  }
+  
   let url,headers,body,parse;
   if(prov==='gemini'){
     url='https://generativelanguage.googleapis.com/v1beta/models/'+model+':streamGenerateContent?alt=sse';
     headers={'Content-Type':'application/json','X-goog-api-key':key};
     body={contents:[{parts:[{text:prompt}]}]};
     parse=j=>j?.candidates?.[0]?.content?.parts?.[0]?.text||'';
-  }else if(prov==='openai'||prov==='grok'||prov==='deepseek_local'){
-    if(prov==='grok') url='https://api.x.ai/v1/chat/completions';
-    else if(prov==='openai') url='https://api.openai.com/v1/chat/completions';
-    else if(prov==='deepseek_local') url='http://localhost:3000/v1/chat/completions';
-    
+  }else if(prov==='deepseek_local'){
+    url='http://localhost:3000/v1/chat/completions';
     headers={'Content-Type':'application/json','Authorization':'Bearer '+key};
     body={model,stream:true,messages:[{role:'user',content:prompt}]};
     parse=j=>j?.choices?.[0]?.delta?.content||'';
-  }else{ // anthropic
-    url='https://api.anthropic.com/v1/messages';
-    headers={'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'};
-    body={model,max_tokens:2048,stream:true,messages:[{role:'user',content:prompt}]};
-    parse=j=>(j?.type==='content_block_delta'&&j?.delta?.text)?j.delta.text:'';
+  }else{
+    throw new Error('Proveedor desconocido');
   }
   try{
     const timeout = (prov === 'deepseek_local') ? 2500 : 90000;
@@ -5074,20 +4996,10 @@ async function _geminiStream(prompt,_key,onChunk,reintento=0,forcedProv=null){
     // Auto-fallback en stream
     if (prov === 'gemini') {
       console.warn('Gemini Stream falló, reintentando con DeepSeek Local...', e);
-      try {
-        return await _geminiStream(prompt, _key, onChunk, 0, 'deepseek_local');
-      } catch (err2) {
-        console.warn('DeepSeek Local Stream también falló. Usando IA Gratis...', err2);
-        return await _geminiStream(prompt, _key, onChunk, 0, 'free');
-      }
+      return await _geminiStream(prompt, _key, onChunk, 0, 'deepseek_local');
     } else if (prov === 'deepseek_local') {
       console.warn('DeepSeek Local Stream falló, reintentando con Gemini...', e);
-      try {
-        return await _geminiStream(prompt, _key, onChunk, 0, 'gemini');
-      } catch (err2) {
-        console.warn('Gemini Stream también falló. Usando IA Gratis...', err2);
-        return await _geminiStream(prompt, _key, onChunk, 0, 'free');
-      }
+      return await _geminiStream(prompt, _key, onChunk, 0, 'gemini');
     }
     throw e;
   }
