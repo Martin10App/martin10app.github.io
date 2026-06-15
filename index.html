@@ -3207,6 +3207,10 @@ function rConfig(){
       <datalist id="ai-models">${c.models.map(m=>`<option value="${m}">`).join('')}</datalist>
     `;})()}
     <button class="btn b-sm b-p" onclick="testGeminiKey()" style="margin-bottom:8px">🔍 Probar conexión</button>
+    <label style="display:flex;align-items:center;gap:8px;margin-bottom:12px;font-size:11px;cursor:pointer;user-select:none;color:var(--text1)">
+      <input type="checkbox" id="ai-always-speak" ${S.g('ai_always_speak',false)?'checked':''} onchange="S.s('ai_always_speak',this.checked)" style="width:15px;height:15px;cursor:pointer">
+      <span>🔊 Hablar siempre (Asistente y Coach)</span>
+    </label>
     <div style="font-size:10px;color:var(--text3);margin-bottom:24px;line-height:1.5">⚠️ Las keys se guardan solo en este dispositivo. El análisis de <strong>fotos de estados de cuenta</strong> usa siempre Gemini, así que para esa función necesitás una key de Gemini.</div>
     <div class="div"></div>
     <div class="sec-t">Compromisos fijos (montos base)</div>
@@ -3716,7 +3720,16 @@ function renderChat(){
       const inner=isVoice?`<span class="cx-vc">${SVG.mic}<span>${fmt(raw)}</span></span>`:fmt(raw);
       h+=`<div class="cx-row ${isUser?'u':'a'}">`;
       if(!isUser)h+=`<div class="cx-av">${SVG.spark}</div>`;
-      h+=`<div class="cx-bub${isRes?' res':''}"${liveId}>${inner}</div></div>`;
+      if(!isUser && !msg.streaming) {
+        h+=`<div class="cx-bub${isRes?' res':''}"${liveId}>${inner}
+          <div style="display:flex;justify-content:flex-end;margin-top:6px">
+            <button onclick="speakBubble(${i})" class="btn b-xs b-g" style="padding:3px 6px;font-size:9.5px;color:var(--text2);display:flex;align-items:center;gap:3px" title="Escuchar">🔊 Hablar</button>
+          </div>
+        </div>`;
+      } else {
+        h+=`<div class="cx-bub${isRes?' res':''}"${liveId}>${inner}</div>`;
+      }
+      h+=`</div>`;
     });
   }
   if(chatHist.length&&chatHist[chatHist.length-1].role==='user'){
@@ -3854,10 +3867,10 @@ async function sendChat(){
     chatHist[chatHist.length-1]={role:'assistant',text:reply||'(sin respuesta)'};
     saveChat();
     if(resultados.length){gastos=S.g('gst4',[]);pagosFijos=S.g('pf4',{});pagosEstado=S.g('pe4',{});}
-    if(_voiceSent){
+    if(_voiceSent || S.g('ai_always_speak', false)){
       _voiceSent=false;
-      const clean=reply.replace(/[✅•⚠️📅📊💪🔴🟢]/g,'').replace(/\*\*(.+?)\*\*/g,'$1').replace(/\n/g,' ').trim();
-      speak(clean.slice(0,350));
+      const clean=reply.replace(/[✅•⚠️📅📊💪🔴🟢🌱]/g,'').replace(/\*\*(.+?)\*\*/g,'$1').replace(/\n/g,' ').trim();
+      speak(clean);
     }
   }catch(e){
     stopThinking();
@@ -4095,7 +4108,16 @@ function renderCoach(){
       const liveId=(!isUser&&isLast)?' id="coach-live"':'';
       h+=`<div class="cx-row ${isUser?'u':'a'}">`;
       if(!isUser)h+=`<div class="cx-av" style="background:linear-gradient(135deg,#34D399,#10B981)">🌱</div>`;
-      h+=`<div class="cx-bub"${liveId}>${fmtB(msg.text||'')}</div></div>`;
+      if(!isUser && !msg.streaming) {
+        h+=`<div class="cx-bub"${liveId}>${fmtB(msg.text||'')}
+          <div style="display:flex;justify-content:flex-end;margin-top:6px">
+            <button onclick="speakCoachBubble(${i})" class="btn b-xs b-g" style="padding:3px 6px;font-size:9.5px;color:var(--text2);display:flex;align-items:center;gap:3px" title="Escuchar">🔊 Hablar</button>
+          </div>
+        </div>`;
+      } else {
+        h+=`<div class="cx-bub"${liveId}>${fmtB(msg.text||'')}</div>`;
+      }
+      h+=`</div>`;
     });
   }
   if(coachHist.length&&coachHist[coachHist.length-1].role==='user'){
@@ -4184,7 +4206,11 @@ async function coachStream(userMsg){
     coachHist[coachHist.length-1]={role:'assistant',text:reply||'(sin respuesta)'};
     saveCoach();
     if(resultados.length){gastos=S.g('gst4',[]);events=S.g('evts1',[]);}
-    if(_voiceSent){_voiceSent=false;const clean=reply.replace(/[✅•⚠️📅📊💪🔴🟢🌱]/g,'').replace(/\*\*(.+?)\*\*/g,'$1').replace(/\n/g,' ').trim();speak(clean.slice(0,300));}
+    if(_voiceSent || S.g('ai_always_speak', false)){
+      _voiceSent=false;
+      const clean=reply.replace(/[✅•⚠️📅📊💪🔴🟢🌱]/g,'').replace(/\*\*(.+?)\*\*/g,'$1').replace(/\n/g,' ').trim();
+      speak(clean);
+    }
   }catch(e){
     stopThinking();
     _voiceSent=false;
@@ -4201,11 +4227,45 @@ function startVoiceCoach(){
   const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
   if(!SR){tst('🎤 Usá Chrome o Edge',3000);return;}
   const btn=document.getElementById('coach-mic-btn');
-  const rec=new SR();rec.lang='es-UY';rec.interimResults=true;rec.continuous=false;
+  const rec=new SR();
+  rec.lang='es-UY';
+  rec.interimResults=true;
+  rec.continuous=false;
   if(btn)btn.classList.add('recording');
-  const stop=()=>{if(btn)btn.classList.remove('recording');};
-  rec.onresult=e=>{const r=e.results[e.results.length-1];if(r.isFinal){const inp=document.getElementById('coach-inp');if(inp){inp.value=r[0].transcript;_voiceSent=true;sendCoach();}stop();}};
-  rec.onerror=()=>stop();rec.onend=()=>stop();
+  const stop=()=>{if(btn)btn.classList.remove('recording'); _hideInterim();};
+  _showInterim('Escuchando…');
+  let finalTxt='';
+  
+  rec.onresult=e=>{
+    let interim='';
+    for(let i=e.resultIndex;i<e.results.length;i++){
+      const r=e.results[i];
+      if(r.isFinal) finalTxt+=r[0].transcript;
+      else interim+=r[0].transcript;
+    }
+    _showInterim(((finalTxt+' '+interim).trim())||'Escuchando…');
+  };
+  
+  rec.onerror=e=>{
+    stop();
+    if(e.error==='not-allowed')tst('🎤 Permití el micrófono en el navegador',4000);
+    else if(e.error==='no-speech')tst('🎤 No te escuché, probá de nuevo',3000);
+    else if(e.error!=='aborted')tst('🎤 Error: '+e.error,3000);
+  };
+  
+  rec.onend=()=>{
+    stop();
+    const txt=finalTxt.trim();
+    if(txt){
+      const inp=document.getElementById('coach-inp');
+      if(inp){
+        inp.value=txt;
+        _voiceSent=true;
+        sendCoach();
+      }
+    }
+  };
+  
   try{rec.start();}catch(e){stop();tst('🎤 Error: '+e.message,3000);}
 }
 
@@ -5074,6 +5134,22 @@ function speak(txt,cb){
   window.speechSynthesis.speak(u);
 }
 
+function speakBubble(index){
+  const msg = chatHist[index];
+  if(!msg) return;
+  const raw = msg.text || '';
+  const clean = raw.replace(/[✅•⚠️📅📊💪🔴🟢]/g,'').replace(/\*\*(.+?)\*\*/g,'$1').replace(/\n/g,' ').trim();
+  speak(clean);
+}
+
+function speakCoachBubble(index){
+  const msg = coachHist[index];
+  if(!msg) return;
+  const raw = msg.text || '';
+  const clean = raw.replace(/[✅•⚠️📅📊💪🔴🟢🌱]/g,'').replace(/\*\*(.+?)\*\*/g,'$1').replace(/\n/g,' ').trim();
+  speak(clean);
+}
+
 function chatVoiceInput(text){
   const inp=document.getElementById('chat-inp');
   if(inp){inp.value=text;_voiceSent=true;sendChat();}
@@ -5105,18 +5181,40 @@ function startVoiceChat(){
   rec.interimResults=true;
   rec.continuous=false;
   if(btn)btn.classList.add('recording');
-  const stop=()=>{if(btn)btn.classList.remove('recording');};
+  const stop=()=>{if(btn)btn.classList.remove('recording'); _hideInterim();};
+  _showInterim('Escuchando…');
+  let finalTxt='';
+  
   rec.onresult=e=>{
-    const r=e.results[e.results.length-1];
-    if(r.isFinal){
-      const txt=r[0].transcript;
+    let interim='';
+    for(let i=e.resultIndex;i<e.results.length;i++){
+      const r=e.results[i];
+      if(r.isFinal) finalTxt+=r[0].transcript;
+      else interim+=r[0].transcript;
+    }
+    _showInterim(((finalTxt+' '+interim).trim())||'Escuchando…');
+  };
+  
+  rec.onerror=e=>{
+    stop();
+    if(e.error==='not-allowed')tst('🎤 Permití el micrófono en el navegador',4000);
+    else if(e.error==='no-speech')tst('🎤 No te escuché, probá de nuevo',3000);
+    else if(e.error!=='aborted')tst('🎤 Error: '+e.error,3000);
+  };
+  
+  rec.onend=()=>{
+    stop();
+    const txt=finalTxt.trim();
+    if(txt){
       const inp=document.getElementById('chat-inp');
-      if(inp){inp.value=txt;_voiceSent=true;sendChat();}
-      stop();
+      if(inp){
+        inp.value=txt;
+        _voiceSent=true;
+        sendChat();
+      }
     }
   };
-  rec.onerror=()=>stop();
-  rec.onend=()=>stop();
+  
   try{rec.start();}catch(e){stop();tst('🎤 Error: '+e.message,3000);}
 }
 
@@ -6122,6 +6220,66 @@ function loadUserData(){
   gymWeekLog=S.g('gymWeekLog',[]);
   activeWeekId=S.g('activeWeekId',null);
   nutData=S.g('nutData',{waterLog:{},waterTarget:0,mealPlans:[],lastPlanDate:''});
+
+  // Cargar Chat Sessions del usuario
+  chatSessions=S.g('chatSessions',[]);
+  activeChatId=S.g('activeChatId',null);
+  chatHist=[];
+  
+  const oldChat=S.g('chat1',[]);
+  if(oldChat.length&&!chatSessions.length){
+    const id=uid();
+    chatSessions.push({id,titulo:'Conversación '+new Date().toLocaleDateString('es-UY'),createdAt:Date.now(),updatedAt:Date.now(),mensajes:oldChat});
+    activeChatId=id;
+    S.s('chatSessions',chatSessions);
+    S.s('activeChatId',activeChatId);
+  }
+  if(!chatSessions.length){
+    const id=uid();
+    chatSessions.push({id,titulo:'Conversación '+new Date().toLocaleDateString('es-UY'),createdAt:Date.now(),updatedAt:Date.now(),mensajes:[]});
+    activeChatId=id;
+    S.s('chatSessions',chatSessions);
+    S.s('activeChatId',activeChatId);
+  }
+  let sChat=chatSessions.find(s=>s.id===activeChatId);
+  if(!sChat) sChat=chatSessions[chatSessions.length-1];
+  if(sChat.mensajes.length===0){
+    const conMsgs=[...chatSessions].filter(x=>x.mensajes.length>0).sort((a,b)=>b.updatedAt-a.updatedAt);
+    if(conMsgs.length>0) sChat=conMsgs[0];
+  }
+  activeChatId=sChat.id;
+  chatHist=sChat.mensajes;
+  S.s('activeChatId',activeChatId);
+
+  // Cargar Coach Sessions del usuario
+  coachSessions=S.g('coachSessions',[]);
+  activeCoachId=S.g('activeCoachId',null);
+  coachHist=[];
+  
+  const oldCoach=S.g('coachHist1',[]);
+  if(oldCoach.length&&!coachSessions.length){
+    const id=uid();
+    coachSessions.push({id,titulo:'Charla '+new Date().toLocaleDateString('es-UY'),createdAt:Date.now(),updatedAt:Date.now(),mensajes:oldCoach});
+    activeCoachId=id;
+    S.s('coachSessions',coachSessions);
+    S.s('activeCoachId',activeCoachId);
+  }
+  if(!coachSessions.length){
+    const id=uid();
+    coachSessions.push({id,titulo:'Charla '+new Date().toLocaleDateString('es-UY'),createdAt:Date.now(),updatedAt:Date.now(),mensajes:[]});
+    activeCoachId=id;
+    S.s('coachSessions',coachSessions);
+    S.s('activeCoachId',activeCoachId);
+  }
+  let sCoach=coachSessions.find(s=>s.id===activeCoachId);
+  if(!sCoach) sCoach=coachSessions[coachSessions.length-1];
+  if(sCoach.mensajes.length===0){
+    const conMsgs=[...coachSessions].filter(x=>x.mensajes.length>0).sort((a,b)=>b.updatedAt-a.updatedAt);
+    if(conMsgs.length>0) sCoach=conMsgs[0];
+  }
+  activeCoachId=sCoach.id;
+  coachHist=sCoach.mensajes;
+  S.s('activeCoachId',activeCoachId);
 }
 
 function updateUserAvatars(){
@@ -6150,6 +6308,8 @@ function doLogout(){
   gymProfile={height:0,weight:0,experience:0};
   gymWeekLog=[];activeWeekId=null;
   nutData={waterLog:{},waterTarget:0,mealPlans:[],lastPlanDate:''};
+  chatSessions=[];activeChatId=null;chatHist=[];
+  coachSessions=[];activeCoachId=null;coachHist=[];
   if(notifInterval){clearInterval(notifInterval);notifInterval=null;}
   cOv1();cOv2();
   showLoginScreen();
