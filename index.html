@@ -3196,8 +3196,8 @@ function rConfig(){
   return`<div class="sec" style="padding:0">
     <div class="sec-t">Inteligencia Artificial</div>
     <div style="font-size:11px;color:var(--text2);margin-bottom:12px;line-height:1.6">Elegí el proveedor de IA y pegá tu API key. Podés cambiar entre ellos cuando quieras.</div>
-    <div style="display:flex;gap:6px;margin-bottom:14px">
-      ${Object.keys(AI_PROVIDERS).map(p=>`<button class="btn b-sm ${aiProvider()===p?'b-p':'b-g'}" style="flex:1;font-size:11px;padding:9px 4px" onclick="setAIProvider('${p}')">${AI_PROVIDERS[p].label.split('·')[1]?.trim()||AI_PROVIDERS[p].label}</button>`).join('')}
+    <div style="display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap">
+      ${Object.keys(AI_PROVIDERS).map(p=>`<button class="btn b-sm ${aiProvider()===p?'b-p':'b-g'}" style="flex:1;min-width:80px;font-size:11px;padding:9px 4px" onclick="setAIProvider('${p}')">${AI_PROVIDERS[p].label.split('·')[1]?.trim()||AI_PROVIDERS[p].label}</button>`).join('')}
     </div>
     ${(()=>{const c=AI_PROVIDERS[aiProvider()];return `
       <div style="font-size:11px;color:var(--text2);margin-bottom:8px;line-height:1.6">API key de <strong style="color:var(--blue)">${c.label}</strong> · obtenela en <strong style="color:var(--blue)">${c.url}</strong></div>
@@ -4620,11 +4620,25 @@ const AI_PROVIDERS={
     defaultModel:'grok-4.3',
     models:['grok-4.3','grok-4-fast-reasoning','grok-3-mini'],
     hint:'xai-…', url:'console.x.ai'
+  },
+  deepseek_local:{
+    label:'DeepSeek · Proxy', keyStore:'deepseek_local_key', modelStore:'ai_model_deepseek_local',
+    defaultModel:'deepseek-flash-thinking',
+    models:['deepseek-flash-thinking','deepseek-thinking','deepseek-v4-pro','deepseek-v4-pro-thinking','deepseek-v4-flash'],
+    hint:'sk-no-key-required', url:'localhost:3000'
+  },
+  wallasapi:{
+    label:'WallasAPI · Router', keyStore:'wallasapi_key', modelStore:'ai_model_wallasapi',
+    defaultModel:'auto',
+    models:['auto','fast','standard','reasoning'],
+    hint:'API Key si requiere', url:'localhost:8001'
   }
 };
 function aiProvider(){const p=S.g('ai_provider','free');return AI_PROVIDERS[p]?p:'free';}
 function aiKey(){const c=AI_PROVIDERS[aiProvider()];if(c.nokey)return 'free';return (S.g(c.keyStore,'')||'').trim();}
 function aiModel(){const c=AI_PROVIDERS[aiProvider()];return (S.g(c.modelStore,'')||'').trim()||c.defaultModel;}
+function aiKeyForProvider(p){const c=AI_PROVIDERS[p];if(!c)return '';if(c.nokey)return 'free';return (S.g(c.keyStore,'')||'').trim();}
+function aiModelForProvider(p){const c=AI_PROVIDERS[p];if(!c)return '';return (S.g(c.modelStore,'')||'').trim()||c.defaultModel;}
 function setAIProvider(p){if(!AI_PROVIDERS[p])return;S.s('ai_provider',p);if(activeProfileTab==='config'){openUserMgmt();}if(typeof renderGastos==='function')renderGastos();}
 
 async function _fetchT(url,opts,ms){
@@ -4635,39 +4649,69 @@ async function _fetchT(url,opts,ms){
 }
 
 // Llamada NO-streaming. Devuelve el texto o lanza {status,message}.
-async function _aiComplete(prompt){
-  const prov=aiProvider(), key=aiKey(), model=aiModel();
+async function _aiComplete(prompt, forcedProv=null){
+  const prov=forcedProv || aiProvider(), key=aiKeyForProvider(prov), model=aiModelForProvider(prov);
   if(!key)throw {status:0,message:'Falta la API key de '+AI_PROVIDERS[prov].label};
-  if(prov==='free'){
-    const r=await _fetchT(FREE_AI_ENDPOINT,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:model||FREE_AI_MODEL,messages:[{role:'user',content:prompt}]})},45000);
-    if(!r.ok)throw {status:r.status,message:(await r.text().catch(()=>'')).slice(0,160)};
-    const ct=(r.headers.get('content-type')||'');
-    if(ct.indexOf('application/json')>=0){const d=await r.json();return d?.choices?.[0]?.message?.content||d?.choices?.[0]?.text||'';}
-    return (await r.text())||'';
+  
+  try {
+    if(prov==='free'){
+      const r=await _fetchT(FREE_AI_ENDPOINT,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:model||FREE_AI_MODEL,messages:[{role:'user',content:prompt}]})},45000);
+      if(!r.ok)throw {status:r.status,message:(await r.text().catch(()=>'')).slice(0,160)};
+      const ct=(r.headers.get('content-type')||'');
+      if(ct.indexOf('application/json')>=0){const d=await r.json();return d?.choices?.[0]?.message?.content||d?.choices?.[0]?.text||'';}
+      return (await r.text())||'';
+    }
+    if(prov==='gemini'){
+      const r=await _fetchT('https://generativelanguage.googleapis.com/v1beta/models/'+model+':generateContent',
+        {method:'POST',headers:{'Content-Type':'application/json','X-goog-api-key':key},body:JSON.stringify({contents:[{parts:[{text:prompt}]}]})});
+      if(!r.ok)throw {status:r.status,message:(await r.text().catch(()=>'')).slice(0,160)};
+      const d=await r.json();
+      return d?.candidates?.[0]?.content?.parts?.[0]?.text||'';
+    }
+    if(prov==='openai'||prov==='grok'||prov==='deepseek_local'||prov==='wallasapi'){
+      let _url = '';
+      if(prov==='grok') _url='https://api.x.ai/v1/chat/completions';
+      else if(prov==='openai') _url='https://api.openai.com/v1/chat/completions';
+      else if(prov==='deepseek_local') _url='http://localhost:3000/v1/chat/completions';
+      else if(prov==='wallasapi') _url='http://localhost:8001/v1/chat/completions';
+      
+      const r=await _fetchT(_url,
+        {method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},body:JSON.stringify({model,messages:[{role:'user',content:prompt}]})});
+      if(!r.ok)throw {status:r.status,message:(await r.text().catch(()=>'')).slice(0,160)};
+      const d=await r.json();
+      return d?.choices?.[0]?.message?.content||'';
+    }
+    if(prov==='anthropic'){
+      const r=await _fetchT('https://api.anthropic.com/v1/messages',
+        {method:'POST',headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model,max_tokens:2048,messages:[{role:'user',content:prompt}]})});
+      if(!r.ok)throw {status:r.status,message:(await r.text().catch(()=>'')).slice(0,160)};
+      const d=await r.json();
+      return (d?.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('')||'';
+    }
+    throw {status:0,message:'Proveedor desconocido'};
+  } catch (e) {
+    if (forcedProv) throw e;
+    
+    // Fallback automático
+    if (prov === 'gemini') {
+      console.warn('Gemini falló, intentando con DeepSeek Local...', e);
+      try {
+        return await _aiComplete(prompt, 'deepseek_local');
+      } catch (err2) {
+        console.warn('DeepSeek Local también falló. Usando IA Gratis de respaldo...', err2);
+        return await _aiComplete(prompt, 'free');
+      }
+    } else if (prov === 'deepseek_local') {
+      console.warn('DeepSeek Local falló, intentando con Gemini...', e);
+      try {
+        return await _aiComplete(prompt, 'gemini');
+      } catch (err2) {
+        console.warn('Gemini también falló. Usando IA Gratis de respaldo...', err2);
+        return await _aiComplete(prompt, 'free');
+      }
+    }
+    throw e;
   }
-  if(prov==='gemini'){
-    const r=await _fetchT('https://generativelanguage.googleapis.com/v1beta/models/'+model+':generateContent',
-      {method:'POST',headers:{'Content-Type':'application/json','X-goog-api-key':key},body:JSON.stringify({contents:[{parts:[{text:prompt}]}]})});
-    if(!r.ok)throw {status:r.status,message:(await r.text().catch(()=>'')).slice(0,160)};
-    const d=await r.json();
-    return d?.candidates?.[0]?.content?.parts?.[0]?.text||'';
-  }
-  if(prov==='openai'||prov==='grok'){
-    const _url=prov==='grok'?'https://api.x.ai/v1/chat/completions':'https://api.openai.com/v1/chat/completions';
-    const r=await _fetchT(_url,
-      {method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},body:JSON.stringify({model,messages:[{role:'user',content:prompt}]})});
-    if(!r.ok)throw {status:r.status,message:(await r.text().catch(()=>'')).slice(0,160)};
-    const d=await r.json();
-    return d?.choices?.[0]?.message?.content||'';
-  }
-  if(prov==='anthropic'){
-    const r=await _fetchT('https://api.anthropic.com/v1/messages',
-      {method:'POST',headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model,max_tokens:2048,messages:[{role:'user',content:prompt}]})});
-    if(!r.ok)throw {status:r.status,message:(await r.text().catch(()=>'')).slice(0,160)};
-    const d=await r.json();
-    return (d?.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('')||'';
-  }
-  throw {status:0,message:'Proveedor desconocido'};
 }
 
 const GEMINI_MODEL='gemini-2.5-flash';
@@ -4843,12 +4887,12 @@ async function _gemini(prompt,_key,reintento=0){
 }
 
 // Streaming SSE multi-proveedor: llama onChunk(textoNuevo, acumulado) por cada fragmento.
-async function _geminiStream(prompt,_key,onChunk,reintento=0){
-  const prov=aiProvider(), key=aiKey(), model=aiModel();
+async function _geminiStream(prompt,_key,onChunk,reintento=0,forcedProv=null){
+  const prov=forcedProv || aiProvider(), key=aiKeyForProvider(prov), model=aiModelForProvider(prov);
   if(!key)throw new Error('Falta la API key de '+AI_PROVIDERS[prov].label);
   if(prov==='free'){
     try{
-      const full=await _aiComplete(prompt);
+      const full=await _aiComplete(prompt, 'free');
       if(onChunk&&full)onChunk(full,full);
       return full;
     }catch(e){throw new Error((e&&e.message)||'Error IA gratis');}
@@ -4859,8 +4903,12 @@ async function _geminiStream(prompt,_key,onChunk,reintento=0){
     headers={'Content-Type':'application/json','X-goog-api-key':key};
     body={contents:[{parts:[{text:prompt}]}]};
     parse=j=>j?.candidates?.[0]?.content?.parts?.[0]?.text||'';
-  }else if(prov==='openai'||prov==='grok'){
-    url=prov==='grok'?'https://api.x.ai/v1/chat/completions':'https://api.openai.com/v1/chat/completions';
+  }else if(prov==='openai'||prov==='grok'||prov==='deepseek_local'||prov==='wallasapi'){
+    if(prov==='grok') url='https://api.x.ai/v1/chat/completions';
+    else if(prov==='openai') url='https://api.openai.com/v1/chat/completions';
+    else if(prov==='deepseek_local') url='http://localhost:3000/v1/chat/completions';
+    else if(prov==='wallasapi') url='http://localhost:8001/v1/chat/completions';
+    
     headers={'Content-Type':'application/json','Authorization':'Bearer '+key};
     body={model,stream:true,messages:[{role:'user',content:prompt}]};
     parse=j=>j?.choices?.[0]?.delta?.content||'';
@@ -4873,7 +4921,7 @@ async function _geminiStream(prompt,_key,onChunk,reintento=0){
   try{
     const res=await _fetchT(url,{method:'POST',headers,body:JSON.stringify(body)},90000);
     if(!res.ok){
-      if(reintento<2){await new Promise(r=>setTimeout(r,1500));return _geminiStream(prompt,_key,onChunk,reintento+1);}
+      if(reintento<2){await new Promise(r=>setTimeout(r,1500));return _geminiStream(prompt,_key,onChunk,reintento+1,forcedProv);}
       const err=await res.text().catch(()=>'');
       throw new Error('HTTP '+res.status+' '+err.slice(0,140));
     }
@@ -4898,10 +4946,27 @@ async function _geminiStream(prompt,_key,onChunk,reintento=0){
         }catch(_){}
       }
     }
-    return full;
   }catch(e){
-    if(reintento<2&&e.name!=='AbortError'){await new Promise(r=>setTimeout(r,1500));return _geminiStream(prompt,_key,onChunk,reintento+1);}
-    throw e;
+    if (forcedProv) throw e;
+    
+    // Auto-fallback en stream
+    if (prov === 'gemini') {
+      console.warn('Gemini Stream falló, reintentando con DeepSeek Local...', e);
+      try {
+        return await _geminiStream(prompt, _key, onChunk, 0, 'deepseek_local');
+      } catch (err2) {
+        console.warn('DeepSeek Local Stream también falló. Usando IA Gratis...', err2);
+        return await _geminiStream(prompt, _key, onChunk, 0, 'free');
+      }
+    } else if (prov === 'deepseek_local') {
+      console.warn('DeepSeek Local Stream falló, reintentando con Gemini...', e);
+      try {
+        return await _geminiStream(prompt, _key, onChunk, 0, 'gemini');
+      } catch (err2) {
+        console.warn('Gemini Stream también falló. Usando IA Gratis...', err2);
+        return await _geminiStream(prompt, _key, onChunk, 0, 'free');
+      }
+    }
   }
 }
 
