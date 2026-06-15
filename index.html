@@ -3685,7 +3685,7 @@ function renderChat(){
     </div>`;
   }
 
-  const fmt=t=>esc(t).replace(/\*\*(.+?)\*\*/g,'<b>$1</b>');
+  const fmt=t=>_mdHtml(t);
   let h='<div class="cx-msgs" id="cx-msgs">';
   if(!chatHist.length){
     const prevSessions = [...chatSessions].filter(s => s.id !== activeChatId && s.mensajes.length > 0).sort((a, b) => b.updatedAt - a.updatedAt);
@@ -3717,7 +3717,7 @@ function renderChat(){
       if(isUser&&raw.indexOf('🎤 ')===0){isVoice=true;raw=raw.slice(2).trim();}
       const isRes=!isUser&&raw.trim().indexOf('✅')===0;
       const liveId=(!isUser&&isLast)?' id="chat-live"':'';
-      const inner=isVoice?`<span class="cx-vc">${SVG.mic}<span>${fmt(raw)}</span></span>`:fmt(raw);
+      const inner=isVoice?`<span class="cx-vc" style="align-items:flex-start">${SVG.mic}<span style="white-space:normal;display:inline-block">${fmt(raw)}</span></span>`:`<div style="white-space:normal">${fmt(raw)}</div>`;
       h+=`<div class="cx-row ${isUser?'u':'a'}">`;
       if(!isUser)h+=`<div class="cx-av">${SVG.spark}</div>`;
       if(!isUser && !msg.streaming) {
@@ -3845,7 +3845,7 @@ async function sendChat(){
       // mientras llega, ocultamos cualquier bloque [ACCION] a medio escribir
       const visible=acc.split('[ACCION')[0];
       if(bubble){
-        bubble.innerHTML=_mdBold(visible)+'<span class="ai-caret">▍</span>';
+        bubble.innerHTML=`<div style="white-space:normal">${_mdHtml(visible)}<span class="ai-caret">▍</span></div>`;
         const cont=document.getElementById('cx-msgs');
         if(cont)cont.scrollTop=cont.scrollHeight;
       }
@@ -4081,7 +4081,7 @@ function renderCoach(){
     </div>`;
   }
 
-  const fmtB=t=>esc(t).replace(/\*\*(.+?)\*\*/g,'<b>$1</b>');
+  const fmtB=t=>`<div style="white-space:normal">${_mdHtml(t)}</div>`;
   let h='<div class="cx-msgs" id="coach-msgs">';
   if(!coachHist.length){
     const prevSessions = [...coachSessions].filter(s => s.id !== activeCoachId && s.mensajes.length > 0).sort((a, b) => b.updatedAt - a.updatedAt);
@@ -4194,7 +4194,7 @@ async function coachStream(userMsg){
     const full=await _geminiStream(coachPrompt(userMsg, _voiceSent),key,(chunk,acc)=>{
       stopThinking();
       const visible=acc.split('[ACCION')[0];
-      if(bubble){bubble.innerHTML=_mdBold(visible)+'<span class="ai-caret">▍</span>';const cont=document.getElementById('coach-msgs');if(cont)cont.scrollTop=cont.scrollHeight;}
+      if(bubble){bubble.innerHTML=`<div style="white-space:normal">${_mdHtml(visible)}<span class="ai-caret">▍</span></div>`;const cont=document.getElementById('coach-msgs');if(cont)cont.scrollTop=cont.scrollHeight;}
     });
     let reply=full;
     const actionRegex=/\[ACCION\]([\s\S]*?)\[\/ACCION\]/g;
@@ -4223,20 +4223,36 @@ async function coachStream(userMsg){
   renderCoach();
 }
 
-function startVoiceCoach(){
+async function startVoiceCoach(){
+  if(_coachVoiceActive){
+    _stopVoiceCoach();
+    return;
+  }
   const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
   if(!SR){tst('🎤 Usá Chrome o Edge',3000);return;}
+  
+  if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      stream.getTracks().forEach(track => track.stop());
+    } catch(err) {
+      tst('🎤 Permiso de micrófono denegado', 3000);
+      return;
+    }
+  }
+
   const btn=document.getElementById('coach-mic-btn');
-  const rec=new SR();
-  rec.lang='es-UY';
-  rec.interimResults=true;
-  rec.continuous=false;
-  if(btn)btn.classList.add('recording');
-  const stop=()=>{if(btn)btn.classList.remove('recording'); _hideInterim();};
+  _coachVoiceRec=new SR();
+  _coachVoiceRec.lang='es-UY';
+  _coachVoiceRec.interimResults=true;
+  _coachVoiceRec.continuous=true;
+  _coachVoiceActive=true;
+  
+  if(btn) btn.classList.add('recording');
   _showInterim('Escuchando…');
   let finalTxt='';
   
-  rec.onresult=e=>{
+  _coachVoiceRec.onresult=e=>{
     let interim='';
     for(let i=e.resultIndex;i<e.results.length;i++){
       const r=e.results[i];
@@ -4246,17 +4262,25 @@ function startVoiceCoach(){
     _showInterim(((finalTxt+' '+interim).trim())||'Escuchando…');
   };
   
-  rec.onerror=e=>{
-    stop();
-    if(e.error==='not-allowed')tst('🎤 Permití el micrófono en el navegador',4000);
+  const stopFn=()=>{
+    _coachVoiceActive=false;
+    _coachVoiceRec=null;
+    if(btn) btn.classList.remove('recording');
+    _hideInterim();
+  };
+  
+  _coachVoiceRec.onerror=e=>{
+    stopFn();
+    if(e.error==='not-allowed')tst('🎤 Permití el micrófono',4000);
     else if(e.error==='no-speech')tst('🎤 No te escuché, probá de nuevo',3000);
     else if(e.error!=='aborted')tst('🎤 Error: '+e.error,3000);
   };
   
-  rec.onend=()=>{
-    stop();
+  _coachVoiceRec.onend=()=>{
+    const wasActive = _coachVoiceActive;
+    stopFn();
     const txt=finalTxt.trim();
-    if(txt){
+    if(txt && wasActive){
       const inp=document.getElementById('coach-inp');
       if(inp){
         inp.value=txt;
@@ -4266,7 +4290,23 @@ function startVoiceCoach(){
     }
   };
   
-  try{rec.start();}catch(e){stop();tst('🎤 Error: '+e.message,3000);}
+  try{
+    _coachVoiceRec.start();
+  }catch(e){
+    stopFn();
+    tst('🎤 Error: '+e.message,3000);
+  }
+}
+
+function _stopVoiceCoach(){
+  if(_coachVoiceRec){
+    try{_coachVoiceRec.stop();}catch(e){}
+  }
+  _coachVoiceActive=false;
+  _coachVoiceRec=null;
+  const btn=document.getElementById('coach-mic-btn');
+  if(btn) btn.classList.remove('recording');
+  _hideInterim();
 }
 
 // ════════════════════════════════════════════
@@ -4659,8 +4699,8 @@ const AI_PROVIDERS={
   },
   gemini:{
     label:'Google Gemini', keyStore:'gemini_key', modelStore:'ai_model_gemini',
-    defaultModel:'gemini-2.5-pro',
-    models:['gemini-2.5-pro','gemini-2.5-flash','gemini-1.5-pro-latest','gemini-1.5-flash-latest','gemini-flash-latest'],
+    defaultModel:'gemini-2.5-flash',
+    models:['gemini-2.5-flash','gemini-2.5-pro','gemini-1.5-pro-latest','gemini-1.5-flash-latest','gemini-flash-latest'],
     hint:'AIza…', url:'aistudio.google.com/apikey'
   },
   openai:{
@@ -4950,20 +4990,23 @@ async function _gemini(prompt,_key,reintento=0){
 async function _geminiStream(prompt,_key,onChunk,reintento=0,forcedProv=null){
   const prov=forcedProv || aiProvider(), key=aiKeyForProvider(prov), model=aiModelForProvider(prov);
   if(!key)throw new Error('Falta la API key de '+AI_PROVIDERS[prov].label);
-  if(prov==='free'){
-    try{
-      const full=await _aiComplete(prompt, 'free');
-      if(onChunk&&full)onChunk(full,full);
-      return full;
-    }catch(e){throw new Error((e&&e.message)||'Error IA gratis');}
-  }
   let url,headers,body,parse;
   if(prov==='gemini'){
     url='https://generativelanguage.googleapis.com/v1beta/models/'+model+':streamGenerateContent?alt=sse';
     headers={'Content-Type':'application/json','X-goog-api-key':key};
     body={contents:[{parts:[{text:prompt}]}]};
     parse=j=>j?.candidates?.[0]?.content?.parts?.[0]?.text||'';
-  }else if(prov==='openai'||prov==='grok'||prov==='deepseek_local'||prov==='wallasapi'){
+  }else if(prov==='openai'||prov==='grok'||prov==='deepseek_local'||prov==='wallasapi'||prov==='free'){
+    if(prov==='grok') url='https://api.x.ai/v1/chat/completions';
+    else if(prov==='openai') url='https://api.openai.com/v1/chat/completions';
+    else if(prov==='deepseek_local') url='http://localhost:3000/v1/chat/completions';
+    else if(prov==='wallasapi') url='http://localhost:8001/v1/chat/completions';
+    else if(prov==='free') url='https://text.pollinations.ai/openai';
+    
+    headers={'Content-Type':'application/json'};
+    if(prov!=='free') headers['Authorization']='Bearer '+key;
+    body={model,stream:true,messages:[{role:'user',content:prompt}]};
+    parse=j=>j?.choices?.[0]?.delta?.content||'';
     if(prov==='grok') url='https://api.x.ai/v1/chat/completions';
     else if(prov==='openai') url='https://api.openai.com/v1/chat/completions';
     else if(prov==='deepseek_local') url='http://localhost:3000/v1/chat/completions';
@@ -5062,6 +5105,48 @@ function buildMemCtx(short){
   return s;
 }
 function _mdBold(t){return esc(t).replace(/\*\*(.+?)\*\*/g,'<b>$1</b>');}
+
+function _mdHtml(t) {
+  if (!t) return '';
+  let html = esc(t);
+  html = html.replace(/\*\*(.+?)\*\*/g, '<b>$1</b>');
+  html = html.replace(/`([^`]+)`/g, '<code style="font-family:var(--fm);background:var(--bg4);padding:2px 4px;border-radius:4px;font-size:0.9em;color:var(--accent2)">$1</code>');
+  const lines = html.split('\n');
+  let inList = false;
+  let inNumList = false;
+  let formatted = [];
+  for (let i = 0; i < lines.length; i++) {
+    let line = lines[i].trim();
+    if (line.startsWith('- ') || line.startsWith('* ') || line.startsWith('• ')) {
+      if (!inList) {
+        if (inNumList) { formatted.push('</ol>'); inNumList = false; }
+        formatted.push('<ul style="margin-left:20px;margin-bottom:8px;padding-left:0;list-style-type:disc">');
+        inList = true;
+      }
+      const content = line.substring(2).trim();
+      formatted.push(`<li style="margin-bottom:4px;line-height:1.5">${content}</li>`);
+    } else if (/^\d+\.\s+/.test(line)) {
+      if (!inNumList) {
+        if (inList) { formatted.push('</ul>'); inList = false; }
+        formatted.push('<ol style="margin-left:20px;margin-bottom:8px;padding-left:0;list-style-type:decimal">');
+        inNumList = true;
+      }
+      const content = line.replace(/^\d+\.\s+/, '').trim();
+      formatted.push(`<li style="margin-bottom:4px;line-height:1.5">${content}</li>`);
+    } else {
+      if (inList) { formatted.push('</ul>'); inList = false; }
+      if (inNumList) { formatted.push('</ol>'); inNumList = false; }
+      if (line === '') {
+        formatted.push('<div style="height:8px"></div>');
+      } else {
+        formatted.push(`<p style="margin-bottom:8px;line-height:1.5">${line}</p>`);
+      }
+    }
+  }
+  if (inList) formatted.push('</ul>');
+  if (inNumList) formatted.push('</ol>');
+  return formatted.join('');
+}
 
 // Extrae el primer objeto JSON COMPLETO de un texto (maneja anidación y ```fences```).
 function _extractJSON(text){
@@ -5172,20 +5257,36 @@ async function testGeminiKey(){
   if(btn){btn.textContent='🔍 Probar conexión';btn.disabled=false;}
 }
 
-function startVoiceChat(){
+async function startVoiceChat(){
+  if(_chatVoiceActive){
+    _stopVoiceChat();
+    return;
+  }
   const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
   if(!SR){tst('🎤 Usá Chrome o Edge',3000);return;}
+  
+  if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      stream.getTracks().forEach(track => track.stop());
+    } catch(err) {
+      tst('🎤 Permiso de micrófono denegado', 3000);
+      return;
+    }
+  }
+
   const btn=document.getElementById('chat-mic-btn');
-  const rec=new SR();
-  rec.lang='es-UY';
-  rec.interimResults=true;
-  rec.continuous=false;
-  if(btn)btn.classList.add('recording');
-  const stop=()=>{if(btn)btn.classList.remove('recording'); _hideInterim();};
+  _chatVoiceRec=new SR();
+  _chatVoiceRec.lang='es-UY';
+  _chatVoiceRec.interimResults=true;
+  _chatVoiceRec.continuous=true;
+  _chatVoiceActive=true;
+  
+  if(btn) btn.classList.add('recording');
   _showInterim('Escuchando…');
   let finalTxt='';
   
-  rec.onresult=e=>{
+  _chatVoiceRec.onresult=e=>{
     let interim='';
     for(let i=e.resultIndex;i<e.results.length;i++){
       const r=e.results[i];
@@ -5195,17 +5296,25 @@ function startVoiceChat(){
     _showInterim(((finalTxt+' '+interim).trim())||'Escuchando…');
   };
   
-  rec.onerror=e=>{
-    stop();
-    if(e.error==='not-allowed')tst('🎤 Permití el micrófono en el navegador',4000);
+  const stopFn=()=>{
+    _chatVoiceActive=false;
+    _chatVoiceRec=null;
+    if(btn) btn.classList.remove('recording');
+    _hideInterim();
+  };
+  
+  _chatVoiceRec.onerror=e=>{
+    stopFn();
+    if(e.error==='not-allowed')tst('🎤 Permití el micrófono',4000);
     else if(e.error==='no-speech')tst('🎤 No te escuché, probá de nuevo',3000);
     else if(e.error!=='aborted')tst('🎤 Error: '+e.error,3000);
   };
   
-  rec.onend=()=>{
-    stop();
+  _chatVoiceRec.onend=()=>{
+    const wasActive = _chatVoiceActive;
+    stopFn();
     const txt=finalTxt.trim();
-    if(txt){
+    if(txt && wasActive){
       const inp=document.getElementById('chat-inp');
       if(inp){
         inp.value=txt;
@@ -5215,7 +5324,23 @@ function startVoiceChat(){
     }
   };
   
-  try{rec.start();}catch(e){stop();tst('🎤 Error: '+e.message,3000);}
+  try{
+    _chatVoiceRec.start();
+  }catch(e){
+    stopFn();
+    tst('🎤 Error: '+e.message,3000);
+  }
+}
+
+function _stopVoiceChat(){
+  if(_chatVoiceRec){
+    try{_chatVoiceRec.stop();}catch(e){}
+  }
+  _chatVoiceActive=false;
+  _chatVoiceRec=null;
+  const btn=document.getElementById('chat-mic-btn');
+  if(btn) btn.classList.remove('recording');
+  _hideInterim();
 }
 
 // ══════════════════════════════════════════
@@ -5795,6 +5920,8 @@ async function doRecoverOrphan(uid){
 
 /* ── VOZ ── */
 let _voiceRec=null,_voiceActive=false;
+let _chatVoiceRec=null,_chatVoiceActive=false;
+let _coachVoiceRec=null,_coachVoiceActive=false;
 
 function _showInterim(t){
   let el=document.getElementById('voice-interim');
