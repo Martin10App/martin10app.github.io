@@ -132,7 +132,7 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
 .mh{width:36px;height:4px;background:var(--bg4);border-radius:2px;margin:0 auto 20px}
 .mt{font-family:var(--fd);font-size:18px;font-weight:800;margin-bottom:20px}
 
-#tst{position:fixed;bottom:90px;left:50%;transform:translateX(-50%) translateY(16px);background:rgba(20,22,32,.97);border:1px solid var(--border3);color:var(--text0);padding:11px 20px;border-radius:12px;font-size:13px;font-weight:600;z-index:999;opacity:0;transition:all .3s;pointer-events:none;white-space:nowrap;box-shadow:0 8px 32px rgba(0,0,0,.5)}
+#tst{position:fixed;bottom:calc(90px + env(safe-area-inset-bottom, 0px));left:50%;transform:translateX(-50%) translateY(16px);background:rgba(20,22,32,.97);border:1px solid var(--border3);color:var(--text0);padding:11px 20px;border-radius:12px;font-size:13px;font-weight:600;z-index:999;opacity:0;transition:all .3s;pointer-events:none;white-space:nowrap;box-shadow:0 8px 32px rgba(0,0,0,.5)}
 #tst.on{opacity:1;transform:translateX(-50%) translateY(0)}
 
 .ring-w{position:relative;display:inline-flex;align-items:center;justify-content:center}
@@ -2272,7 +2272,6 @@ function renderGastos(){
   if(curXT===3)el.innerHTML=rComparar();
   if(curXT===4)el.innerHTML=rTarjetas();
   if(curXT===5)el.innerHTML=rNuevoGasto();
-  if(curXT===6)el.innerHTML=rConfig();
   if(curXT===7)el.innerHTML=rCompras();
 }
 
@@ -3215,14 +3214,13 @@ function rConfig(){
     <div class="div"></div>
     <div class="sec-t">Compromisos fijos (montos base)</div>
     <div style="font-size:11px;color:var(--text2);margin-bottom:14px;line-height:1.6">El "monto base" se usa por defecto en meses nuevos. Cada mes puede editarse individualmente desde "Mes" sin afectar a los otros.</div>
-    ${cats.filter(c=>!c.cardRef).map((c,i)=>{
-      const realIdx=cats.indexOf(c);
+    ${cats.filter(c=>!c.cardRef).map((c)=>{
       return`<div style="display:flex;align-items:center;gap:10px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--r-sm);padding:11px 13px;margin-bottom:8px">
       <div class="cdot" style="background:${c.c};width:12px;height:12px;flex-shrink:0"></div>
       <div style="flex:1;font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(c.n)}</div>
-      <input type="text" inputmode="decimal" value="${c.base}" oninput="cats[${realIdx}].base=parseMoney(this.value);S.s('cats4',cats)" style="width:78px;padding:6px 8px;border-radius:8px;background:var(--bg3);border:1px solid var(--border2);color:var(--text0);font-size:12px;text-align:right;outline:none;font-family:var(--fm)" title="Monto base">
-      <input type="text" inputmode="decimal" value="${c.limite||''}" placeholder="sin límite" oninput="cats[${realIdx}].limite=parseMoney(this.value);S.s('cats4',cats)" style="width:68px;padding:6px 8px;border-radius:8px;background:var(--bg3);border:1px solid var(--border2);color:var(--text2);font-size:11px;text-align:right;outline:none;font-family:var(--fm)" title="Límite mensual">
-      <button onclick="delCat(${realIdx})" style="color:var(--text3);font-size:16px">✕</button>
+      <input type="text" inputmode="decimal" value="${c.base}" oninput="(function(v){const ci=cats.findIndex(x=>x.id==='${c.id}');if(ci>=0){cats[ci].base=parseMoney(v);S.s('cats4',cats);}})(this.value)" style="width:78px;padding:6px 8px;border-radius:8px;background:var(--bg3);border:1px solid var(--border2);color:var(--text0);font-size:12px;text-align:right;outline:none;font-family:var(--fm)" title="Monto base">
+      <input type="text" inputmode="decimal" value="${c.limite||''}" placeholder="sin límite" oninput="(function(v){const ci=cats.findIndex(x=>x.id==='${c.id}');if(ci>=0){cats[ci].limite=parseMoney(v);S.s('cats4',cats);}})(this.value)" style="width:68px;padding:6px 8px;border-radius:8px;background:var(--bg3);border:1px solid var(--border2);color:var(--text2);font-size:11px;text-align:right;outline:none;font-family:var(--fm)" title="Límite mensual">
+      <button onclick="delCat(cats.findIndex(x=>x.id==='${c.id}'))" style="color:var(--text3);font-size:16px">✕</button>
     </div>`;}).join('')}
     ${cats.filter(c=>c.cardRef).map(c=>`
     <div style="display:flex;align-items:center;gap:10px;background:var(--purple-d, rgba(168,85,247,.05));border:1px solid var(--purple-b, rgba(168,85,247,.2));border-radius:var(--r-sm);padding:11px 13px;margin-bottom:8px;opacity:.8">
@@ -6406,18 +6404,18 @@ function loadUserData(){
   activeCoachId=S.g('activeCoachId',null);
   coachHist=[];
   
-  const oldCoach=S.g('coachHist1',[]);
-  if(oldCoach.length&&!coachSessions.length){
-    const id=uid();
-    coachSessions.push({id,titulo:'Charla '+new Date().toLocaleDateString('es-UY'),createdAt:Date.now(),updatedAt:Date.now(),mensajes:oldCoach});
-    activeCoachId=id;
-    S.s('coachSessions',coachSessions);
-    S.s('activeCoachId',activeCoachId);
-  }
+  // Migración única: si ya se hizo en el IIFE de inicio, coachSessions ya tendrá datos
   if(!coachSessions.length){
-    const id=uid();
-    coachSessions.push({id,titulo:'Charla '+new Date().toLocaleDateString('es-UY'),createdAt:Date.now(),updatedAt:Date.now(),mensajes:[]});
-    activeCoachId=id;
+    const oldCoach=S.g('coachHist1',[]);
+    if(oldCoach.length){
+      const id=uid();
+      coachSessions.push({id,titulo:'Charla '+new Date().toLocaleDateString('es-UY'),createdAt:Date.now(),updatedAt:Date.now(),mensajes:oldCoach});
+      activeCoachId=id;
+    } else {
+      const id=uid();
+      coachSessions.push({id,titulo:'Charla '+new Date().toLocaleDateString('es-UY'),createdAt:Date.now(),updatedAt:Date.now(),mensajes:[]});
+      activeCoachId=id;
+    }
     S.s('coachSessions',coachSessions);
     S.s('activeCoachId',activeCoachId);
   }
@@ -6434,7 +6432,7 @@ function loadUserData(){
 
 function updateUserAvatars(){
   const initial=currentUser?currentUser.name[0].toUpperCase():'?';
-  ['user-avatar-gym','user-avatar-gastos','user-avatar-agenda'].forEach(id=>{const el=document.getElementById(id);if(el){el.textContent=initial;el.title=currentUser?.name||'';}});
+  ['user-avatar-gym','user-avatar-gastos','user-avatar-agenda','user-avatar-chat','user-avatar-coach'].forEach(id=>{const el=document.getElementById(id);if(el){el.textContent=initial;el.title=currentUser?.name||'';}});
 }
 
 function onLoginSuccess(){
@@ -6545,14 +6543,14 @@ async function doCreateUser(){
   openUserMgmt();
 }
 
-function deleteUser(uid){
+function deleteUser(userId){
   const users=getUsers();
-  const u=users.find(x=>x.id===uid);
+  const u=users.find(x=>x.id===userId);
   if(!u||!confirm(`¿Eliminar a "${u.name}"?\nSe borrarán TODOS sus datos permanentemente.`))return;
   const keys=[];
-  for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k&&k.startsWith(uid+'_'))keys.push(k);}
+  for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k&&k.startsWith(userId+'_'))keys.push(k);}
   keys.forEach(k=>localStorage.removeItem(k));
-  saveUsers(users.filter(x=>x.id!==uid));
+  saveUsers(users.filter(x=>x.id!==userId));
   tst(`"${u.name}" eliminado`);
   openUserMgmt();
 }
