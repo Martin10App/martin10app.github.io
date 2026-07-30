@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1,user-scalable=no">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="mobile-web-app-capable" content="yes">
@@ -17,6 +17,7 @@ body{background:radial-gradient(130% 70% at 50% -15%,rgba(110,91,255,.10),transp
 input,select,textarea,button{font-family:inherit}
 ::-webkit-scrollbar{width:2px}::-webkit-scrollbar-thumb{background:#2a2d38;border-radius:2px}
 button{cursor:pointer;border:none;background:none;color:inherit}
+button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid var(--accent2);outline-offset:2px}
 input[type=number]{-moz-appearance:textfield}
 input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
 
@@ -43,7 +44,7 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
 #scr{flex:1;overflow-y:auto;overflow-x:hidden;overscroll-behavior-y:contain;-webkit-overflow-scrolling:touch}
 #nav{flex-shrink:0;display:grid;grid-template-columns:repeat(5,1fr);background:rgba(10,11,17,.86);backdrop-filter:blur(28px) saturate(180%);-webkit-backdrop-filter:blur(28px) saturate(180%);border-top:1px solid var(--border2);box-shadow:0 -10px 40px -12px rgba(0,0,0,.7);padding:10px 0 max(10px,env(safe-area-inset-bottom));z-index:100;position:relative}
 #nav::before{content:"";position:absolute;top:0;left:18%;right:18%;height:1px;background:linear-gradient(90deg,transparent,var(--accent-b),transparent)}
-.nb{display:flex;flex-direction:column;align-items:center;gap:5px;color:var(--text2);font-size:10px;font-weight:600;letter-spacing:.8px;text-transform:uppercase;padding:6px 6px;transition:color .2s,transform .2s;font-family:var(--fd)}
+.nb{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;min-height:48px;color:var(--text2);font-size:10px;font-weight:600;letter-spacing:.8px;text-transform:uppercase;padding:6px 6px;transition:color .2s,transform .2s;font-family:var(--fd)}
 .nb svg{width:24px;height:24px;stroke-width:1.8;transition:all .2s}
 .nb:active{transform:scale(.9)}
 .nb.on{color:var(--accent2)}.nb.on svg{filter:drop-shadow(0 0 10px var(--accent-b))}
@@ -215,7 +216,7 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
 .login-err{background:var(--red-d);border:1px solid var(--red-b);border-radius:9px;padding:11px 14px;font-size:12px;color:var(--red);margin-bottom:16px;text-align:center;display:none}
 .login-first-t{font-family:var(--fd);font-size:17px;font-weight:800;margin-bottom:5px}
 .login-first-s{font-size:12px;color:var(--text2);margin-bottom:20px;line-height:1.5}
-.user-avatar{width:34px;height:34px;border-radius:50%;background:var(--red);color:#fff;display:flex;align-items:center;justify-content:center;font-family:var(--fd);font-weight:800;font-size:14px;flex-shrink:0;border:none;cursor:pointer;transition:opacity .2s}
+.user-avatar{width:44px;height:44px;border-radius:50%;background:var(--red);color:#fff;display:flex;align-items:center;justify-content:center;font-family:var(--fd);font-weight:800;font-size:14px;flex-shrink:0;border:none;cursor:pointer;transition:opacity .2s}
 .user-avatar:active{opacity:.75}
 
 /* ── MICRÓFONO VOZ ── */
@@ -250,14 +251,14 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
 .cx-vc svg{width:14px;height:14px;opacity:.85;flex-shrink:0}
 .cx-empty{text-align:center;padding:40px 20px;color:var(--text2);margin:auto 0}
 .cx-input{display:flex;align-items:center;gap:8px;padding:11px 12px max(13px,env(safe-area-inset-bottom));border-top:1px solid var(--border);background:var(--bg1)}
-.cx-ibtn{width:38px;height:38px;border-radius:50%;background:var(--bg3);color:var(--text1);display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:transform .15s,background .2s,color .2s}
+.cx-ibtn{width:44px;height:44px;border-radius:50%;background:var(--bg3);color:var(--text1);display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:transform .15s,background .2s,color .2s}
 .cx-ibtn:active{transform:scale(.9)}
 .cx-ibtn svg{width:19px;height:19px}
 .cx-ibtn.recording{background:var(--red);color:#fff;animation:mic-pulse 1.2s ease-in-out infinite}
 .cx-fieldw{flex:1;min-width:0;background:var(--bg2);border:1px solid var(--border2);border-radius:21px;display:flex;align-items:center;padding:0 16px}
 .cx-fieldw input{flex:1;min-width:0;background:none;border:none;outline:none;color:var(--text0);font-size:13.5px;padding:11px 0}
 .cx-fieldw input::placeholder{color:var(--text3)}
-.cx-send{width:42px;height:42px;border-radius:50%;background:var(--red);color:#fff;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:transform .15s,opacity .2s}
+.cx-send{width:44px;height:44px;border-radius:50%;background:var(--red);color:#fff;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:transform .15s,opacity .2s}
 .cx-send:active{transform:scale(.9)}
 .cx-send svg{width:20px;height:20px}
 
@@ -486,7 +487,10 @@ let currentUser=null;
 const S={
   _p(k){return currentUser?currentUser.id+'_'+k:k;},
   g(k,d=null){try{const v=localStorage.getItem(this._p(k));return v!=null?JSON.parse(v):d;}catch{return d;}},
-  s(k,v){try{localStorage.setItem(this._p(k),JSON.stringify(v));}catch{}}
+  s(k,v){
+    try{localStorage.setItem(this._p(k),JSON.stringify(v));return true;}
+    catch(e){console.error('No se pudo guardar en el dispositivo:',e);if(typeof tst==='function')tst('No se pudo guardar. Liberá espacio y reintentá.',5000);return false;}
+  }
 };
 
 // ════════ SEED DATA (2025+2026 reales del Excel) ════════
@@ -3731,7 +3735,7 @@ function renderChat(){
     });
   }
   if(chatHist.length&&chatHist[chatHist.length-1].role==='user'){
-    h+=`<div class="cx-row a"><div class="cx-av">${SVG.spark}</div><div class="typing-dots" id="tk-ind"><span class="tk-txt" id="tk-txt">Pensando</span><span class="tk-d"><span class="dot"></span><span class="dot"></span><span class="dot"></span></span></div></div>`;
+    h+=`<div class="cx-row a"><div class="cx-av">${SVG.spark}</div><div class="typing-dots"><span class="tk-txt">Pensando</span><span class="tk-d"><span class="dot"></span><span class="dot"></span><span class="dot"></span></span></div></div>`;
   }
   h+='</div>';
   h+=`<div class="cx-input">
@@ -4120,7 +4124,7 @@ function renderCoach(){
     });
   }
   if(coachHist.length&&coachHist[coachHist.length-1].role==='user'){
-    h+=`<div class="cx-row a"><div class="cx-av" style="background:linear-gradient(135deg,#34D399,#10B981)">🌱</div><div class="typing-dots" id="tk-ind"><span class="tk-txt" id="tk-txt">Pensando</span><span class="tk-d"><span class="dot"></span><span class="dot"></span><span class="dot"></span></span></div></div>`;
+    h+=`<div class="cx-row a"><div class="cx-av" style="background:linear-gradient(135deg,#34D399,#10B981)">🌱</div><div class="typing-dots"><span class="tk-txt">Pensando</span><span class="tk-d"><span class="dot"></span><span class="dot"></span><span class="dot"></span></span></div></div>`;
   }
   h+='</div>';
   h+=`<div class="cx-input">
@@ -4924,7 +4928,7 @@ INSTRUCCIONES DEL REPORTE:
 1. Sé motivador, profesional y directo. Hablá en español uruguayo (tuteo rioplatense).
 2. Analizá si está aplicando sobrecarga progresiva (subiendo pesos, series o repeticiones) y dale indicaciones específicas en base a sus números reales.
 3. Analizá el cardio semanal y si se alinea con su objetivo físico principal.
-4. Respondé formateado con HTML limpio y elegante (usá contenedores div clase "card" y "crd", negritas b, y colores inline con variables como var(--accent2), var(--green) o var(--blue)). No uses markdown en absoluto.
+4. Respondé en Markdown claro y breve. No uses HTML.
 
 Estructurá el reporte con:
 - Un título principal: "📊 Reporte de Rendimiento & Sobrecarga"
@@ -4934,10 +4938,10 @@ Estructurá el reporte con:
 
   try {
     const raw = await _aiComplete(prompt);
-    const cleanHTML = raw.replace(/```html?/gi, '').replace(/```/g, '').trim();
+    const cleanReport = raw.replace(/```(?:html|markdown)?/gi, '').replace(/```/g, '').trim();
     oOv1(`<div class="sec" style="max-height:85dvh;overflow-y:auto">
       <div style="font-family:var(--fd);font-size:18px;font-weight:800;margin-bottom:14px;color:var(--accent2);display:flex;align-items:center;gap:6px">📊 Análisis de Rendimiento</div>
-      <div style="font-size:13px;line-height:1.6;color:var(--text1);">${cleanHTML}</div>
+      <div style="font-size:13px;line-height:1.6;color:var(--text1);">${_mdHtml(cleanReport)}</div>
       <button class="btn b-lg b-g" onclick="cOv1()" style="width:100%;margin-top:16px;">Entendido</button>
     </div>`);
   } catch(e) {
@@ -5062,11 +5066,11 @@ function startThinking(phases){
   stopThinking();
   const ph=phases||['Pensando','Analizando tus datos','Preparando respuesta'];
   let i=0;
-  const el=document.getElementById('tk-txt');
+  const el=document.querySelector('.pg.on .typing-dots .tk-txt');
   if(el)el.textContent=ph[0];
   _tkTimer=setInterval(()=>{
     i=(i+1)%ph.length;
-    const e=document.getElementById('tk-txt');
+    const e=document.querySelector('.pg.on .typing-dots .tk-txt');
     if(e)e.textContent=ph[i];
   },1600);
 }
@@ -6255,31 +6259,18 @@ function showCreateAccountForm(){
 }
 
 async function doLogin(){
-  let name=(document.getElementById('login-user')?.value||'').trim();
-  let pass=document.getElementById('login-pass')?.value||'';
+  const name=(document.getElementById('login-user')?.value||'').trim();
+  const pass=document.getElementById('login-pass')?.value||'';
   if(!name||!pass){showLoginScreen('Completá usuario y contraseña');return;}
-  // Try both lowercase and original case
   const users=getUsers();
-  let user;
-  for(const tryName of [name.toLowerCase(),name]){
-    const newHash=await hashPass(pass);
-    user=users.find(u=>u.name.toLowerCase()===tryName.toLowerCase()&&u.passHash===newHash);
-    if(user)break;
-    // Fallback: hash viejo (btoa)
-    const legacy=hashPassLegacy(pass);
-    user=users.find(u=>u.name.toLowerCase()===tryName.toLowerCase()&&u.passHash===legacy);
-    if(user){user.passHash=newHash;saveUsers(users);break;}
-  }
-  if(!user){
-    // One more try: generate both hashes and compare all users
-    const newHash=await hashPass(pass);
-    const legacy=hashPassLegacy(pass);
-    for(const u of users){
-      if(u.passHash===newHash||u.passHash===legacy){
-        u.passHash=newHash;saveUsers(users);
-        user=u;break;
-      }
-    }
+  const candidate=users.find(u=>u.name.toLowerCase()===name.toLowerCase());
+  if(!candidate){showLoginScreen('Usuario o contraseña incorrectos');return;}
+  const newHash=await hashPass(pass);
+  const legacy=hashPassLegacy(pass);
+  const user=(candidate.passHash===newHash||candidate.passHash===legacy)?candidate:null;
+  if(user&&user.passHash===legacy){
+    user.passHash=newHash;
+    saveUsers(users);
   }
   if(!user){showLoginScreen('Usuario o contraseña incorrectos');return;}
   currentUser={id:user.id,name:user.name,isAdmin:user.isAdmin};
@@ -6296,7 +6287,7 @@ async function doCreateAdmin(){
   if(pass!==pass2){alert('Las contraseñas no coinciden');return;}
   const users=getUsers();
   if(users.some(u=>u.name.toLowerCase()===name.toLowerCase())){alert('Ese nombre ya existe');return;}
-  const nu={id:'usr_'+name.toLowerCase().replace(/[^a-z0-9]/g,'_'),name,passHash:await hashPass(pass),isAdmin:true};
+  const nu={id:'usr_'+uid(),name,passHash:await hashPass(pass),isAdmin:true};
   users.push(nu);saveUsers(users);
   currentUser={id:nu.id,name:nu.name,isAdmin:true};
   localStorage.setItem(AUTH_SESSION,JSON.stringify({id:nu.id}));
@@ -6312,7 +6303,7 @@ async function doCreateRegularUser(){
   if(pass!==pass2){alert('Las contraseñas no coinciden');return;}
   const users=getUsers();
   if(users.some(u=>u.name.toLowerCase()===name.toLowerCase())){alert('Ese nombre ya existe');return;}
-  const nu={id:'usr_'+name.toLowerCase().replace(/[^a-z0-9]/g,'_'),name,passHash:await hashPass(pass),isAdmin:false};
+  const nu={id:'usr_'+uid(),name,passHash:await hashPass(pass),isAdmin:false};
   users.push(nu);saveUsers(users);
   currentUser={id:nu.id,name:nu.name,isAdmin:false};
   localStorage.setItem(AUTH_SESSION,JSON.stringify({id:nu.id}));
@@ -7039,11 +7030,16 @@ function confirmAIPurchases(){
 
 async function exportData(){
   try{
-    const data={};
+    if(!currentUser)throw new Error('No hay una sesión activa');
+    const prefix=currentUser.id+'_';
+    const entries={};
     for(let i=0;i<localStorage.length;i++){
       const k=localStorage.key(i);
-      try{data[k]=JSON.parse(localStorage.getItem(k));}catch{data[k]=localStorage.getItem(k);}
+      if(!k||!k.startsWith(prefix))continue;
+      const cleanKey=k.slice(prefix.length);
+      try{entries[cleanKey]=JSON.parse(localStorage.getItem(k));}catch{entries[cleanKey]=localStorage.getItem(k);}
     }
+    const data={format:'martinapp-backup',version:2,exportedAt:new Date().toISOString(),userName:currentUser.name,entries};
     const json=JSON.stringify(data,null,2);
     const date=new Date();
     const fname=`app-backup-${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}.json`;
@@ -7087,11 +7083,32 @@ function importData(ev){
   reader.onload=function(e){
     try{
       const data=JSON.parse(e.target.result);
-      if(!confirm('¿Importar datos? Se reemplazarán los datos actuales. Si ya creaste tu cuenta en Netlify, los datos se restaurarán.'))return;
+      if(!currentUser)throw new Error('No hay una sesión activa');
+      if(!data||data.format!=='martinapp-backup'||data.version!==2||!data.entries||Array.isArray(data.entries))throw new Error('Este archivo no es un respaldo válido de MartinApp');
+      const incoming=Object.entries(data.entries).filter(([k])=>k&&k!=='__proto__'&&k!=='constructor'&&k!=='prototype');
+      if(!incoming.length)throw new Error('El respaldo no contiene datos');
+      if(!confirm(`¿Importar ${incoming.length} registros de ${data.userName||'este respaldo'}? Se reemplazarán solamente los datos de tu cuenta actual.`))return;
+      const prefix=currentUser.id+'_';
+      const previous={};
+      const currentKeys=[];
+      for(let i=0;i<localStorage.length;i++){
+        const k=localStorage.key(i);
+        if(k&&k.startsWith(prefix)){currentKeys.push(k);previous[k]=localStorage.getItem(k);}
+      }
       let count=0;
-      Object.keys(data).forEach(k=>{
-        try{localStorage.setItem(k,JSON.stringify(data[k]));count++;}catch{}
-      });
+      try{
+        currentKeys.forEach(k=>localStorage.removeItem(k));
+        incoming.forEach(([k,v])=>{localStorage.setItem(prefix+k,JSON.stringify(v));count++;});
+      }catch(writeErr){
+        const partialKeys=[];
+        for(let i=0;i<localStorage.length;i++){
+          const k=localStorage.key(i);
+          if(k&&k.startsWith(prefix))partialKeys.push(k);
+        }
+        partialKeys.forEach(k=>localStorage.removeItem(k));
+        Object.entries(previous).forEach(([k,v])=>localStorage.setItem(k,v));
+        throw new Error('No había espacio suficiente; se restauraron tus datos anteriores');
+      }
       tst(`✓ ${count} datos importados. Recargando...`);
       setTimeout(()=>location.reload(),1200);
     }catch(err){tst('Error al importar: '+err.message);}
