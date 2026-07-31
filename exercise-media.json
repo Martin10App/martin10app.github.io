@@ -1,0 +1,776 @@
+{
+  "version": 1,
+  "source": "https://github.com/hasaneyldrm/exercises-dataset",
+  "usage": "educational-non-commercial",
+  "media_base": "https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/main/",
+  "exercises": [
+    {
+      "id": "0025",
+      "aliases": [
+        "Press banca plano con barra"
+      ],
+      "name": "barbell bench press",
+      "body_part": "chest",
+      "equipment": "barbell",
+      "target": "pectorals",
+      "instructions_es": "Túmbate sobre un banco con los pies apoyados en el suelo y la espalda presionada contra el banco. Agarra la barra con un agarre pronado un poco más ancho que la separación de los hombros. Levanta la barra del soporte y sostenla directamente sobre el pecho con los brazos completamente extendidos. Baja la barra lentamente hacia el pecho, manteniendo los codos pegados al cuerpo. Haz una pausa breve cuando la barra toque el pecho. Empuja la barra de vuelta a la posición inicial extendiendo los brazos. Repite el número de repeticiones deseado.",
+      "image": "images/0025-EIeI8Vf.jpg",
+      "gif_url": "videos/0025-EIeI8Vf.gif"
+    },
+    {
+      "id": "0314",
+      "aliases": [
+        "Press banca inclinado con mancuernas"
+      ],
+      "name": "dumbbell incline bench press",
+      "body_part": "chest",
+      "equipment": "dumbbell",
+      "target": "pectorals",
+      "instructions_es": "Coloca un banco inclinado a un ángulo de 45 grados. Siéntate en el banco con los pies apoyados en el suelo y la espalda firmemente apoyada contra el banco. Sostén una mancuerna en cada mano, con las palmas hacia adelante, y levántalas hasta la altura de los hombros. Baja lentamente las mancuernas hacia los lados del pecho, manteniendo los codos en un ángulo de 90 grados. Empuja las mancuernas de nuevo hacia arriba hasta la posición inicial, extendiendo completamente los brazos. Repite el número de repeticiones deseado.",
+      "image": "images/0314-ns0SIbU.jpg",
+      "gif_url": "videos/0314-ns0SIbU.gif"
+    },
+    {
+      "id": "0308",
+      "aliases": [
+        "Aperturas con mancuernas"
+      ],
+      "name": "dumbbell fly",
+      "body_part": "chest",
+      "equipment": "dumbbell",
+      "target": "pectorals",
+      "instructions_es": "Túmbate boca arriba en un banco con una mancuerna en cada mano, con las palmas enfrentadas entre sí. Extiende los brazos rectos hacia arriba sobre el pecho, con una ligera flexión en los codos. Manteniendo una ligera flexión en los codos, baja los brazos hacia los lados en un amplio arco hasta sentir un estiramiento en el pecho. Haz una pausa por un momento, luego invierte el movimiento y lleva las mancuernas de nuevo hacia arriba hasta la posición inicial. Repite el número de repeticiones deseado.",
+      "image": "images/0308-yz9nUhF.jpg",
+      "gif_url": "videos/0308-yz9nUhF.gif"
+    },
+    {
+      "id": "0033",
+      "aliases": [
+        "Press banca declinado"
+      ],
+      "name": "barbell decline bench press",
+      "body_part": "chest",
+      "equipment": "barbell",
+      "target": "pectorals",
+      "instructions_es": "Túmbate en un banco declinado con los pies sujetos y la cabeza más baja que las caderas. Agarra la barra con un agarre pronado un poco más ancho que la separación de los hombros. Saca la barra del soporte y bájala lentamente hacia el pecho, manteniendo los codos pegados al cuerpo. Haz una pausa breve en la parte baja y luego empuja la barra de vuelta a la posición inicial. Repite el número de repeticiones deseado.",
+      "image": "images/0033-GrO65fd.jpg",
+      "gif_url": "videos/0033-GrO65fd.gif"
+    },
+    {
+      "id": "0251",
+      "aliases": [
+        "Fondos en paralelas"
+      ],
+      "name": "chest dip",
+      "body_part": "chest",
+      "equipment": "body weight",
+      "target": "pectorals",
+      "instructions_es": "Colócate en las barras paralelas con los brazos completamente extendidos y el cuerpo recto. Baja el cuerpo flexionando los codos hasta que los hombros queden por debajo de los codos. Empújate de vuelta hacia arriba a la posición inicial extendiendo los brazos. Repite el número de repeticiones deseado.",
+      "image": "images/0251-9WTm7dq.jpg",
+      "gif_url": "videos/0251-9WTm7dq.gif"
+    },
+    {
+      "id": "0375",
+      "aliases": [
+        "Pullover con mancuerna"
+      ],
+      "name": "dumbbell pullover",
+      "body_part": "chest",
+      "equipment": "dumbbell",
+      "target": "pectorals",
+      "instructions_es": "Túmbate boca arriba en un banco con la cabeza en un extremo y los pies en el suelo. Sujeta una mancuerna con ambas manos y extiende los brazos rectos por encima del pecho. Manteniendo una ligera flexión en los codos, baja lentamente la mancuerna detrás de la cabeza hasta sentir un estiramiento en el pecho y los hombros. Haz una pausa por un momento, luego levanta la mancuerna de vuelta a la posición inicial. Repite el número de repeticiones deseado.",
+      "image": "images/0375-9XjtHvS.jpg",
+      "gif_url": "videos/0375-9XjtHvS.gif"
+    },
+    {
+      "id": "1269",
+      "aliases": [
+        "Crossover en cables"
+      ],
+      "name": "cable standing up straight crossovers",
+      "body_part": "chest",
+      "equipment": "cable",
+      "target": "pectorals",
+      "instructions_es": "Ponte de pie en el medio de una máquina de cable con los pies separados a la altura de los hombros. Sujeta los mangos de los cables con las palmas hacia abajo y los brazos extendidos hacia los lados. Manteniendo los brazos rectos, junta las manos frente a tu cuerpo, cruzándolas una sobre la otra. Haz una pausa breve, luego regresa lentamente a la posición inicial, manteniendo los brazos extendidos. Repite el número de repeticiones deseado.",
+      "image": "images/1269-UKWTJWR.jpg",
+      "gif_url": "videos/1269-UKWTJWR.gif"
+    },
+    {
+      "id": "0748",
+      "aliases": [
+        "Press en máquina Smith"
+      ],
+      "name": "smith bench press",
+      "body_part": "chest",
+      "equipment": "smith machine",
+      "target": "pectorals",
+      "instructions_es": "Ajusta la altura de la barra de la máquina Smith a la altura del pecho. Túmbate en el banco con los pies firmemente apoyados en el suelo. Sujeta la barra con agarre prono, un poco más separado que el ancho de los hombros. Suelta la barra del soporte y bájala hacia el pecho, manteniendo los codos pegados al cuerpo. Haz una pausa por un momento cuando la barra toque el pecho. Empuja la barra de vuelta a la posición inicial, extendiendo los brazos por completo. Repite el número de repeticiones deseado.",
+      "image": "images/0748-trqKQv2.jpg",
+      "gif_url": "videos/0748-trqKQv2.gif"
+    },
+    {
+      "id": "0596",
+      "aliases": [
+        "Aperturas en máquina Peck Deck"
+      ],
+      "name": "lever seated fly",
+      "body_part": "chest",
+      "equipment": "leverage machine",
+      "target": "pectorals",
+      "instructions_es": "Ajusta la altura del asiento y colócate en la máquina con la espalda apoyada en la almohadilla. Agarra las asas con un agarre pronado y mantén los codos ligeramente flexionados. Exhala y empuja las asas hacia adelante, juntándolas frente a tu pecho. Haz una pausa por un momento, contrayendo los músculos del pecho. Inhala y vuelve lentamente a la posición inicial, permitiendo que los músculos del pecho se estiren. Repite el número de repeticiones deseado.",
+      "image": "images/0596-v3xmPAR.jpg",
+      "gif_url": "videos/0596-v3xmPAR.gif"
+    },
+    {
+      "id": "0662",
+      "aliases": [
+        "Push-up con lastre"
+      ],
+      "name": "push-up",
+      "body_part": "chest",
+      "equipment": "body weight",
+      "target": "pectorals",
+      "instructions_es": "Comienza en una posición de plancha alta con las manos un poco más separadas que la anchura de los hombros y los pies juntos. Activa el core y baja el cuerpo hacia el suelo flexionando los codos, manteniendo el cuerpo en línea recta. Haz una pausa cuando el pecho esté justo por encima del suelo y luego empújate de vuelta a la posición inicial estirando los brazos. Repite el número de repeticiones deseado.",
+      "image": "images/0662-I4hDWkc.jpg",
+      "gif_url": "videos/0662-I4hDWkc.gif"
+    },
+    {
+      "id": "0652",
+      "aliases": [
+        "Dominadas con agarre prono"
+      ],
+      "name": "pull-up",
+      "body_part": "back",
+      "equipment": "body weight",
+      "target": "lats",
+      "instructions_es": "Cuélgate de una barra de dominadas con las palmas hacia afuera y los brazos completamente extendidos. Activa el core y junta los omóplatos. Tira de tu cuerpo hacia la barra flexionando los codos y llevando el pecho hacia la barra. Haz una pausa en la parte alta del movimiento y luego baja lentamente el cuerpo de vuelta a la posición inicial. Repite el número de repeticiones deseado.",
+      "image": "images/0652-lBDjFxJ.jpg",
+      "gif_url": "videos/0652-lBDjFxJ.gif"
+    },
+    {
+      "id": "0027",
+      "aliases": [
+        "Remo con barra"
+      ],
+      "name": "barbell bent over row",
+      "body_part": "back",
+      "equipment": "barbell",
+      "target": "upper back",
+      "instructions_es": "Ponte de pie con los pies separados a la altura de los hombros y las rodillas ligeramente flexionadas. Inclínate hacia delante desde las caderas manteniendo la espalda recta y el pecho elevado. Agarra la barra con un agarre pronado, con las manos un poco más separadas que el ancho de los hombros. Tira de la barra hacia la parte inferior del pecho retrayendo los omóplatos y contrayendo los músculos de la espalda. Haz una pausa breve en la parte alta y luego baja lentamente la barra de vuelta a la posición inicial. Repite el número de repeticiones deseado.",
+      "image": "images/0027-eZyBC3j.jpg",
+      "gif_url": "videos/0027-eZyBC3j.gif"
+    },
+    {
+      "id": "2330",
+      "aliases": [
+        "Jalón al pecho en polea alta"
+      ],
+      "name": "cable lat pulldown full range of motion",
+      "body_part": "back",
+      "equipment": "cable",
+      "target": "lats",
+      "instructions_es": "Siéntate en la máquina de jalón al pecho con las rodillas colocadas debajo de las almohadillas. Sujeta la barra del cable con un agarre prono, un poco más separado que el ancho de los hombros. Inclínate ligeramente hacia atrás y mantén el pecho elevado, conservando un ligero arco en la zona lumbar. Jala la barra hacia la parte superior del pecho, apretando los omóplatos entre sí. Haz una pausa por un momento en la parte baja del movimiento y luego suelta lentamente la barra de vuelta a la posición inicial. Repite el número de repeticiones deseado.",
+      "image": "images/2330-LEprlgG.jpg",
+      "gif_url": "videos/2330-LEprlgG.gif"
+    },
+    {
+      "id": "0213",
+      "aliases": [
+        "Remo en polea baja con barra V"
+      ],
+      "name": "cable seated high row (v-bar)",
+      "body_part": "back",
+      "equipment": "cable",
+      "target": "lats",
+      "instructions_es": "Siéntate en la máquina de cable con los pies apoyados planos en el suelo y las rodillas ligeramente flexionadas. Sujeta el accesorio en V con un agarre prono, con las palmas una frente a la otra y las manos separadas a la altura de los hombros. Mantén la espalda recta e inclínate ligeramente hacia adelante desde las caderas. Jala el accesorio en V hacia el torso retrayendo los omóplatos y apretando los músculos de la espalda. Haz una pausa por un momento en el punto más alto de la contracción, luego libera lentamente la tensión y regresa a la posición inicial. Repite el número de repeticiones deseado.",
+      "image": "images/0213-pwt0pnM.jpg",
+      "gif_url": "videos/0213-pwt0pnM.gif"
+    },
+    {
+      "id": "0032",
+      "aliases": [
+        "Peso muerto convencional"
+      ],
+      "name": "barbell deadlift",
+      "body_part": "upper legs",
+      "equipment": "barbell",
+      "target": "glutes",
+      "instructions_es": "Ponte de pie con los pies separados a la altura de los hombros y la barra en el suelo frente a ti. Flexiona las rodillas y las caderas para bajar el torso y agarra la barra con un agarre pronado, con las manos un poco más separadas que el ancho de los hombros. Mantén la espalda recta y el pecho elevado mientras empujas con los talones para levantar la barra del suelo, extendiendo las caderas y las rodillas. Al ponerte de pie, aprieta los glúteos y mantén el core activado. Baja la barra de vuelta al suelo flexionando las caderas y las rodillas, manteniendo la espalda recta. Repite el número de repeticiones deseado.",
+      "image": "images/0032-ila4NZS.jpg",
+      "gif_url": "videos/0032-ila4NZS.gif"
+    },
+    {
+      "id": "0292",
+      "aliases": [
+        "Remo con mancuerna un brazo"
+      ],
+      "name": "dumbbell one arm bent-over row",
+      "body_part": "back",
+      "equipment": "dumbbell",
+      "target": "upper back",
+      "instructions_es": "Ponte de pie con los pies separados a la altura de los hombros, sosteniendo una mancuerna en una mano con la palma hacia el cuerpo. Flexiona ligeramente las rodillas e inclínate hacia adelante desde las caderas, manteniendo la espalda recta y el core activado. Deja que la mancuerna cuelgue recta hacia el suelo, con el brazo completamente extendido. Tira de la mancuerna hacia el pecho, manteniendo el codo cerca del cuerpo y juntando los omóplatos. Haz una pausa breve en la parte más alta, luego baja lentamente la mancuerna de vuelta a la posición inicial. Repite el número de repeticiones deseado, luego cambia de lado.",
+      "image": "images/0292-C0MA9bC.jpg",
+      "gif_url": "videos/0292-C0MA9bC.gif"
+    },
+    {
+      "id": "0238",
+      "aliases": [
+        "Pull-over en polea alta"
+      ],
+      "name": "cable straight arm pulldown",
+      "body_part": "back",
+      "equipment": "cable",
+      "target": "lats",
+      "instructions_es": "Coloca una barra recta en la polea alta de una máquina de cable. Ponte de pie frente a la máquina con los pies separados a la altura de los hombros. Sujeta la barra con un agarre prono, manteniendo los brazos rectos y las palmas hacia abajo. Activa los dorsales y tira de la barra hacia abajo, hacia los muslos, manteniendo los brazos rectos durante todo el movimiento. Haz una pausa por un momento en la parte baja y luego regresa lentamente la barra a la posición inicial. Repite el número de repeticiones deseado.",
+      "image": "images/0238-x69MAlq.jpg",
+      "gif_url": "videos/0238-x69MAlq.gif"
+    },
+    {
+      "id": "0095",
+      "aliases": [
+        "Encogimientos de hombros con barra"
+      ],
+      "name": "barbell shrug",
+      "body_part": "back",
+      "equipment": "barbell",
+      "target": "traps",
+      "instructions_es": "Ponte de pie con los pies separados a la altura de los hombros y sujeta una barra frente a ti con un agarre pronado. Mantén los brazos rectos y la espalda recta durante todo el ejercicio. Levanta los hombros hacia las orejas lo más alto posible, apretando los trapecios en la parte alta. Mantén la posición por un momento y luego baja lentamente los hombros de vuelta a la posición inicial. Repite el número de repeticiones deseado.",
+      "image": "images/0095-dG7tG5y.jpg",
+      "gif_url": "videos/0095-dG7tG5y.gif"
+    },
+    {
+      "id": "0203",
+      "aliases": [
+        "Face pull en polea",
+        "Face pull con cuerda"
+      ],
+      "name": "cable rear delt row (with rope)",
+      "body_part": "shoulders",
+      "equipment": "cable",
+      "target": "delts",
+      "instructions_es": "Sujeta una agarradera de cuerda a una máquina de cable con polea baja. Ponte de pie frente a la máquina con los pies separados a la altura de los hombros. Sujeta la agarradera de cuerda con un agarre prono, con las palmas una frente a la otra. Flexiona ligeramente las rodillas e inclínate hacia adelante desde las caderas, manteniendo la espalda recta. Mantén los codos ligeramente flexionados y jala la cuerda hacia el pecho, apretando los omóplatos entre sí. Haz una pausa por un momento en la parte más alta del movimiento y luego libera lentamente la tensión, regresando a la posición inicial. Repite el número de repeticiones deseado.",
+      "image": "images/0203-wqNPGCg.jpg",
+      "gif_url": "videos/0203-wqNPGCg.gif"
+    },
+    {
+      "id": "0489",
+      "aliases": [
+        "Hiperextensiones en banco romano"
+      ],
+      "name": "hyperextension",
+      "body_part": "back",
+      "equipment": "body weight",
+      "target": "spine",
+      "instructions_es": "Ajusta el banco de hiperextensiones para que la parte superior de los muslos quede apoyada en la almohadilla y los pies queden asegurados. Cruza los brazos sobre el pecho o coloca las manos detrás de la cabeza. Baja la parte superior del cuerpo hacia el suelo manteniendo la espalda recta. Haz una pausa breve en la parte baja, luego eleva la parte superior del cuerpo hasta que quede alineada con las piernas. Repite el número de repeticiones deseado.",
+      "image": "images/0489-zhMwOwE.jpg",
+      "gif_url": "videos/0489-zhMwOwE.gif"
+    },
+    {
+      "id": "0043",
+      "aliases": [
+        "Sentadilla con barra"
+      ],
+      "name": "barbell full squat",
+      "body_part": "upper legs",
+      "equipment": "barbell",
+      "target": "glutes",
+      "instructions_es": "Ponte de pie con los pies separados a la altura de los hombros, con los dedos de los pies ligeramente hacia afuera. Sujeta la barra sobre la parte superior de la espalda, apoyándola en los trapecios o los deltoides posteriores. Activa el core y mantén el pecho elevado mientras comienzas a bajar el cuerpo. Flexiona las rodillas y las caderas, empujando las caderas hacia atrás y hacia abajo como si te sentaras en una silla. Baja hasta que los muslos queden paralelos al suelo o un poco por debajo. Mantén las rodillas alineadas con los dedos de los pies y el peso sobre los talones. Empuja con los talones para volver a ponerte de pie, extendiendo las caderas y las rodillas. Repite el número de repeticiones deseado.",
+      "image": "images/0043-qXTaZnJ.jpg",
+      "gif_url": "videos/0043-qXTaZnJ.gif"
+    },
+    {
+      "id": "0739",
+      "aliases": [
+        "Prensa 45°"
+      ],
+      "name": "sled 45в° leg press",
+      "body_part": "upper legs",
+      "equipment": "sled machine",
+      "target": "glutes",
+      "instructions_es": "Ajusta el asiento y la placa de la máquina de trineo a una posición cómoda. Siéntate en la máquina de trineo con la espalda contra el respaldo y los pies separados a la altura de los hombros sobre la placa. Sujeta las asas a los lados del asiento para mayor estabilidad. Empuja la placa alejándola de tu cuerpo extendiendo las piernas, manteniendo los talones sobre la placa. Continúa empujando hasta que las piernas estén casi completamente extendidas, pero sin bloquear las rodillas. Haz una pausa por un momento en la parte alta del movimiento, luego baja lentamente la placa de vuelta hacia tu cuerpo doblando las rodillas. Repite el número de repeticiones deseado.",
+      "image": "images/0739-10Z2DXU.jpg",
+      "gif_url": "videos/0739-10Z2DXU.gif"
+    },
+    {
+      "id": "0585",
+      "aliases": [
+        "Extensión de cuádriceps en máquina"
+      ],
+      "name": "lever leg extension",
+      "body_part": "upper legs",
+      "equipment": "leverage machine",
+      "target": "quads",
+      "instructions_es": "Ajusta la altura del asiento y el respaldo de la máquina a tu cuerpo. Siéntate en la máquina con la espalda apoyada en el respaldo y los pies sobre la almohadilla para los pies. Sujeta las asas o las barras laterales para mayor estabilidad. Extiende las piernas hacia adelante enderezando las rodillas, levantando el peso. Haz una pausa breve en lo alto, luego baja lentamente el peso de vuelta a la posición inicial. Repite el número de repeticiones deseado.",
+      "image": "images/0585-my33uHU.jpg",
+      "gif_url": "videos/0585-my33uHU.gif"
+    },
+    {
+      "id": "0586",
+      "aliases": [
+        "Curl femoral tumbado"
+      ],
+      "name": "lever lying leg curl",
+      "body_part": "upper legs",
+      "equipment": "leverage machine",
+      "target": "hamstrings",
+      "instructions_es": "Ajusta la máquina a tu cuerpo y selecciona el peso deseado. Túmbate boca abajo en la máquina con las piernas rectas y los talones contra la palanca acolchada. Sujeta las asas o los lados de la máquina para mayor estabilidad. Manteniendo la parte superior del cuerpo inmóvil, exhala y flexiona las piernas hacia arriba tanto como sea posible sin levantar las caderas de la almohadilla. Mantén la posición contraída durante una pausa breve mientras aprietas los isquiotibiales. Inhala y baja lentamente la palanca de vuelta a la posición inicial. Repite el número de repeticiones deseado.",
+      "image": "images/0586-17lJ1kr.jpg",
+      "gif_url": "videos/0586-17lJ1kr.gif"
+    },
+    {
+      "id": "0116",
+      "aliases": [
+        "Peso muerto piernas rígidas"
+      ],
+      "name": "barbell straight leg deadlift",
+      "body_part": "upper legs",
+      "equipment": "barbell",
+      "target": "hamstrings",
+      "instructions_es": "Ponte de pie con los pies separados a la altura de los hombros y los dedos de los pies apuntando hacia delante. Sujeta la barra con un agarre pronado, manos un poco más separadas que el ancho de los hombros. Flexiona las caderas y baja la barra hacia el suelo, manteniendo la espalda recta y las rodillas ligeramente flexionadas. Baja la barra hasta que sientas un estiramiento en los isquiotibiales. Activa los isquiotibiales y los glúteos para levantar la barra de vuelta a la posición inicial. Repite el número de repeticiones deseado.",
+      "image": "images/0116-hrVQWvE.jpg",
+      "gif_url": "videos/0116-hrVQWvE.gif"
+    },
+    {
+      "id": "0336",
+      "aliases": [
+        "Zancadas con mancuernas"
+      ],
+      "name": "dumbbell lunge",
+      "body_part": "upper legs",
+      "equipment": "dumbbell",
+      "target": "glutes",
+      "instructions_es": "Ponte de pie con los pies separados a la altura de los hombros, sujetando una mancuerna en cada mano. Da un paso adelante con el pie derecho, bajando el cuerpo hasta una posición de zancada. Mantén la espalda recta y el pecho erguido mientras bajas el cuerpo. Empuja con el talón derecho para regresar a la posición inicial. Repite con la pierna izquierda. Alterna las piernas el número de repeticiones deseado.",
+      "image": "images/0336-RRWFUcw.jpg",
+      "gif_url": "videos/0336-RRWFUcw.gif"
+    },
+    {
+      "id": "0058",
+      "aliases": [
+        "Hip thrust con barra"
+      ],
+      "name": "barbell lying lifting (on hip)",
+      "body_part": "upper legs",
+      "equipment": "barbell",
+      "target": "glutes",
+      "instructions_es": "Túmbate boca arriba en un banco con los pies planos sobre el suelo y las rodillas flexionadas. Sujeta la barra con un agarre pronado y colócala sobre las caderas. Activando los glúteos, levanta las caderas del banco hasta que el cuerpo forme una línea recta desde las rodillas hasta los hombros. Haz una pausa por un momento en la parte superior, luego baja lentamente las caderas de vuelta a la posición inicial. Repite el número de repeticiones deseado.",
+      "image": "images/0058-SNFfUff.jpg",
+      "gif_url": "videos/0058-SNFfUff.gif"
+    },
+    {
+      "id": "0410",
+      "aliases": [
+        "Sentadilla búlgara"
+      ],
+      "name": "dumbbell single leg split squat",
+      "body_part": "upper legs",
+      "equipment": "dumbbell",
+      "target": "quads",
+      "instructions_es": "Ponte de pie con los pies separados a la altura de los hombros, sujetando una mancuerna en cada mano. Da un paso hacia adelante con un pie y coloca los pies de modo que el pie delantero quede plano en el suelo y el pie trasero quede elevado sobre un banco o escalón. Baja el cuerpo flexionando la rodilla y la cadera delanteras, manteniendo la rodilla trasera ligeramente flexionada y el talón trasero levantado del suelo. Continúa bajando hasta que el muslo delantero quede paralelo al suelo, luego empuja con el talón delantero para volver a la posición inicial. Repite el número de repeticiones deseado y luego cambia de pierna y repite.",
+      "image": "images/0410-qx4fgX7.jpg",
+      "gif_url": "videos/0410-qx4fgX7.gif"
+    },
+    {
+      "id": "0605",
+      "aliases": [
+        "Gemelos de pie en máquina"
+      ],
+      "name": "lever standing calf raise",
+      "body_part": "lower legs",
+      "equipment": "leverage machine",
+      "target": "calves",
+      "instructions_es": "Ajusta la máquina a tu altura y ponte de pie con los pies separados a la altura de los hombros. Coloca los hombros debajo de las almohadillas y sujétate de las asas para mayor estabilidad. Eleva los talones tan alto como puedas extendiendo los tobillos. Haz una pausa breve en la parte alta y luego baja lentamente los talones de vuelta a la posición inicial. Repite el número de repeticiones deseado.",
+      "image": "images/0605-ykUOVze.jpg",
+      "gif_url": "videos/0605-ykUOVze.gif"
+    },
+    {
+      "id": "0594",
+      "aliases": [
+        "Gemelos sentado en máquina"
+      ],
+      "name": "lever seated calf raise",
+      "body_part": "lower legs",
+      "equipment": "leverage machine",
+      "target": "calves",
+      "instructions_es": "Ajusta la altura del asiento de modo que las rodillas queden ligeramente flexionadas y los pies queden planos sobre la placa para los pies. Coloca los dedos de los pies sobre la placa para los pies, con los talones colgando fuera del borde. Sujeta las asas o los lados del asiento para mayor estabilidad. Empuja con la parte delantera de los pies para elevar los talones tan alto como sea posible. Haz una pausa breve en la parte alta y luego baja lentamente los talones de vuelta a la posición inicial. Repite el número de repeticiones deseado.",
+      "image": "images/0594-bOOdeyc.jpg",
+      "gif_url": "videos/0594-bOOdeyc.gif"
+    },
+    {
+      "id": "1457",
+      "aliases": [
+        "Press militar con barra de pie"
+      ],
+      "name": "barbell standing wide military press",
+      "body_part": "shoulders",
+      "equipment": "barbell",
+      "target": "delts",
+      "instructions_es": "Ponte de pie con los pies separados a la altura de los hombros y sujeta la barra con agarre prono, un poco más separado que el ancho de los hombros. Levanta la barra hasta la altura de los hombros, manteniendo los codos ligeramente por delante de la barra. Empuja la barra por encima de la cabeza, extendiendo completamente los brazos. Baja la barra de vuelta a la altura de los hombros y repite el número de repeticiones deseado.",
+      "image": "images/1457-Kyd9Rz5.jpg",
+      "gif_url": "videos/1457-Kyd9Rz5.gif"
+    },
+    {
+      "id": "2137",
+      "aliases": [
+        "Press Arnold con mancuernas"
+      ],
+      "name": "dumbbell arnold press",
+      "body_part": "shoulders",
+      "equipment": "dumbbell",
+      "target": "delts",
+      "instructions_es": "Siéntate en un banco con respaldo y sujeta una mancuerna en cada mano a la altura del hombro, con las palmas hacia tu cuerpo y los codos flexionados. Empuja las mancuernas hacia arriba hasta que los brazos estén completamente extendidos y las palmas miren hacia adelante. Rota las muñecas mientras levantas, de modo que las palmas miren hacia adelante en la parte alta del movimiento. Haz una pausa breve en la parte alta, luego baja lentamente las mancuernas de vuelta a la posición inicial. Repite el número de repeticiones deseado.",
+      "image": "images/2137-Xy4jlWA.jpg",
+      "gif_url": "videos/2137-Xy4jlWA.gif"
+    },
+    {
+      "id": "0334",
+      "aliases": [
+        "Elevaciones laterales con mancuernas"
+      ],
+      "name": "dumbbell lateral raise",
+      "body_part": "shoulders",
+      "equipment": "dumbbell",
+      "target": "delts",
+      "instructions_es": "Ponte de pie con los pies separados a la altura de los hombros y sostén una mancuerna en cada mano, con las palmas hacia el cuerpo. Mantén la espalda recta y activa el core. Levanta los brazos hacia los lados hasta que queden paralelos al suelo, manteniendo una ligera flexión en los codos. Haz una pausa por un momento en la parte superior, luego baja lentamente los brazos de vuelta a la posición inicial. Repite el número de repeticiones deseado.",
+      "image": "images/0334-DsgkuIt.jpg",
+      "gif_url": "videos/0334-DsgkuIt.gif"
+    },
+    {
+      "id": "0834",
+      "aliases": [
+        "Elevaciones frontales con disco"
+      ],
+      "name": "weighted front raise",
+      "body_part": "shoulders",
+      "equipment": "weighted",
+      "target": "delts",
+      "instructions_es": "Ponte de pie con los pies separados a la altura de los hombros, sosteniendo una mancuerna en cada mano con las palmas hacia los muslos. Manteniendo los brazos rectos, exhala y levanta las mancuernas frente a ti hasta que queden a la altura de los hombros. Haz una pausa por un momento en la parte superior, luego inhala y baja lentamente las mancuernas de vuelta a la posición inicial. Repite el número de repeticiones deseado.",
+      "image": "images/0834-e4aFmFY.jpg",
+      "gif_url": "videos/0834-e4aFmFY.gif"
+    },
+    {
+      "id": "0383",
+      "aliases": [
+        "Pájaro inclinado con mancuernas"
+      ],
+      "name": "dumbbell reverse fly",
+      "body_part": "shoulders",
+      "equipment": "dumbbell",
+      "target": "delts",
+      "instructions_es": "Ponte de pie con los pies separados a la altura de los hombros y sostén una mancuerna en cada mano. Flexiona ligeramente las rodillas e inclínate hacia adelante desde las caderas, manteniendo la espalda recta. Extiende los brazos rectos hacia adelante, con las palmas mirándose entre sí. Manteniendo una ligera flexión en los codos, levanta los brazos hacia los lados hasta que queden paralelos al suelo. Haz una pausa por un momento en la parte superior, luego baja lentamente los brazos de vuelta a la posición inicial. Repite el número de repeticiones deseado.",
+      "image": "images/0383-EAs3xL9.jpg",
+      "gif_url": "videos/0383-EAs3xL9.gif"
+    },
+    {
+      "id": "0406",
+      "aliases": [
+        "Encogimientos de trapecio con mancuernas"
+      ],
+      "name": "dumbbell shrug",
+      "body_part": "back",
+      "equipment": "dumbbell",
+      "target": "traps",
+      "instructions_es": "Ponte de pie con los pies separados a la altura de los hombros y sujeta una mancuerna en cada mano con las palmas hacia tu cuerpo. Mantén los brazos rectos y deja que las mancuernas cuelguen a tus costados. Eleva los hombros lo más alto posible, como si intentaras tocarte las orejas con ellos. Mantén la contracción durante un segundo, luego baja lentamente los hombros de vuelta a la posición inicial. Repite el número de repeticiones deseado.",
+      "image": "images/0406-NJzBsGJ.jpg",
+      "gif_url": "videos/0406-NJzBsGJ.gif"
+    },
+    {
+      "id": "0603",
+      "aliases": [
+        "Press en máquina de hombros"
+      ],
+      "name": "lever shoulder press",
+      "body_part": "shoulders",
+      "equipment": "leverage machine",
+      "target": "delts",
+      "instructions_es": "Ajusta la altura del asiento y colócate en la máquina con la espalda apoyada en el respaldo. Agarra las asas con un agarre prono y coloca las manos a la altura de los hombros. Empuja las asas hacia arriba hasta que los brazos queden completamente extendidos, pero sin bloquear los codos. Haz una pausa breve en lo alto, luego baja lentamente las asas de vuelta a la posición inicial. Repite el número de repeticiones deseado.",
+      "image": "images/0603-67n3r98.jpg",
+      "gif_url": "videos/0603-67n3r98.gif"
+    },
+    {
+      "id": "0178",
+      "aliases": [
+        "Elevaciones laterales en polea baja"
+      ],
+      "name": "cable lateral raise",
+      "body_part": "shoulders",
+      "equipment": "cable",
+      "target": "delts",
+      "instructions_es": "Ponte de pie con los pies separados a la altura de los hombros y sujeta las agarraderas del cable con un agarre prono. Mantén los brazos rectos y el core activado. Levanta los brazos hacia los lados hasta que queden paralelos al suelo. Haz una pausa por un momento en la parte superior, luego baja lentamente los brazos de vuelta a la posición inicial. Repite el número de repeticiones deseado.",
+      "image": "images/0178-goJ6ezq.jpg",
+      "gif_url": "videos/0178-goJ6ezq.gif"
+    },
+    {
+      "id": "0405",
+      "aliases": [
+        "Press con mancuernas sentado"
+      ],
+      "name": "dumbbell seated shoulder press",
+      "body_part": "shoulders",
+      "equipment": "dumbbell",
+      "target": "delts",
+      "instructions_es": "Siéntate en un banco con una mancuerna en cada mano, apoyadas en los muslos. Sube las mancuernas hasta la altura de los hombros, con las palmas hacia adelante. Presiona las mancuernas hacia arriba hasta que los brazos queden completamente extendidos por encima de la cabeza. Haz una pausa por un momento en la parte superior, luego baja lentamente las mancuernas de vuelta a la altura de los hombros. Repite el número de repeticiones deseado.",
+      "image": "images/0405-znQUdHY.jpg",
+      "gif_url": "videos/0405-znQUdHY.gif"
+    },
+    {
+      "id": "0031",
+      "aliases": [
+        "Curl con barra recta"
+      ],
+      "name": "barbell curl",
+      "body_part": "upper arms",
+      "equipment": "barbell",
+      "target": "biceps",
+      "instructions_es": "Ponte de pie con los pies separados a la altura de los hombros y sujeta una barra con un agarre supino, con las palmas mirando hacia delante. Mantén los codos cerca del torso y exhala mientras levantas el peso contrayendo los bíceps. Continúa levantando la barra hasta que los bíceps estén completamente contraídos y la barra esté a la altura de los hombros. Mantén la posición contraída durante una breve pausa mientras aprietas los bíceps. Inhala mientras comienzas a bajar lentamente la barra de vuelta a la posición inicial. Repite el número de repeticiones deseado.",
+      "image": "images/0031-25GPyDY.jpg",
+      "gif_url": "videos/0031-25GPyDY.gif"
+    },
+    {
+      "id": "0285",
+      "aliases": [
+        "Curl con mancuernas alternado"
+      ],
+      "name": "dumbbell alternate biceps curl",
+      "body_part": "upper arms",
+      "equipment": "dumbbell",
+      "target": "biceps",
+      "instructions_es": "Ponte de pie con una mancuerna en cada mano, con las palmas hacia adelante y los brazos completamente extendidos. Manteniendo los brazos superiores fijos, exhala y levanta el peso mientras contraes los bíceps. Continúa levantando las mancuernas hasta que los bíceps estén completamente contraídos y las mancuernas estén a la altura de los hombros. Mantén la posición contraída durante una breve pausa mientras aprietas los bíceps. Inhala y comienza a bajar lentamente las mancuernas de vuelta a la posición inicial. Repite el número de repeticiones deseado, alternando los brazos.",
+      "image": "images/0285-BU15nH4.jpg",
+      "gif_url": "videos/0285-BU15nH4.gif"
+    },
+    {
+      "id": "1627",
+      "aliases": [
+        "Curl predicador con barra Z"
+      ],
+      "name": "ez barbell close grip preacher curl",
+      "body_part": "upper arms",
+      "equipment": "ez barbell",
+      "target": "biceps",
+      "instructions_es": "Siéntate en un banco scott y coloca los brazos superiores sobre la almohadilla, sujetando la barra EZ con agarre supino. Apoya los tríceps sobre la almohadilla y extiende los brazos por completo, manteniendo la espalda recta. Sube lentamente la barra hacia los hombros, contrayendo los bíceps. Haz una pausa breve en la parte alta, apretando los bíceps. Baja la barra a la posición inicial, extendiendo los brazos por completo. Repite el número de repeticiones deseado.",
+      "image": "images/1627-hacCyUv.jpg",
+      "gif_url": "videos/1627-hacCyUv.gif"
+    },
+    {
+      "id": "0313",
+      "aliases": [
+        "Curl martillo con mancuernas"
+      ],
+      "name": "dumbbell hammer curl",
+      "body_part": "upper arms",
+      "equipment": "dumbbell",
+      "target": "biceps",
+      "instructions_es": "Ponte de pie con una mancuerna en cada mano, con las palmas mirando hacia el torso. Mantén los codos cerca del torso y gira las palmas de las manos hasta que queden mirando hacia adelante. Esta será tu posición inicial. Ahora, manteniendo los brazos superiores quietos, exhala y flexiona los brazos contrayendo los bíceps. Continúa levantando las pesas hasta que los bíceps estén completamente contraídos y las mancuernas estén a la altura de los hombros. Mantén la posición contraída durante una breve pausa mientras aprietas los bíceps. Luego, inhala y comienza a bajar lentamente las mancuernas de vuelta a la posición inicial. Repite el número de repeticiones recomendado.",
+      "image": "images/0313-slDvUAU.jpg",
+      "gif_url": "videos/0313-slDvUAU.gif"
+    },
+    {
+      "id": "0060",
+      "aliases": [
+        "Press francés con barra Z"
+      ],
+      "name": "barbell lying triceps extension skull crusher",
+      "body_part": "upper arms",
+      "equipment": "barbell",
+      "target": "triceps",
+      "instructions_es": "Túmbate boca arriba en un banco con los pies planos sobre el suelo y la cabeza en el extremo del banco. Sujeta una barra con un agarre pronado, manos separadas a la altura de los hombros, y extiende los brazos rectos por encima del pecho. Manteniendo los brazos superiores fijos, baja lentamente la barra hacia la frente flexionando los codos. Haz una pausa breve cuando la barra esté justo encima de la frente y luego extiende los brazos de vuelta a la posición inicial. Repite el número de repeticiones deseado.",
+      "image": "images/0060-h8LFzo9.jpg",
+      "gif_url": "videos/0060-h8LFzo9.gif"
+    },
+    {
+      "id": "0241",
+      "aliases": [
+        "Extensión de tríceps en polea alta"
+      ],
+      "name": "cable triceps pushdown (v-bar)",
+      "body_part": "upper arms",
+      "equipment": "cable",
+      "target": "triceps",
+      "instructions_es": "Coloca un accesorio en V en la máquina de cable en el ajuste más alto. Ponte de pie frente a la máquina de cable con los pies separados a la altura de los hombros. Agarra el accesorio en V con un agarre prono, con las palmas hacia abajo y las manos separadas a la altura de los hombros. Mantén los codos cerca de los costados y los brazos superiores quietos durante todo el ejercicio. Activa los tríceps y exhala mientras empujas el accesorio en V hacia abajo hasta que los brazos estén completamente extendidos. Haz una pausa breve en la parte baja del movimiento, apretando los tríceps. Inhala mientras regresas lentamente el accesorio en V a la posición inicial, manteniendo el control. Repite el número de repeticiones deseado.",
+      "image": "images/0241-gAwDzB3.jpg",
+      "gif_url": "videos/0241-gAwDzB3.gif"
+    },
+    {
+      "id": "0129",
+      "aliases": [
+        "Fondos en banco para tríceps"
+      ],
+      "name": "bench dip (knees bent)",
+      "body_part": "upper arms",
+      "equipment": "body weight",
+      "target": "triceps",
+      "instructions_es": "Siéntate en el borde de un banco o silla con las manos sujetando el borde junto a las caderas. Desliza los glúteos fuera del banco y estira las piernas frente a ti, manteniendo los talones en el suelo. Flexiona los codos y baja el cuerpo hacia el suelo, manteniendo la espalda cerca del banco. Haz una pausa por un momento en la parte inferior, luego empuja tu cuerpo de vuelta a la posición inicial. Repite el número de repeticiones deseado.",
+      "image": "images/0129-RrLske5.jpg",
+      "gif_url": "videos/0129-RrLske5.gif"
+    },
+    {
+      "id": "0297",
+      "aliases": [
+        "Curl de concentración"
+      ],
+      "name": "dumbbell concentration curl",
+      "body_part": "upper arms",
+      "equipment": "dumbbell",
+      "target": "biceps",
+      "instructions_es": "Siéntate en un banco con las piernas separadas y una mancuerna en una mano, apoyando el codo en la parte interna del muslo. Extiende completamente el brazo y sujeta la mancuerna con un agarre supino. Manteniendo el brazo superior quieto, exhala y flexiona el peso hacia el hombro mientras contraes el bíceps. Continúa levantando la mancuerna hasta que el bíceps esté completamente contraído y la mancuerna esté a la altura del hombro. Mantén la posición contraída durante una breve pausa mientras aprietas los bíceps. Inhala y baja lentamente la mancuerna de vuelta a la posición inicial. Repite el número de repeticiones deseado, luego cambia de brazo.",
+      "image": "images/0297-gvsWLQw.jpg",
+      "gif_url": "videos/0297-gvsWLQw.gif"
+    },
+    {
+      "id": "0333",
+      "aliases": [
+        "Patada de tríceps con mancuerna"
+      ],
+      "name": "dumbbell kickback",
+      "body_part": "upper arms",
+      "equipment": "dumbbell",
+      "target": "triceps",
+      "instructions_es": "Ponte de pie con los pies separados a la altura de los hombros y sostén una mancuerna en cada mano. Flexiona ligeramente las rodillas e inclínate hacia adelante desde las caderas, manteniendo la espalda recta. Acerca los brazos superiores a los costados, con los codos flexionados en un ángulo de 90 grados. Extiende los brazos rectos hacia atrás, contrayendo los tríceps en la parte superior del movimiento. Haz una pausa por un momento, luego baja lentamente las mancuernas de vuelta a la posición inicial. Repite el número de repeticiones deseado.",
+      "image": "images/0333-W6PxUkg.jpg",
+      "gif_url": "videos/0333-W6PxUkg.gif"
+    },
+    {
+      "id": "0868",
+      "aliases": [
+        "Curl en polea baja con barra"
+      ],
+      "name": "cable curl",
+      "body_part": "upper arms",
+      "equipment": "cable",
+      "target": "biceps",
+      "instructions_es": "Ponte de pie frente a la máquina de cable con los pies separados a la altura de los hombros. Sujeta el accesorio del cable con agarre supino, palmas hacia arriba. Mantén los codos cerca de los costados y los brazos superiores quietos. Exhala y flexiona el accesorio del cable hacia los hombros, contrayendo los bíceps. Haz una pausa breve en la parte más alta del movimiento, contrayendo los bíceps. Inhala y baja lentamente el accesorio del cable de vuelta a la posición inicial. Repite el número de repeticiones deseado.",
+      "image": "images/0868-G08RZcQ.jpg",
+      "gif_url": "videos/0868-G08RZcQ.gif"
+    },
+    {
+      "id": "0274",
+      "aliases": [
+        "Crunch abdominal clásico"
+      ],
+      "name": "crunch floor",
+      "body_part": "waist",
+      "equipment": "body weight",
+      "target": "abs",
+      "instructions_es": "Túmbate sobre tu espalda con las rodillas flexionadas y los pies apoyados en el suelo. Coloca las manos detrás de la cabeza con los codos apuntando hacia afuera. Activa el abdomen y levanta los hombros del suelo, flexionándote hacia adelante en dirección a las rodillas. Haz una pausa breve en la parte alta, luego baja lentamente los hombros de vuelta a la posición inicial. Repite el número de repeticiones deseado.",
+      "image": "images/0274-TFqbd8t.jpg",
+      "gif_url": "videos/0274-TFqbd8t.gif"
+    },
+    {
+      "id": "2135",
+      "aliases": [
+        "Plancha frontal"
+      ],
+      "name": "weighted front plank",
+      "body_part": "waist",
+      "equipment": "weighted",
+      "target": "abs",
+      "instructions_es": "Comienza tumbándote boca abajo en el suelo. Coloca los antebrazos en el suelo, con los codos justo debajo de los hombros. Extiende las piernas rectas hacia atrás, con la punta de los pies en el suelo. Activa el core y levanta el cuerpo del suelo, equilibrándote sobre los antebrazos y la punta de los pies. Mantén el cuerpo en línea recta desde la cabeza hasta los talones. Mantén esta posición durante el tiempo deseado. Baja el cuerpo de nuevo a la posición inicial. Repite el número de repeticiones deseado.",
+      "image": "images/2135-VBAWRPG.jpg",
+      "gif_url": "videos/2135-VBAWRPG.gif"
+    },
+    {
+      "id": "0472",
+      "aliases": [
+        "Elevación de piernas colgado"
+      ],
+      "name": "hanging leg raise",
+      "body_part": "waist",
+      "equipment": "body weight",
+      "target": "abs",
+      "instructions_es": "Cuélgate de una barra de dominadas con los brazos completamente extendidos y las palmas mirando hacia afuera. Activa el core y levanta las piernas frente a ti, manteniéndolas rectas. Continúa levantando hasta que las piernas estén paralelas al suelo o tan alto como puedas llegar cómodamente. Haz una pausa por un momento en la parte superior, luego baja lentamente las piernas de vuelta a la posición inicial. Repite el número de repeticiones deseado.",
+      "image": "images/0472-I3tsCnC.jpg",
+      "gif_url": "videos/0472-I3tsCnC.gif"
+    },
+    {
+      "id": "0857",
+      "aliases": [
+        "Rueda abdominal (Ab wheel)"
+      ],
+      "name": "wheel rollerout",
+      "body_part": "waist",
+      "equipment": "wheel roller",
+      "target": "abs",
+      "instructions_es": "Arrodíllate en el suelo y coloca el rodillo frente a ti. Coloca las manos en las asas del rodillo y extiende los brazos rectos hacia adelante. Activa los músculos del core y haz rodar lentamente el rodillo hacia adelante, manteniendo la espalda recta y el abdomen contraído. Continúa rodando hacia delante hasta que el cuerpo esté completamente extendido y los brazos por encima de la cabeza. Haz una pausa de un momento, luego haz rodar lentamente el rodillo de regreso hacia las rodillas, manteniendo el control y el abdomen activado. Repite el número de repeticiones deseado.",
+      "image": "images/0857-NAgVB3t.jpg",
+      "gif_url": "videos/0857-NAgVB3t.gif"
+    },
+    {
+      "id": "0175",
+      "aliases": [
+        "Crunch en polea alta"
+      ],
+      "name": "cable kneeling crunch",
+      "body_part": "waist",
+      "equipment": "cable",
+      "target": "abs",
+      "instructions_es": "Sujeta una agarradera de cuerda a una polea alta y ponte de rodillas de espaldas a la máquina. Sujeta la agarradera de cuerda con ambas manos y colócala detrás de la cabeza, manteniendo los codos hacia afuera a los lados. Manteniendo las caderas inmóviles, flexiona la cintura y encoge el torso hacia los muslos. Haz una pausa por un momento en la parte inferior, luego regresa lentamente a la posición inicial. Repite el número de repeticiones deseado.",
+      "image": "images/0175-WW95auq.jpg",
+      "gif_url": "videos/0175-WW95auq.gif"
+    },
+    {
+      "id": "0630",
+      "aliases": [
+        "Mountain climbers"
+      ],
+      "name": "mountain climber",
+      "body_part": "cardio",
+      "equipment": "body weight",
+      "target": "cardiovascular system",
+      "instructions_es": "Comienza en una posición de plancha alta con las manos justo debajo de los hombros y el cuerpo en línea recta. Activa el core y lleva la rodilla derecha hacia el pecho, luego cambia rápidamente y lleva la rodilla izquierda hacia el pecho. Continúa alternando las piernas con un movimiento de carrera, manteniendo las caderas bajas y el core activado. Mantén un ritmo constante y respira de forma regular durante todo el ejercicio. Repite el número de repeticiones deseado.",
+      "image": "images/0630-RJgzwny.jpg",
+      "gif_url": "videos/0630-RJgzwny.gif"
+    },
+    {
+      "id": "0687",
+      "aliases": [
+        "Russian twist"
+      ],
+      "name": "russian twist",
+      "body_part": "waist",
+      "equipment": "body weight",
+      "target": "abs",
+      "instructions_es": "Siéntate en el suelo con las rodillas flexionadas y los pies apoyados en el suelo. Inclínate ligeramente hacia atrás manteniendo la espalda recta y el core activado. Junta las manos frente al pecho o sujeta una pesa si lo deseas. Levanta los pies del suelo, equilibrándote sobre los isquiones. Gira el torso hacia la derecha, llevando las manos o la pesa hacia el lado derecho del cuerpo. Haz una pausa por un momento, luego gira el torso hacia la izquierda, llevando las manos o la pesa hacia el lado izquierdo del cuerpo. Continúa alternando lados durante el número de repeticiones deseado.",
+      "image": "images/0687-XVDdcoj.jpg",
+      "gif_url": "videos/0687-XVDdcoj.gif"
+    },
+    {
+      "id": "0705",
+      "aliases": [
+        "Plancha lateral"
+      ],
+      "name": "side bridge v. 2",
+      "body_part": "waist",
+      "equipment": "body weight",
+      "target": "abs",
+      "instructions_es": "Túmbate de lado con las piernas extendidas y una sobre la otra. Coloca el antebrazo en el suelo justo debajo del hombro, con el codo flexionado en un ángulo de 90 grados. Activa el core y levanta las caderas del suelo, formando una línea recta desde la cabeza hasta los pies. Mantén esta posición durante el tiempo deseado. Baja las caderas de vuelta a la posición inicial. Repite del otro lado.",
+      "image": "images/0705-RKjH6Lt.jpg",
+      "gif_url": "videos/0705-RKjH6Lt.gif"
+    },
+    {
+      "id": "0276",
+      "aliases": [
+        "Dead bug"
+      ],
+      "name": "dead bug",
+      "body_part": "waist",
+      "equipment": "body weight",
+      "target": "abs",
+      "instructions_es": "Túmbate boca arriba con los brazos extendidos hacia el techo. Flexiona las rodillas y levanta las piernas del suelo, formando un ángulo de 90 grados en las caderas y las rodillas. Activa el core y la zona lumbar para presionar la zona lumbar contra el suelo. Baja lentamente el brazo derecho y la pierna izquierda hacia el suelo, manteniéndolos rectos y justo por encima del suelo. Haz una pausa breve y luego vuelve a la posición inicial. Repite el movimiento con el brazo izquierdo y la pierna derecha. Continúa alternando lados durante el número de repeticiones deseado.",
+      "image": "images/0276-iny3m5y.jpg",
+      "gif_url": "videos/0276-iny3m5y.gif"
+    },
+    {
+      "id": "3420",
+      "aliases": [
+        "Hollow body hold"
+      ],
+      "name": "v-sit on floor",
+      "body_part": "waist",
+      "equipment": "body weight",
+      "target": "abs",
+      "instructions_es": "Siéntate en el suelo con las piernas extendidas frente a ti. Inclínate ligeramente hacia atrás y levanta las piernas del suelo, manteniéndolas rectas. Al mismo tiempo, levanta la parte superior del cuerpo del suelo y extiende los brazos hacia las piernas. Mantén esta posición durante unos segundos, luego baja lentamente la parte superior del cuerpo y las piernas de nuevo a la posición inicial. Repite el número de repeticiones deseado.",
+      "image": "images/3420-ZuXu4Eq.jpg",
+      "gif_url": "videos/3420-ZuXu4Eq.gif"
+    }
+  ]
+}

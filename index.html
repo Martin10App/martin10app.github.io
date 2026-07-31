@@ -262,6 +262,20 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
 .cx-send:active{transform:scale(.9)}
 .cx-send svg{width:20px;height:20px}
 
+/* Exercise movement viewer */
+.ex-media-card{background:linear-gradient(180deg,var(--bg3),var(--bg2));border:1px solid var(--border2);border-radius:var(--r);padding:12px;margin-bottom:14px;overflow:hidden}
+.ex-media-frame{position:relative;aspect-ratio:1/1;max-height:300px;background:#fff;border-radius:var(--r-sm);overflow:hidden;display:flex;align-items:center;justify-content:center}
+.ex-media-frame img{width:100%;height:100%;object-fit:contain;display:block}
+.ex-media-skeleton{aspect-ratio:1/1;max-height:300px;border-radius:var(--r-sm);background:linear-gradient(100deg,var(--bg3) 25%,var(--bg4) 45%,var(--bg3) 65%);background-size:220% 100%;animation:mediaShimmer 1.35s linear infinite;display:flex;align-items:center;justify-content:center;color:var(--text2);font-size:12px;text-align:center;padding:20px}
+.ex-media-meta{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0 8px}
+.ex-media-chip{font-size:9px;line-height:1;padding:5px 8px;border-radius:7px;background:var(--accent-d);border:1px solid var(--accent-b);color:var(--accent2);font-weight:700;text-transform:uppercase;letter-spacing:.5px}
+.ex-media-actions{display:flex;gap:8px;margin-top:10px}
+.ex-media-actions .btn{min-height:44px;flex:1}
+.ex-motion-badge{display:inline-flex;align-items:center;gap:4px;margin-top:5px;color:var(--accent2);font-size:9px;font-weight:700;letter-spacing:.5px;text-transform:uppercase}
+.ex-motion-badge svg{width:13px;height:13px}
+@keyframes mediaShimmer{from{background-position:150% 0}to{background-position:-70% 0}}
+@media (prefers-reduced-motion:reduce){.ex-media-skeleton{animation:none}.ex-media-card *{scroll-behavior:auto!important}}
+
 /* Recent switchers and premium classes */
 .recent-bar{display:flex;gap:8px;overflow-x:auto;padding:8px 14px;border-bottom:1px solid var(--border);background:var(--bg1);align-items:center;scrollbar-width:none}
 .recent-bar::-webkit-scrollbar{display:none}
@@ -480,6 +494,7 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
 <div class="ov" id="ov1" onclick="cOv1()"><div class="mdl" onclick="event.stopPropagation()"><div class="mh"></div><div id="m1"></div></div></div>
 <div class="ov" id="ov2" onclick="cOv2()"><div class="mdl" onclick="event.stopPropagation()"><div class="mh"></div><div id="m2"></div></div></div>
 
+<script src="exercise-media.js?v=1"></script>
 <script>
 'use strict';
 
@@ -905,8 +920,9 @@ function openDay(rid,did){
     h+=`<div id="er-${ei}" style="background:${allDone?'rgba(0,196,140,.04)':'var(--bg2)'};border:1px solid ${allDone?'rgba(0,196,140,.2)':'var(--border)'};border-radius:var(--r-sm);padding:14px;margin-bottom:9px;transition:all .3s">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
         <div style="flex:1">
-          <button style="padding:0;text-align:left" onclick="openExInfo(${JSON.stringify(JSON.stringify(ex))})">
+          <button style="padding:0;text-align:left;min-height:44px" aria-label="Ver movimiento y detalles de ${esc(ex.name)}" onclick="openExInfo(${JSON.stringify(JSON.stringify(ex))})">
             <div style="font-size:14px;font-weight:700;color:${allDone?'var(--text2)':'var(--text0)'};${allDone?'text-decoration:line-through':''}">${esc(ex.name)}</div>
+            <span class="ex-motion-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m10 8 6 4-6 4z"/></svg>Ver movimiento</span>
           </button>
           <div style="display:flex;align-items:center;gap:8px;margin-top:6px">
             <span style="font-size:9px;font-weight:700;color:${mcl};background:${mcl}18;border:1px solid ${mcl}33;padding:2px 7px;border-radius:5px;letter-spacing:.5px;text-transform:uppercase">${esc(ex.muscle)}</span>
@@ -971,13 +987,14 @@ function verTecnica(nameStr){
   window.open('https://www.youtube.com/results?search_query='+q,'_blank');
 }
 function openExInfo(exStr){
-  const ex=JSON.parse(exStr);const related=apiForMuscle(ex.muscle);const mc=MC[ex.muscle]||'#aaa';
+  const ex=JSON.parse(exStr);const related=apiForMuscle(ex.muscle);const mc=MC[ex.muscle]||'#aaa';const mediaSlotId='ex-media-'+uid();
   let h=`<div style="margin-bottom:20px">
     <div style="font-size:9px;font-weight:700;color:${mc};letter-spacing:2px;text-transform:uppercase;margin-bottom:6px">${esc(ex.muscle)}</div>
     <div class="mt" style="margin-bottom:0">${esc(ex.name)}</div></div>
   <div class="stats s2" style="margin-bottom:14px">
     <div class="st"><div class="sv" style="color:${mc}">${ex.series}</div><div class="sl">Series</div></div>
     <div class="st"><div class="sv" style="color:${mc}">${esc(ex.reps)}</div><div class="sl">Reps</div></div></div>
+  <div id="${mediaSlotId}" aria-live="polite" aria-busy="true"><div class="ex-media-skeleton">Cargando demostraci\u00f3n del movimiento...</div></div>
   <button class="btn b-lg" style="width:100%;background:#FF0000;color:#fff;margin-bottom:18px" onclick="verTecnica(${JSON.stringify(JSON.stringify(ex.name))})">▶ Ver técnica en YouTube</button>`;
   if(related.length){h+=`<div class="sec-t">Ejercicios similares</div>`;
     related.forEach(r=>{h+=`<div class="crd" style="margin-bottom:8px;display:flex;align-items:flex-start;gap:10px">
@@ -985,7 +1002,7 @@ function openExInfo(exStr){
       <div><div style="font-size:13px;font-weight:600">${esc(r.nombre||r.name||'')}</div>
       ${r.descripcion?`<div style="font-size:11px;color:var(--text2);margin-top:3px;line-height:1.5">${esc((r.descripcion||'').slice(0,90))}…</div>`:''}</div></div>`;});
   } else {h+=`<div style="text-align:center;padding:16px;font-size:12px;color:var(--text2)">Sin ejercicios similares para este músculo</div>`;}
-  oOv2(h);
+  oOv2(h);setTimeout(()=>loadExerciseMovement(ex,mediaSlotId),0);
 }
 
 function rGymTrain(){
