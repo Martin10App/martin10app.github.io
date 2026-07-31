@@ -224,6 +224,24 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
 #mic-btn:active{transform:scale(.9)}
 #mic-btn.recording{animation:mic-pulse 1.2s ease-in-out infinite}
 @keyframes mic-pulse{0%,100%{box-shadow:0 4px 22px rgba(255,59,78,.45);transform:scale(1)}50%{box-shadow:0 0 0 10px rgba(255,59,78,.15),0 4px 22px rgba(255,59,78,.6);transform:scale(1.08)}}
+.perm-primer{display:none;position:fixed;inset:0;z-index:10020;background:rgba(0,0,0,.76);backdrop-filter:blur(10px);align-items:flex-end;justify-content:center;padding:16px;padding-bottom:calc(16px + env(safe-area-inset-bottom,0px))}
+.perm-primer.on{display:flex;animation:fi .2s}
+.perm-sheet{width:100%;max-width:430px;background:var(--bg1);border:1px solid var(--border2);border-radius:22px;padding:22px;box-shadow:0 24px 70px rgba(0,0,0,.55)}
+.perm-head{display:flex;align-items:flex-start;gap:12px;margin-bottom:17px}
+.perm-logo{width:42px;height:42px;border-radius:13px;background:var(--red-d);border:1px solid var(--red-b);color:var(--red);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.perm-logo svg,.perm-icon svg{width:22px;height:22px}
+.perm-title{font-family:var(--fd);font-size:19px;font-weight:800;line-height:1.15}
+.perm-sub{font-size:11px;color:var(--text2);line-height:1.5;margin-top:5px}
+.perm-row{display:grid;grid-template-columns:42px minmax(0,1fr) auto;align-items:center;gap:11px;padding:12px 0;border-top:1px solid var(--border)}
+.perm-icon{width:40px;height:40px;border-radius:12px;background:var(--bg3);color:var(--text1);display:flex;align-items:center;justify-content:center}
+.perm-name{font-size:13px;font-weight:700}.perm-desc{font-size:10.5px;color:var(--text2);line-height:1.4;margin-top:3px}
+.perm-btn{min-width:82px;min-height:44px;padding:9px 12px;border-radius:11px;background:var(--red);color:#fff;font-size:11px;font-weight:800;cursor:pointer;border:1px solid transparent;transition:transform .15s,opacity .15s}
+.perm-btn:active{transform:scale(.96)}.perm-btn:disabled{opacity:.55;cursor:default}
+.perm-btn.ok{background:var(--green-d);border-color:var(--green-b);color:var(--green)}.perm-btn.blocked{background:var(--red-d);border-color:var(--red-b);color:var(--red)}
+.perm-help{display:none;margin-top:10px;padding:11px 12px;border-radius:11px;background:var(--gold-d);border:1px solid var(--gold-b);font-size:10.5px;color:var(--text1);line-height:1.5}
+.perm-help.on{display:block}.perm-later{width:100%;min-height:44px;margin-top:8px;color:var(--text2);font-size:11px;font-weight:700;cursor:pointer}
+@media (min-width:700px){.perm-primer{align-items:center}.perm-sheet{padding:25px}}
+@media (prefers-reduced-motion:reduce){.perm-primer.on{animation:none}.perm-btn{transition:none}}
 #voice-interim{position:fixed;left:50%;bottom:140px;transform:translateX(-50%) translateY(10px);max-width:84%;background:rgba(20,22,32,.97);border:1px solid var(--border3);color:var(--text0);padding:12px 18px;border-radius:14px;font-size:14px;font-weight:500;line-height:1.4;text-align:center;z-index:998;opacity:0;transition:all .25s;pointer-events:none;box-shadow:0 8px 32px rgba(0,0,0,.5)}
 #voice-interim.on{opacity:1;transform:translateX(-50%) translateY(0)}
 @keyframes dotPulse{0%,80%,100%{transform:scale(.6);opacity:.3}40%{transform:scale(1);opacity:.8}}
@@ -494,6 +512,9 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
 
 <div class="ov" id="ov1" onclick="cOv1()"><div class="mdl" onclick="event.stopPropagation()"><div class="mh"></div><div id="m1"></div></div></div>
 <div class="ov" id="ov2" onclick="cOv2()"><div class="mdl" onclick="event.stopPropagation()"><div class="mh"></div><div id="m2"></div></div></div>
+<div class="perm-primer" id="permission-primer" role="dialog" aria-modal="true" aria-labelledby="permission-title" onclick="closePermissionPrimer(true)">
+  <div class="perm-sheet" onclick="event.stopPropagation()" id="permission-sheet"></div>
+</div>
 
 <script src="exercise-media.js?v=2"></script>
 <script>
@@ -2670,17 +2691,11 @@ async function analizarGastos(){
     'RESUMEN:\n'+resumen;
   try{
     const texto=await _aiComplete(prompt);
-    let reply=texto||'(sin respuesta)';
-    const actionRegex=/\[ACCION\]([\s\S]*?)\[\/ACCION\]/g;
-    let match;const resultados=[];
-    while((match=actionRegex.exec(reply))!==null){
-      try{resultados.push(ejecutarAccion(JSON.parse(match[1])));}
-      catch(e){resultados.push('Error en acción: '+e.message);}
-    }
-    if(resultados.length){
-      reply=reply.replace(/\[ACCION\][\s\S]*?\[\/ACCION\]/g,'').trim();
-      if(reply)reply+='\n\n';
-      reply+='✅ Acciones ejecutadas:\n'+resultados.map(r=>'• '+r).join('\n');
+    const run=executeAIActionBlocks(texto||'(sin respuesta)');
+    let reply=run.clean;
+    const summary=actionExecutionSummary(run);
+    if(summary)reply+=(reply?'\n\n':'')+summary;
+    if(run.done.length){
       cats=S.g('cats4',[]);
       renderGastos();
     }
@@ -3215,6 +3230,13 @@ async function shopFromPlan(){
 // ── TAB 5: CONFIG ──
 function rConfig(){
   return`<div class="sec" style="padding:0">
+    <div class="sec-t">Permisos del dispositivo</div>
+    <div class="card" style="margin-bottom:22px;display:flex;align-items:center;gap:12px;border-color:var(--border2)">
+      <div style="width:40px;height:40px;border-radius:12px;background:var(--red-d);color:var(--red);display:flex;align-items:center;justify-content:center;flex-shrink:0" aria-hidden="true"><svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M12 15.5A3.5 3.5 0 1 0 12 8a3.5 3.5 0 0 0 0 7.5Z"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1-2.8 2.8-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.6v.2h-4V21a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1L4.2 17l.1-.1a1.7 1.7 0 0 0 .3-1.9A1.7 1.7 0 0 0 3 14H2.8v-4H3a1.7 1.7 0 0 0 1.6-1 1.7 1.7 0 0 0-.3-1.9L4.2 7 7 4.2l.1.1A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1-1.6v-.2h4V3a1.7 1.7 0 0 0 1 1.6 1.7 1.7 0 0 0 1.9-.3l.1-.1L19.8 7l-.1.1a1.7 1.7 0 0 0-.3 1.9 1.7 1.7 0 0 0 1.6 1h.2v4H21a1.7 1.7 0 0 0-1.6 1Z" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+      <div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:700">Micrófono y notificaciones</div><div style="font-size:10.5px;color:var(--text2);line-height:1.45;margin-top:3px">Revisá o activá los permisos de MartinApp.</div></div>
+      <button class="btn b-sm b-p" style="min-height:44px" onclick="openPermissionPrimer(true)">Configurar</button>
+    </div>
+    <div class="div"></div>
     <div class="sec-t">Inteligencia Artificial</div>
     <div style="font-size:11px;color:var(--text2);margin-bottom:12px;line-height:1.6">Elegí el proveedor de IA y pegá tu API key. Podés cambiar entre ellos cuando quieras.</div>
     <div style="display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap">
@@ -3491,25 +3513,49 @@ function saveEvent(){
   const reminder=parseInt(document.getElementById('ev-rem')?.value)||0;
   if(!title){tst('Escribí un título para el evento');return;}
   if(!date){tst('Seleccioná una fecha');return;}
-  events.push({id:uid(),title,date,time,reminder,notified:false});
+  const newEvent={id:uid(),title,date,time,reminder,notified:false};
+  events.push(newEvent);
   sortEvents();S.s('evts1',events);
-  if(reminder>0)scheduleNotif(events[events.length-1]);
+  if(reminder>0)scheduleNotif(newEvent);
   tst(`✓ "${title}" agendado`);aTab(0);
 }
 
 function delEvent(id){
   if(!confirm('¿Eliminar este evento?'))return;
+  cancelEventNotification(id);
   events=events.filter(e=>e.id!==id);S.s('evts1',events);renderAgenda();
 }
 
 // ── NOTIFICACIONES ──
-function pedirPermisoNotif(){
-  if(!("Notification" in window)){tst('Tu navegador no soporta notificaciones');return;}
-  Notification.requestPermission().then(p=>{
-    if(p==='granted'){tst('🔔 Recordatorios activados');try{new Notification('MARTIN·APP',{body:'¡Listo! Te voy a avisar de tus eventos.'});}catch(e){}}
-    else if(p==='denied')tst('Quedaron bloqueadas. Activalas desde el navegador.',4000);
-    renderAgenda();
-  });
+function localNotifPlugin(){return window.Capacitor?.Plugins?.LocalNotifications||null;}
+function notifIdForEvent(id){let h=17;for(const ch of String(id||''))h=((h*31)+ch.charCodeAt(0))&0x7fffffff;return Math.max(1000,h);}
+async function getNotificationPermissionState(){
+  const native=localNotifPlugin();
+  if(native){try{const p=await native.checkPermissions();return p.display||'prompt';}catch(e){console.warn('checkPermissions',e);}}
+  if('Notification' in window)return Notification.permission;
+  return 'unsupported';
+}
+async function pedirPermisoNotif(){
+  const native=localNotifPlugin();
+  let state='unsupported';
+  try{
+    if(native){
+      const p=await native.requestPermissions();state=p.display||'denied';
+      if(state==='granted'){
+        await native.schedule({notifications:[{title:'MARTIN·APP',body:'Recordatorios activados correctamente.',id:991001,schedule:{at:new Date(Date.now()+1200)}}]});
+        events.forEach(scheduleNotif);
+      }
+    }else if('Notification' in window){
+      state=await Notification.requestPermission();
+      if(state==='granted'){try{new Notification('MARTIN·APP',{body:'¡Listo! Te voy a avisar de tus eventos.'});}catch(e){}}
+    }
+  }catch(e){console.error('Permiso de notificaciones',e);state='denied';}
+  if(state==='granted')tst('Recordatorios activados');
+  else if(state==='denied')tst('Android bloqueó las notificaciones. Revisá los permisos de MartinApp.',5000);
+  else tst('Este dispositivo no ofrece notificaciones para la app.',4500);
+  await refreshPermissionPrimer();
+  renderAgenda();
+  return state;
 }
 function startNotifCheck(){
   if(notifInterval)clearInterval(notifInterval);
@@ -3549,9 +3595,102 @@ function checkEvents(){
   if(changed)S.s('evts1',events);
 }
 
-function scheduleNotif(e){
-  if(!e.reminder||!("Notification" in window))return;
-  if(Notification.permission==='default')pedirPermisoNotif();
+async function scheduleNotif(e){
+  if(!e?.reminder||!e.date)return;
+  const native=localNotifPlugin();
+  if(native){
+    try{
+      const p=await native.checkPermissions();
+      if(p.display!=='granted'){openPermissionPrimer(true);return;}
+      const [ey,em,ed]=e.date.split('-').map(Number),[eh,emin]=(e.time||'09:00').split(':').map(Number);
+      const at=new Date(ey,em-1,ed,eh||0,emin||0);at.setMinutes(at.getMinutes()-(+e.reminder||0));
+      if(at.getTime()<=Date.now())return;
+      await native.schedule({notifications:[{title:e.title||'Recordatorio',body:(e.time?e.time+' hs · ':'')+'Evento de tu agenda',id:notifIdForEvent(e.id),schedule:{at,allowWhileIdle:true},extra:{eventId:e.id}}]});
+      return;
+    }catch(err){console.error('scheduleNotif',err);}
+  }
+  if('Notification' in window&&Notification.permission==='default')openPermissionPrimer(true);
+}
+async function cancelEventNotification(id){
+  const native=localNotifPlugin();if(!native)return;
+  try{await native.cancel({notifications:[{id:notifIdForEvent(id)}]});}catch(e){console.warn('cancel notification',e);}
+}
+
+// ── CENTRO DE PERMISOS (APK + navegador) ──
+async function getMicrophonePermissionState(){
+  if(!navigator.mediaDevices?.getUserMedia&&!window.SpeechRecognition&&!window.webkitSpeechRecognition)return 'unsupported';
+  try{
+    if(navigator.permissions?.query){
+      const p=await navigator.permissions.query({name:'microphone'});
+      if(p?.state)return p.state;
+    }
+  }catch(e){}
+  return S.g('micPermissionGrantedV1',false)?'granted':'prompt';
+}
+async function ensureMicrophonePermission(showFeedback=true){
+  if(navigator.mediaDevices?.getUserMedia){
+    try{
+      const stream=await navigator.mediaDevices.getUserMedia({audio:true});
+      stream.getTracks().forEach(track=>track.stop());
+      S.s('micPermissionGrantedV1',true);
+      return true;
+    }catch(err){
+      S.s('micPermissionGrantedV1',false);
+      console.error('Permiso de micrófono',err);
+      if(showFeedback)tst('Android bloqueó el micrófono. Revisá Ajustes > Aplicaciones > MartinApp > Permisos.',6000);
+      return false;
+    }
+  }
+  if(window.SpeechRecognition||window.webkitSpeechRecognition)return true;
+  if(showFeedback)tst('El reconocimiento de voz no está disponible en este dispositivo.',5000);
+  return false;
+}
+async function requestMicrophonePermission(){
+  const ok=await ensureMicrophonePermission(true);
+  if(ok)tst('Micrófono activado. Ya podés hablar con la IA.');
+  await refreshPermissionPrimer();
+  return ok;
+}
+function permissionStateUI(state){
+  if(state==='granted')return {label:'Activo',cls:'ok',disabled:'disabled'};
+  if(state==='denied')return {label:'Revisar',cls:'blocked',disabled:''};
+  if(state==='unsupported')return {label:'No disponible',cls:'blocked',disabled:'disabled'};
+  return {label:'Activar',cls:'',disabled:''};
+}
+async function refreshPermissionPrimer(){
+  const sheet=document.getElementById('permission-sheet');if(!sheet)return;
+  const [notif,mic]=await Promise.all([getNotificationPermissionState(),getMicrophonePermissionState()]);
+  const n=permissionStateUI(notif),m=permissionStateUI(mic);
+  const blocked=notif==='denied'||mic==='denied';
+  sheet.innerHTML=`
+    <div class="perm-head">
+      <div class="perm-logo" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M12 3v3m0 12v3M3 12h3m12 0h3M5.6 5.6l2.1 2.1m8.6 8.6 2.1 2.1m0-12.8-2.1 2.1m-8.6 8.6-2.1 2.1" stroke-linecap="round"/><circle cx="12" cy="12" r="3.5"/></svg></div>
+      <div><div class="perm-title" id="permission-title">Activá todas las funciones</div><div class="perm-sub">MartinApp pide cada permiso sólo cuando tocás su botón. Podés cambiarlo después desde Configuración.</div></div>
+    </div>
+    <div class="perm-row">
+      <div class="perm-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+      <div><div class="perm-name">Notificaciones</div><div class="perm-desc">Avisos de agenda incluso con la app cerrada.</div></div>
+      <button class="perm-btn ${n.cls}" ${n.disabled} onclick="pedirPermisoNotif()" aria-label="Activar notificaciones">${n.label}</button>
+    </div>
+    <div class="perm-row">
+      <div class="perm-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3" stroke-linecap="round"/></svg></div>
+      <div><div class="perm-name">Micrófono</div><div class="perm-desc">Dictá pedidos al Chat IA y al Coach.</div></div>
+      <button class="perm-btn ${m.cls}" ${m.disabled} onclick="requestMicrophonePermission()" aria-label="Activar micrófono">${m.label}</button>
+    </div>
+    <div class="perm-help ${blocked?'on':''}" id="permission-help">Si Android indica “bloqueado”, abrí <strong>Ajustes → Aplicaciones → MartinApp → Permisos</strong> y habilitá Micrófono y Notificaciones. La versión anterior del APK necesita ser reemplazada por la nueva para mostrar estos permisos.</div>
+    <button class="perm-later" onclick="closePermissionPrimer(true)">Ahora no</button>`;
+  return {notif,mic};
+}
+async function openPermissionPrimer(force=false){
+  if(!currentUser)return;
+  const states=await refreshPermissionPrimer();
+  if(!force&&S.g('permissionPrimerDismissedV1',false))return;
+  if(!force&&states?.notif==='granted'&&states?.mic==='granted')return;
+  document.getElementById('permission-primer')?.classList.add('on');
+}
+function closePermissionPrimer(dismiss=false){
+  document.getElementById('permission-primer')?.classList.remove('on');
+  if(dismiss&&currentUser)S.s('permissionPrimerDismissedV1',true);
 }
 
 // ══════════════════════════════════════════
@@ -3847,7 +3986,7 @@ async function sendChat(){
   const _mem=S.g('userMem1',[]);
   const _dias=['domingo','lunes','martes','miércoles','jueves','viernes','sábado'];
   const _hoy='CONTEXTO TEMPORAL: hoy es '+_dias[now.getDay()]+' '+String(now.getDate()).padStart(2,'0')+'/'+String(now.getMonth()+1).padStart(2,'0')+'/'+now.getFullYear()+', '+String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0')+'hs. Para eventos sin fecha explícita usá HOY; "mañana"=día siguiente; "el viernes"=el próximo viernes. "8pm"=20:00, "8am"=08:00. Devolvé fechas como YYYY-MM-DD.\n\n';
-  const memCtx=buildMemCtx(false);
+  const memCtx=buildMemCtx(false)+aiActionContract();
   const memInstr='\n\nMEMORIA / APRENDIZAJE:\n- ESTO ES CRÍTICO: Si en el mensaje hay CUALQUIER info DURADERA de la persona (preferencias, hábitos, restricciones, objetivos, pesos levantados habitualmente, fechas fijas, etc.), TENÉS QUE GUARDARLA vos mismo usando [ACCION]{"op":"recordar","dato":"frase en 3ra persona","tag":"dieta|gym|finanzas|agenda|general","importante":true|false}[/ACCION]. Poné importante:true SOLO para datos permanentes de fondo (alergias, lesiones, objetivos de vida); el resto false.\n- Si te piden olvidar algo: [ACCION]{"op":"olvidar","dato":"texto a borrar"}[/ACCION].\n- NO te olvides de guardar las cosas importantes, o tu memoria fallará.\n- No repitas en memoria algo que ya figura arriba.';
   const ctxHist=chatHist.slice(-20).map(msg=>'['+msg.role+']: '+msg.text).join('\n');
   const voiceGuide = _voiceSent ? '\n\nIMPORTANTE: El usuario te está hablando por voz. Respondé de forma muy corta (máximo 2 o 3 oraciones breves), directa y conversacional en español uruguayo, sin usar viñetas, listas ni formato markdown largo.' : '';
@@ -3872,18 +4011,11 @@ async function sendChat(){
     });
 
     // ejecutar acciones embebidas
-    let reply=full;
-    const actionRegex=/\[ACCION\]([\s\S]*?)\[\/ACCION\]/g;
-    let match;const resultados=[];
-    while((match=actionRegex.exec(reply))!==null){
-      try{resultados.push(ejecutarAccion(JSON.parse(match[1])));}
-      catch(e){resultados.push('Error en acción: '+e.message);}
-    }
-    if(resultados.length){
-      reply=reply.replace(/\[ACCION\][\s\S]*?\[\/ACCION\]/g,'').trim();
-      if(reply)reply+='\n\n';
-      reply+='✅ Acciones ejecutadas:\n'+resultados.map(r=>'• '+r).join('\n');
-    }
+    const run=executeAIActionBlocks(full);
+    let reply=run.clean;
+    const summary=actionExecutionSummary(run);
+    if(summary)reply+=(reply?'\n\n':'')+summary;
+    const resultados=run.done;
     chatHist[chatHist.length-1]={role:'assistant',text:reply||'(sin respuesta)'};
     saveChat();
     if(resultados.length){gastos=S.g('gst4',[]);pagosFijos=S.g('pf4',{});pagosEstado=S.g('pe4',{});}
@@ -4051,7 +4183,7 @@ function coachPrompt(userMsg, isVoice){
   const p=coachProfile();
   const perfilCoach=Object.keys(p).length?('LO QUE SÉ DE LA PERSONA:\n'+COACH_Q.filter(q=>p[q.k]).map(q=>'- '+q.k+': '+p[q.k]).join('\n')):'';
   const _mem=S.g('userMem1',[]);
-  const memCtx=buildMemCtx(true);
+  const memCtx=buildMemCtx(true)+aiActionContract();
   const ctxHist=coachHist.slice(-16).map(msg=>'['+msg.role+']: '+msg.text).join('\n');
   const voiceGuide = isVoice ? '\n\nIMPORTANTE: El usuario te está hablando por voz. Respondé de forma muy corta (máximo 2 o 3 oraciones breves), directa y conversacional en español uruguayo, sin usar viñetas, listas ni formato markdown largo.' : '';
   return 'Sos un COACH DE BIENESTAR Y PRODUCTIVIDAD personal, cálido pero directo. NO sos psicólogo ni das terapia clínica: sos un acompañante que motiva, ayuda a organizarse, a moverse más y a dejar de procrastinar.\n\n'+
@@ -4217,13 +4349,11 @@ async function coachStream(userMsg){
       const visible=acc.split('[ACCION')[0];
       if(bubble){bubble.innerHTML=`<div style="white-space:normal">${_mdHtml(visible)}<span class="ai-caret">▍</span></div>`;const cont=document.getElementById('coach-msgs');if(cont)cont.scrollTop=cont.scrollHeight;}
     });
-    let reply=full;
-    const actionRegex=/\[ACCION\]([\s\S]*?)\[\/ACCION\]/g;
-    let match;const resultados=[];
-    while((match=actionRegex.exec(reply))!==null){
-      try{resultados.push(ejecutarAccion(JSON.parse(match[1])));}catch(e){resultados.push('Error: '+e.message);}
-    }
-    if(resultados.length){reply=reply.replace(/\[ACCION\][\s\S]*?\[\/ACCION\]/g,'').trim();if(reply)reply+='\n\n';reply+='✅ '+resultados.join(' · ');}
+    const run=executeAIActionBlocks(full);
+    let reply=run.clean;
+    const summary=actionExecutionSummary(run,true);
+    if(summary)reply+=(reply?'\n\n':'')+summary;
+    const resultados=run.done;
     coachHist[coachHist.length-1]={role:'assistant',text:reply||'(sin respuesta)'};
     saveCoach();
     if(resultados.length){gastos=S.g('gst4',[]);events=S.g('evts1',[]);}
@@ -4250,17 +4380,8 @@ async function startVoiceCoach(){
     return;
   }
   const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
-  if(!SR){tst('🎤 Usá Chrome o Edge',3000);return;}
-  
-  if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      stream.getTracks().forEach(track => track.stop());
-    } catch(err) {
-      tst('🎤 Permiso de micrófono denegado', 3000);
-      return;
-    }
-  }
+  if(!SR){tst('El reconocimiento de voz no está disponible en este dispositivo.',4000);openPermissionPrimer(true);return;}
+  if(!await ensureMicrophonePermission(true)){openPermissionPrimer(true);return;}
 
   const btn=document.getElementById('coach-mic-btn');
   _coachVoiceRec=new SR();
@@ -4411,6 +4532,43 @@ function confirmarEliminar(){
   if(typeof renderGym==='function')renderGym();
   if(typeof renderAgenda==='function')renderAgenda();
   tst('🗑 '+n+' elemento'+(n!==1?'s':'')+' eliminado'+(n!==1?'s':''));
+}
+function aiActionContract(){
+  return '\n\nCONTRATO DE EJECUCIÓN (prioridad alta):\n'+
+    '- Detectá todos los pedidos explícitos que cambian datos. Si hay varios, emití un bloque [ACCION]{JSON válido}[/ACCION] por tarea, en orden, con máximo 8.\n'+
+    '- No digas “listo”, “agendado” ni “guardado” antes de emitir la acción correspondiente: la app informa después el resultado real.\n'+
+    '- Si falta un dato obligatorio que no puede inferirse de los DATOS DE LA APP o del contexto temporal, hacé una sola pregunta breve y no inventes la acción.\n'+
+    '- Reutilizá IDs y nombres exactos del contexto. Nunca inventes IDs. Números como números, JSON sin comentarios ni markdown.\n'+
+    '- Para borrar, sólo emití eliminar si el usuario lo pidió explícitamente; la app siempre pedirá confirmación.\n'+
+    '- Operaciones válidas: gasto, pago, fijo, ahorro, crear_meta, set_saldo_ahorro, compra, evento, crear_rutina, modificar_ejercicio, registrar_serie, completar_ejercicio, comida, crear_dieta, cardio, sueno, comprar, recordar, olvidar, eliminar y responder.\n'+
+    '- En pedidos compuestos, resolvé cada parte que tenga datos suficientes y explicá brevemente cualquier parte pendiente.';
+}
+const AI_ALLOWED_ACTIONS=new Set(['gasto','pago','fijo','ahorro','crear_meta','set_saldo_ahorro','crear_rutina','modificar_ejercicio','cambiar_ejercicio','registrar_serie','completar_ejercicio','compra','evento','responder','comprar','super','sueno','sueño','dormir','cardio','comida','crear_dieta','recordar','olvidar','eliminar','borrar']);
+function executeAIActionBlocks(reply,maxActions=8){
+  const source=String(reply||'');
+  const regex=/\[ACCION\]\s*([\s\S]*?)\s*\[\/ACCION\]/gi;
+  const done=[],errors=[],seen=new Set();let match,count=0;
+  while((match=regex.exec(source))!==null){
+    if(count>=maxActions){errors.push('Se alcanzó el límite seguro de '+maxActions+' acciones');break;}
+    count++;
+    try{
+      const acc=JSON.parse(match[1]);
+      if(!acc||Array.isArray(acc)||typeof acc!=='object')throw new Error('el bloque no contiene un objeto');
+      acc.op=String(acc.op||'').trim().toLowerCase();
+      if(!AI_ALLOWED_ACTIONS.has(acc.op))throw new Error('operación "'+(acc.op||'vacía')+'" no permitida');
+      const signature=JSON.stringify(acc);
+      if(seen.has(signature))continue;
+      seen.add(signature);
+      done.push(ejecutarAccion(acc));
+    }catch(e){errors.push(e.message||String(e));}
+  }
+  return {clean:source.replace(regex,'').trim(),done,errors};
+}
+function actionExecutionSummary(run,compact=false){
+  const parts=[];
+  if(run.done.length)parts.push((compact?'Hecho: ':'Acciones realizadas:\n')+(compact?run.done.join(' · '):run.done.map(r=>'• '+r).join('\n')));
+  if(run.errors.length)parts.push((compact?'No pude: ':'No pude ejecutar:\n')+(compact?run.errors.join(' · '):run.errors.map(r=>'• '+r).join('\n')));
+  return parts.join('\n');
 }
 function ejecutarAccion(acc){
   if(!acc||!acc.op)return 'Acción inválida';
@@ -5305,17 +5463,8 @@ async function startVoiceChat(){
     return;
   }
   const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
-  if(!SR){tst('🎤 Usá Chrome o Edge',3000);return;}
-  
-  if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      stream.getTracks().forEach(track => track.stop());
-    } catch(err) {
-      tst('🎤 Permiso de micrófono denegado', 3000);
-      return;
-    }
-  }
+  if(!SR){tst('El reconocimiento de voz no está disponible en este dispositivo.',4000);openPermissionPrimer(true);return;}
+  if(!await ensureMicrophonePermission(true)){openPermissionPrimer(true);return;}
 
   const btn=document.getElementById('chat-mic-btn');
   _chatVoiceRec=new SR();
@@ -5984,7 +6133,8 @@ function _hideInterim(){
 async function startVoice(){
   if(_voiceActive){_stopVoice();return;}
   const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
-  if(!SR){tst('🎤 Usá Chrome o Edge para voz',4000);return;}
+  if(!SR){tst('El reconocimiento de voz no está disponible en este dispositivo.',4000);openPermissionPrimer(true);return;}
+  if(!await ensureMicrophonePermission(true)){openPermissionPrimer(true);return;}
   const btn=document.getElementById('mic-btn');
   _voiceRec=new SR();
   _voiceRec.lang='es-UY';
@@ -6066,7 +6216,7 @@ async function interpretVoice(txt){
   const _mem=S.g('userMem1',[]);
   const _dias=['domingo','lunes','martes','miércoles','jueves','viernes','sábado'];
   const _hoy='CONTEXTO TEMPORAL: hoy es '+_dias[now.getDay()]+' '+String(now.getDate()).padStart(2,'0')+'/'+String(now.getMonth()+1).padStart(2,'0')+'/'+now.getFullYear()+', '+String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0')+'hs. Para eventos sin fecha explícita usá HOY; "mañana"=día siguiente; "el viernes"=el próximo viernes. "8pm"=20:00, "8am"=08:00. Devolvé fechas como YYYY-MM-DD.\n\n';
-  const memCtx=buildMemCtx(false);
+  const memCtx=buildMemCtx(false)+aiActionContract();
   const memInstr='\n\nMEMORIA / APRENDIZAJE:\n- Si en el mensaje hay info DURADERA de la persona (preferencias, hábitos, restricciones de dieta, objetivos, días/horarios de entrenamiento, ingresos, fechas fijas, etc.), guardala vos mismo con [ACCION]{"op":"recordar","dato":"frase corta en 3ra persona","tag":"dieta|gym|finanzas|agenda|general","importante":true|false}[/ACCION]. Poné importante:true SOLO para datos permanentes críticos (alergias, intolerancias, salud, lesiones, objetivos de fondo, familia); el resto false.\n- Si te piden olvidar algo: [ACCION]{"op":"olvidar","dato":"texto a borrar"}[/ACCION].\n- NO guardes datos puntuales del día (un gasto suelto, un peso de hoy) como memoria; eso ya va a las acciones normales. Guardá solo lo que define a la persona a largo plazo.\n- No repitas en memoria algo que ya figura arriba.';
   const prompt='Sos MARTIN·APP AI: asistente personal con control total de los datos.\n\n'+_hoy+dataCtx+memCtx+memInstr+'\n\nREGLAS:\n'+
     '- Respondé en español uruguayo, natural, amigable y con confianza. Como es por voz, sé breve y conversacional.\n'+
@@ -6104,15 +6254,11 @@ async function interpretVoice(txt){
     const full=await _geminiStream(prompt,key,(chunk,acc)=>flushSpeech(acc,false));
     flushSpeech(full,true);
 
-    let reply=full;
-    const actionRegex=/\[ACCION\]([\s\S]*?)\[\/ACCION\]/g;
-    let match;const resultados=[];
-    while((match=actionRegex.exec(reply))!==null){
-      try{resultados.push(ejecutarAccion(JSON.parse(match[1])));}
-      catch(e){resultados.push('Error: '+e.message);}
-    }
-    let voz=reply.replace(/\[ACCION\][\s\S]*?\[\/ACCION\]/g,'').trim();
-    if(resultados.length){voz+='. '+resultados.join('. ');}
+    const run=executeAIActionBlocks(full);
+    const resultados=run.done;
+    let voz=run.clean;
+    const summary=actionExecutionSummary(run,true);
+    if(summary)voz+=(voz?'. ':'')+summary;
     chatHist.push({role:'user',text:'🎤 '+txt});
     chatHist.push({role:'assistant',text:voz});
     saveChat();
@@ -6454,6 +6600,7 @@ function onLoginSuccess(){
   renderGym();
   startNotifCheck();
   consolidarMemoriaDiaria();
+  setTimeout(()=>openPermissionPrimer(false),700);
 }
 
 function doLogout(){
