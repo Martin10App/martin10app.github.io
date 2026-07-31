@@ -942,7 +942,7 @@ function openDay(rid,did){
     h+=`<div id="er-${ei}" style="background:${allDone?'rgba(0,196,140,.04)':'var(--bg2)'};border:1px solid ${allDone?'rgba(0,196,140,.2)':'var(--border)'};border-radius:var(--r-sm);padding:14px;margin-bottom:9px;transition:all .3s">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
         <div style="flex:1">
-          <button style="padding:0;text-align:left;min-height:44px" aria-label="Ver movimiento y detalles de ${esc(ex.name)}" onclick="openExInfo(${JSON.stringify(JSON.stringify(ex))})">
+          <button style="padding:0;text-align:left;min-height:44px" aria-label="Ver movimiento y detalles de ${esc(ex.name)}" data-rid="${esc(rid)}" data-did="${esc(did)}" data-ei="${ei}" onclick="openExInfo(this)">
             <div style="font-size:14px;font-weight:700;color:${allDone?'var(--text2)':'var(--text0)'};${allDone?'text-decoration:line-through':''}">${esc(ex.name)}</div>
             <span class="ex-motion-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m10 8 6 4-6 4z"/></svg>Ver movimiento</span>
           </button>
@@ -1003,13 +1003,27 @@ function addSet(rid,did,ei,col){
   tst(`+1 serie (total: ${ex.series})`);
 }
 
-function verTecnica(nameStr){
-  const name=JSON.parse(nameStr);
-  const q=encodeURIComponent('técnica correcta '+name+' ejercicio');
+function getRoutineExercise(rid,did,ei){
+  const routine=routines.find(item=>item.id===rid);
+  const day=routine?.days.find(item=>item.id===did);
+  const index=Number(ei);
+  return Number.isInteger(index)&&index>=0?day?.exercises[index]||null:null;
+}
+function routineExerciseRef(button){
+  return {rid:button?.dataset?.rid||'',did:button?.dataset?.did||'',ei:Number(button?.dataset?.ei)};
+}
+function verTecnica(button){
+  const {rid,did,ei}=routineExerciseRef(button);
+  const ex=getRoutineExercise(rid,did,ei);
+  if(!ex){tst('No encontré ese ejercicio en la rutina');return;}
+  const q=encodeURIComponent('técnica correcta '+ex.name+' ejercicio');
   window.open('https://www.youtube.com/results?search_query='+q,'_blank');
 }
-function openExInfo(exStr){
-  const ex=JSON.parse(exStr);const related=apiForMuscle(ex.muscle);const mc=MC[ex.muscle]||'#aaa';const mediaSlotId='ex-media-'+uid();
+function openExInfo(button){
+  const {rid,did,ei}=routineExerciseRef(button);
+  const ex=getRoutineExercise(rid,did,ei);
+  if(!ex){tst('No encontré ese ejercicio en la rutina');return;}
+  const related=apiForMuscle(ex.muscle);const mc=MC[ex.muscle]||'#aaa';const mediaSlotId='ex-media-'+uid();
   let h=`<div style="margin-bottom:20px">
     <div style="font-size:9px;font-weight:700;color:${mc};letter-spacing:2px;text-transform:uppercase;margin-bottom:6px">${esc(ex.muscle)}</div>
     <div class="mt" style="margin-bottom:0">${esc(ex.name)}</div></div>
@@ -1017,7 +1031,7 @@ function openExInfo(exStr){
     <div class="st"><div class="sv" style="color:${mc}">${ex.series}</div><div class="sl">Series</div></div>
     <div class="st"><div class="sv" style="color:${mc}">${esc(ex.reps)}</div><div class="sl">Reps</div></div></div>
   <div id="${mediaSlotId}" aria-live="polite" aria-busy="true"><div class="ex-media-skeleton">Cargando demostraci\u00f3n del movimiento...</div></div>
-  <button class="btn b-lg" style="width:100%;background:#FF0000;color:#fff;margin-bottom:18px" onclick="verTecnica(${JSON.stringify(JSON.stringify(ex.name))})">▶ Ver técnica en YouTube</button>`;
+  <button class="btn b-lg" style="width:100%;background:#FF0000;color:#fff;margin-bottom:18px" data-rid="${esc(rid)}" data-did="${esc(did)}" data-ei="${ei}" onclick="verTecnica(this)">▶ Ver técnica en YouTube</button>`;
   if(related.length){h+=`<div class="sec-t">Ejercicios similares</div>`;
     related.forEach(r=>{h+=`<div class="crd" style="margin-bottom:8px;display:flex;align-items:flex-start;gap:10px">
       <div style="width:34px;height:34px;border-radius:9px;background:${mc}18;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:16px">💪</div>
