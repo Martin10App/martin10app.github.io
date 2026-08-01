@@ -3414,6 +3414,76 @@ async function shopFromPlan(){
 }
 
 // ── TAB 5: CONFIG ──
+const APP_UPDATE_MANIFEST_URL='https://martin10app.github.io/app-version.json';
+let _appUpdateState={status:'idle',currentVersion:'',currentBuild:0,manifest:null,error:''};
+
+function capacitorPlugin(name){return window.Capacitor?.Plugins?.[name]||null;}
+function isNativeMartinApp(){try{return !!window.Capacitor?.isNativePlatform?.();}catch(_){return false;}}
+function appUpdateCardHtml(){
+  const st=_appUpdateState;
+  let title='La parte web se actualiza sola';
+  let detail='Cuando publicamos mejoras de pantalla o IA, aparecen al volver a abrir MartinApp.';
+  let action='<button class="btn b-sm b-p" style="min-height:48px;width:100%;margin-top:12px" onclick="checkForAppUpdate(true)">Buscar actualización</button>';
+  if(st.status==='checking'){
+    title='Buscando actualización…';detail='Comparando la versión instalada con la última disponible.';
+    action='<button class="btn b-sm b-g" style="min-height:48px;width:100%;margin-top:12px" disabled>Buscando…</button>';
+  }else if(st.status==='available'&&st.manifest){
+    title='Nueva versión '+esc(st.manifest.version||'disponible');
+    detail=esc(st.manifest.notes||'Incluye mejoras nativas para MartinApp.')+' La instalación se descarga directo, sin WhatsApp.';
+    action='<button class="btn b-sm b-p" style="min-height:48px;width:100%;margin-top:12px" onclick="openAppUpdate()">Descargar e instalar</button>';
+  }else if(st.status==='current'){
+    title='MartinApp está actualizada';
+    detail='Versión instalada '+esc(st.currentVersion||'web')+(st.currentBuild?' · compilación '+st.currentBuild:'')+'.';
+  }else if(st.status==='error'){
+    title='No se pudo comprobar ahora';detail=esc(st.error||'Revisá la conexión y volvé a intentar.');
+  }
+  return '<div style="display:flex;align-items:flex-start;gap:12px"><div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:700">'+title+'</div><div style="font-size:10.5px;color:var(--text2);line-height:1.55;margin-top:4px">'+detail+'</div></div></div>'+action;
+}
+function refreshAppUpdateCard(){const el=document.getElementById('app-update-card');if(el)el.innerHTML=appUpdateCardHtml();}
+async function checkForAppUpdate(interactive=false){
+  _appUpdateState={..._appUpdateState,status:'checking',error:''};refreshAppUpdateCard();
+  try{
+    const res=await fetch(APP_UPDATE_MANIFEST_URL+'?t='+Date.now(),{cache:'no-store'});
+    if(!res.ok)throw new Error('El servidor respondió '+res.status);
+    const manifest=await res.json();
+    if(!manifest||!Number.isFinite(Number(manifest.nativeBuild))||!manifest.apkUrl)throw new Error('La información de versión no es válida');
+    const apkUrl=new URL(manifest.apkUrl,APP_UPDATE_MANIFEST_URL);
+    if(apkUrl.protocol!=='https:'||apkUrl.hostname!=='martin10app.github.io'||!apkUrl.pathname.toLowerCase().endsWith('.apk'))throw new Error('La dirección de descarga no es segura');
+    manifest.apkUrl=apkUrl.href;
+    let currentBuild=Number(manifest.nativeBuild),currentVersion='web';
+    const app=capacitorPlugin('App');
+    if(isNativeMartinApp()){
+      if(app?.getInfo){const info=await app.getInfo();currentBuild=Number(info.build)||0;currentVersion=info.version||'';}
+      else{currentBuild=0;currentVersion='anterior';}
+    }
+    const available=isNativeMartinApp()&&currentBuild<Number(manifest.nativeBuild);
+    _appUpdateState={status:available?'available':'current',currentBuild,currentVersion,manifest,error:''};refreshAppUpdateCard();
+    if(available){
+      if(interactive)tst('Hay una nueva versión lista para instalar',3500);
+      else{
+        const promptKey='martinapp_update_prompt_'+manifest.nativeBuild;
+        if(!localStorage.getItem(promptKey)){
+          localStorage.setItem(promptKey,'1');
+          oOv1('<div class="mt">Actualización disponible</div><div style="font-size:12px;color:var(--text2);line-height:1.65;margin-bottom:16px">'+esc(manifest.notes||'Hay mejoras nuevas para MartinApp.')+'<br><br>Se descarga directo desde la app; Android te pedirá confirmar la instalación.</div><button class="btn b-lg b-p" style="width:100%;min-height:48px" onclick="cOv1();openAppUpdate()">Descargar e instalar</button><button class="btn b-md b-g" style="width:100%;min-height:48px;margin-top:8px" onclick="cOv1()">Más tarde</button>');
+        }
+      }
+    }else if(interactive)tst('MartinApp ya está actualizada',2500);
+    return available;
+  }catch(e){
+    _appUpdateState={..._appUpdateState,status:'error',error:e.message||String(e)};refreshAppUpdateCard();
+    if(interactive)tst('No se pudo buscar la actualización: '+_appUpdateState.error,4000);
+    return false;
+  }
+}
+async function openAppUpdate(){
+  const url=_appUpdateState.manifest?.apkUrl||'https://martin10app.github.io/MartinApp-actualizada.apk';
+  try{
+    const launcher=capacitorPlugin('AppLauncher');
+    if(launcher?.openUrl){const result=await launcher.openUrl({url});if(result?.completed)return;}
+    const opened=window.open(url,'_blank','noopener');if(!opened)window.location.href=url;
+  }catch(e){window.location.href=url;}
+}
+
 function rConfig(){
   return`<div class="sec" style="padding:0">
     <div class="sec-t">Permisos del dispositivo</div>
@@ -3421,6 +3491,10 @@ function rConfig(){
       <div style="width:40px;height:40px;border-radius:12px;background:var(--red-d);color:var(--red);display:flex;align-items:center;justify-content:center;flex-shrink:0" aria-hidden="true"><svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M12 15.5A3.5 3.5 0 1 0 12 8a3.5 3.5 0 0 0 0 7.5Z"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1-2.8 2.8-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.6v.2h-4V21a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1L4.2 17l.1-.1a1.7 1.7 0 0 0 .3-1.9A1.7 1.7 0 0 0 3 14H2.8v-4H3a1.7 1.7 0 0 0 1.6-1 1.7 1.7 0 0 0-.3-1.9L4.2 7 7 4.2l.1.1A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1-1.6v-.2h4V3a1.7 1.7 0 0 0 1 1.6 1.7 1.7 0 0 0 1.9-.3l.1-.1L19.8 7l-.1.1a1.7 1.7 0 0 0-.3 1.9 1.7 1.7 0 0 0 1.6 1h.2v4H21a1.7 1.7 0 0 0-1.6 1Z" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
       <div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:700">Micrófono y notificaciones</div><div style="font-size:10.5px;color:var(--text2);line-height:1.45;margin-top:3px">Revisá o activá los permisos de MartinApp.</div></div>
       <button class="btn b-sm b-p" style="min-height:44px" onclick="openPermissionPrimer(true)">Configurar</button>
+    </div>
+    <div class="sec-t">Actualizaciones</div>
+    <div class="card" id="app-update-card" style="margin-bottom:22px;border-color:var(--border2)">
+      ${appUpdateCardHtml()}
     </div>
     <div class="div"></div>
     <div class="sec-t">Inteligencia Artificial</div>
@@ -3440,6 +3514,7 @@ function rConfig(){
       <input type="checkbox" id="ai-always-speak" ${S.g('ai_always_speak',false)?'checked':''} onchange="S.s('ai_always_speak',this.checked)" style="width:15px;height:15px;cursor:pointer">
       <span>🔊 Hablar siempre (Asistente y Coach)</span>
     </label>
+    <button class="btn b-sm b-g" style="min-height:48px;width:100%;margin-bottom:12px" onclick="testAppVoice()" aria-label="Probar la voz de la inteligencia artificial">Probar voz de la IA</button>
     <div style="font-size:10px;color:var(--text3);margin-bottom:24px;line-height:1.5">⚠️ Las keys se guardan solo en este dispositivo. El análisis de <strong>fotos de estados de cuenta</strong> usa siempre Gemini, así que para esa función necesitás una key de Gemini.</div>
     <div class="div"></div>
     <div class="sec-t">Compromisos fijos (montos base)</div>
@@ -4220,7 +4295,7 @@ async function sendChat(){
   routines.forEach(r=>{r.days.forEach(d=>{d.exercises.forEach((ex,ei)=>{exNameMap[r.id+'|'+d.id+'|'+ei]=ex.name;});});});
   const weightsArr=Object.entries(weights);
   const gymWeights=weightsArr.length?'\nPesos registrados: '+weightsArr.map(([k,v])=>(exNameMap[k]||'ej'+k.split('|').pop())+': '+v+'kg').join(', '):'';
-  const gymData=routines.length?'Rutinas: '+routines.map(r=>'"'+r.name+'"('+r.days.length+' días)').join(', ')+gymWeights+(gymHist.length?'\nHistorial reciente: '+gymHist.slice(0,15).map(h=>h.rn+'-'+h.dn+':'+h.pct+'%').join('; '):''):'(sin rutinas)';
+  const gymData=buildGymAIContext()+gymWeights+(gymHist.length?'\nHistorial reciente: '+gymHist.slice(0,15).map(h=>h.rn+'-'+h.dn+':'+h.pct+'%').join('; '):'');
   const proxEventos=events.filter(e=>e.date>=now.toISOString().slice(0,10)).slice(0,5).map(e=>e.title+' el '+e.date+' a las '+e.time).join('; ');
   const _cd7=cardioLog.filter(c=>_last7Keys().includes(c.date));
   const cardioData=_cd7.length?_cd7.reduce((s,c)=>s+c.mins,0)+' min, '+_cd7.reduce((s,c)=>s+(+c.km||0),0).toFixed(1)+' km en '+_cd7.length+' sesiones ('+_cd7.map(c=>(CARDIO_TYPES[c.type]||{}).label||c.type).join(', ')+')':'sin registros esta semana';
@@ -4788,6 +4863,21 @@ function confirmarEliminar(){
   if(typeof renderAgenda==='function')renderAgenda();
   tst('🗑 '+n+' elemento'+(n!==1?'s':'')+' eliminado'+(n!==1?'s':''));
 }
+function buildGymAIContext(){
+  if(!routines.length)return '(sin rutinas)';
+  const data=routines.map((r,ri)=>({
+    id:r.id,
+    nombre:r.name,
+    activa:r.id===activeRid,
+    dias:(r.days||[]).map((d,di)=>({
+      id:d.id,
+      referencia:'Día '+(di+1),
+      nombre:d.label,
+      ejercicios:(d.exercises||[]).map((e,ei)=>({posicion:ei+1,nombre:e.name,musculo:e.muscle,series:e.series,reps:e.reps}))
+    }))
+  }));
+  return 'ESTRUCTURA EXACTA DE RUTINAS (usá estos nombres y días):\n'+JSON.stringify(data);
+}
 function aiActionContract(){
   return '\n\nCONTRATO DE EJECUCIÓN (prioridad alta):\n'+
     '- Detectá todos los pedidos explícitos que cambian datos. Si hay varios, emití un bloque [ACCION]{JSON válido}[/ACCION] por tarea, en orden, con máximo 8.\n'+
@@ -4796,7 +4886,8 @@ function aiActionContract(){
     '- Reutilizá IDs y nombres exactos del contexto. Nunca inventes IDs. Números como números, JSON sin comentarios ni markdown.\n'+
     '- Para borrar, sólo emití eliminar si el usuario lo pidió explícitamente; la app siempre pedirá confirmación.\n'+
     '- En Gym, registrar_serie debe conservar peso, repeticiones reales y RIR si el usuario los dijo. Nunca supongas reps ni RIR y nunca subas carga sólo porque una serie esté completa.\n'+
-    '- Operaciones válidas: gasto, pago, fijo, ahorro, crear_meta, set_saldo_ahorro, compra, evento, crear_rutina, modificar_ejercicio, registrar_serie, completar_ejercicio, comida, crear_dieta, cardio, sueno, comprar, recordar, olvidar, eliminar y responder.\n'+
+    '- Para reemplazar un solo ejercicio usá cambiar_ejercicio, nunca crear_rutina. Indicá rutina, dia, nombre_original y nombre_nuevo. Conservá series, reps y músculo si el usuario no pidió cambiarlos. “Día 1” refiere al primer día de la rutina activa. No modifiques ningún otro ejercicio.\n'+
+    '- Operaciones válidas: gasto, pago, fijo, ahorro, crear_meta, set_saldo_ahorro, compra, evento, crear_rutina, modificar_ejercicio, cambiar_ejercicio, registrar_serie, completar_ejercicio, comida, crear_dieta, cardio, sueno, comprar, recordar, olvidar, eliminar y responder.\n'+
     '- En pedidos compuestos, resolvé cada parte que tenga datos suficientes y explicá brevemente cualquier parte pendiente.';
 }
 const AI_ALLOWED_ACTIONS=new Set(['gasto','pago','fijo','ahorro','crear_meta','set_saldo_ahorro','crear_rutina','modificar_ejercicio','cambiar_ejercicio','registrar_serie','completar_ejercicio','compra','evento','responder','comprar','super','sueno','sueño','dormir','cardio','comida','crear_dieta','recordar','olvidar','eliminar','borrar']);
@@ -4825,6 +4916,64 @@ function actionExecutionSummary(run,compact=false){
   if(run.done.length)parts.push((compact?'Hecho: ':'Acciones realizadas:\n')+(compact?run.done.join(' · '):run.done.map(r=>'• '+r).join('\n')));
   if(run.errors.length)parts.push((compact?'No pude: ':'No pude ejecutar:\n')+(compact?run.errors.join(' · '):run.errors.map(r=>'• '+r).join('\n')));
   return parts.join('\n');
+}
+function normalizeGymLookup(value){
+  return String(value||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
+}
+function gymLookupMatches(value,query){
+  const a=normalizeGymLookup(value),b=normalizeGymLookup(query);
+  if(!a||!b)return false;
+  if(a.includes(b)||b.includes(a))return true;
+  const stop=new Set(['de','del','la','el','los','las','con','en']);
+  const aTokens=new Set(a.split(' ').filter(x=>x&&!stop.has(x)));
+  const bTokens=b.split(' ').filter(x=>x&&!stop.has(x));
+  return bTokens.length>0&&bTokens.every(x=>aTokens.has(x));
+}
+function resolveGymExerciseTarget(rs,acc){
+  let routine=rs.find(x=>x.id===activeRid)||rs[0]||null;
+  if(acc.rutina){
+    const q=normalizeGymLookup(acc.rutina);
+    const exact=rs.filter(x=>x.id===acc.rutina||normalizeGymLookup(x.name)===q);
+    const matches=exact.length?exact:rs.filter(x=>gymLookupMatches(x.name,q));
+    if(matches.length!==1)return {error:matches.length?'La rutina indicada es ambigua':'Rutina "'+acc.rutina+'" no encontrada'};
+    routine=matches[0];
+  }
+  if(!routine)return {error:'Rutina no encontrada'};
+  if(!acc.dia)return {error:'Falta indicar el día de la rutina'};
+  const dayQuery=normalizeGymLookup(acc.dia);let day=null;
+  const dayNumber=dayQuery.match(/(?:^|\s)dia\s*(\d+)(?:\s|$)/)||dayQuery.match(/^(\d+)$/);
+  if(dayNumber){const pos=Number(dayNumber[1])-1;if(pos>=0&&pos<routine.days.length)day=routine.days[pos];}
+  if(!day){
+    const exact=routine.days.filter(d=>d.id===acc.dia||normalizeGymLookup(d.label)===dayQuery);
+    const matches=exact.length?exact:routine.days.filter(d=>gymLookupMatches(d.label,dayQuery));
+    if(matches.length!==1)return {error:matches.length?'El día indicado es ambiguo':'Día "'+acc.dia+'" no encontrado en la rutina "'+routine.name+'"'};
+    day=matches[0];
+  }
+  if(!acc.nombre_original)return {error:'Falta indicar el nombre del ejercicio a modificar'};
+  const exQuery=normalizeGymLookup(acc.nombre_original);
+  const list=day.exercises.map((e,index)=>({e,index}));
+  const exact=list.filter(x=>normalizeGymLookup(x.e.name)===exQuery);
+  const matches=exact.length?exact:list.filter(x=>gymLookupMatches(x.e.name,exQuery));
+  if(matches.length!==1)return {error:matches.length?'El ejercicio indicado es ambiguo dentro de '+day.label:'Ejercicio "'+acc.nombre_original+'" no encontrado en el día "'+day.label+'"'};
+  return {routine,day,exercise:matches[0].e,exerciseIndex:matches[0].index};
+}
+function applyGymExerciseReplacement(ex,acc){
+  const before={name:ex.name,series:ex.series,reps:ex.reps,muscle:ex.muscle};
+  const newName=acc.nombre_nuevo===undefined?ex.name:String(acc.nombre_nuevo).trim();
+  const newSeries=acc.series===undefined?ex.series:Number.parseInt(acc.series,10);
+  const newReps=acc.reps===undefined?ex.reps:String(acc.reps).trim();
+  if(!newName||newName.length>80)return {error:'El nombre nuevo del ejercicio no es válido'};
+  if(!Number.isInteger(newSeries)||newSeries<1||newSeries>12)return {error:'Las series deben ser un número entre 1 y 12'};
+  if(!newReps||newReps.length>20)return {error:'El rango de repeticiones no es válido'};
+  let newMuscle=ex.muscle;
+  if(acc.musculo!==undefined){
+    const allowed=['Pecho','Espalda','Hombros','Bíceps','Tríceps','Cuádriceps','Femoral','Gemelos','Abdomen'];
+    const muscle=allowed.find(x=>normalizeGymLookup(x)===normalizeGymLookup(acc.musculo));
+    if(!muscle)return {error:'El grupo muscular indicado no es válido'};
+    newMuscle=muscle;
+  }
+  Object.assign(ex,{name:newName,series:newSeries,reps:newReps,muscle:newMuscle});
+  return {before,after:{...ex}};
 }
 function ejecutarAccion(acc){
   if(!acc||!acc.op)return 'Acción inválida';
@@ -4913,36 +5062,26 @@ function ejecutarAccion(acc){
   if(acc.op==='modificar_ejercicio'||acc.op==='cambiar_ejercicio'){
     const rs=S.g('rt2',[]);
     if(!rs.length)return 'No hay rutinas creadas';
-    let r = rs.find(x=>x.id===activeRid);
-    if(acc.rutina){
-      const query=acc.rutina.toLowerCase();
-      r = rs.find(x=>x.id===acc.rutina || x.name.toLowerCase().includes(query)) || r;
-    }
-    if(!r)return 'Rutina no encontrada';
-    if(!acc.dia)return 'Falta indicar el día de la rutina';
-    const dayQuery = acc.dia.toLowerCase();
-    const day = r.days.find(d => d.id === acc.dia || d.label.toLowerCase().includes(dayQuery) || dayQuery.includes(d.label.toLowerCase()));
-    if(!day)return 'Día "'+acc.dia+'" no encontrado en la rutina "'+r.name+'"';
-    if(!acc.nombre_original)return 'Falta indicar el nombre del ejercicio a modificar';
-    const exOrig = (acc.nombre_original).toLowerCase();
-    const exIndex = day.exercises.findIndex(e => e.name.toLowerCase().includes(exOrig) || exOrig.includes(e.name.toLowerCase()));
-    if(exIndex===-1)return 'Ejercicio "'+acc.nombre_original+'" no encontrado en el día "'+day.label+'"';
-    const ex = day.exercises[exIndex];
+    const target=resolveGymExerciseTarget(rs,acc);
+    if(target.error)return target.error;
+    const r=target.routine,day=target.day,ex=target.exercise,exIndex=target.exerciseIndex;
     const oldName = ex.name;
     const oldSeries = ex.series;
     const oldReps = ex.reps;
-    if(acc.nombre_nuevo) ex.name = acc.nombre_nuevo;
-    if(acc.series) ex.series = parseInt(acc.series, 10);
-    if(acc.reps) ex.reps = String(acc.reps);
-    if(acc.musculo) ex.muscle = acc.musculo;
+    const replacement=applyGymExerciseReplacement(ex,acc);
+    if(replacement.error)return replacement.error;
     S.s('rt2', rs);
     routines = rs;
     const prefix = `${r.id}|${day.id}|${exIndex}|`;
     Object.keys(sets).forEach(k=>{ if(k.startsWith(prefix)) delete sets[k]; });
     Object.keys(setPerformance).forEach(k=>{if(k.startsWith(prefix))delete setPerformance[k];});
-    S.s('sets2', sets);S.s('setPerf3',setPerformance);
+    delete weights[`${r.id}|${day.id}|${exIndex}`];
+    const activeWeek=gymWeekLog.find(w=>w.id===activeWeekId&&w.routineId===r.id);
+    const weekExercise=activeWeek?.days?.[day.id]?.exercises?.[exIndex];
+    if(weekExercise){Object.assign(weekExercise,{name:ex.name,muscle:ex.muscle,series:ex.series,reps:ex.reps,weight:'',completedSets:0,totalSets:ex.series,setLogs:[]});S.s('gymWeekLog',gymWeekLog);}
+    S.s('sets2',sets);S.s('setPerf3',setPerformance);S.s('wts2',weights);
     if(typeof renderGym==='function')renderGym();
-    return '💪 Modificado en '+day.label+': "'+oldName+'" ('+oldSeries+'x'+oldReps+') ➔ "'+ex.name+'" ('+ex.series+'x'+ex.reps+')';
+    return 'Cambié solo '+day.label+': "'+oldName+'" ('+oldSeries+'x'+oldReps+') por "'+ex.name+'" ('+ex.series+'x'+ex.reps+'). El resto de la rutina quedó igual';
   }
   if(acc.op==='registrar_serie' || acc.op==='completar_ejercicio'){
     const rs=S.g('rt2',[]);
@@ -5670,21 +5809,38 @@ function findBestSpanishVoice(voices) {
   return scored[0].voice;
 }
 
-function speak(txt,cb){
+function stopSpeaking(){
+  try{capacitorPlugin('TextToSpeech')?.stop?.();}catch(_){}
+  try{window.speechSynthesis?.cancel();}catch(_){}
+}
+function speak(txt,cb,append=false){
+  const clean=String(txt||'').trim();
+  if(!clean){if(cb)cb();return;}
+  const nativeTts=capacitorPlugin('TextToSpeech');
+  if(nativeTts?.speak){
+    if(!append){try{nativeTts.stop();}catch(_){}}
+    nativeTts.speak({text:clean,lang:'es-UY',rate:1.02,pitch:1,volume:1,queueStrategy:append?1:0})
+      .then(()=>{if(cb)cb();})
+      .catch(err=>{console.error('TextToSpeech',err);if(cb)cb();});
+    return;
+  }
   if(!('speechSynthesis' in window)){if(cb)cb();return;}
-  window.speechSynthesis.cancel();
+  if(!append)window.speechSynthesis.cancel();
   setTimeout(()=>{
-    const u=new SpeechSynthesisUtterance(txt);
-    u.lang='es-UY';
-    u.rate=1.05;
-    u.pitch=1;
-    const voices = _loadedVoices.length ? _loadedVoices : window.speechSynthesis.getVoices();
-    const esVoice = findBestSpanishVoice(voices);
-    if(esVoice) u.voice=esVoice;
-    u.onend=()=>{if(cb)cb();};
-    u.onerror=()=>{if(cb)cb();};
+    const u=new SpeechSynthesisUtterance(clean);
+    u.lang='es-UY';u.rate=1.05;u.pitch=1;
+    const voices=_loadedVoices.length?_loadedVoices:window.speechSynthesis.getVoices();
+    const esVoice=findBestSpanishVoice(voices);if(esVoice)u.voice=esVoice;
+    u.onend=()=>{if(cb)cb();};u.onerror=()=>{if(cb)cb();};
     window.speechSynthesis.speak(u);
-  }, 100);
+  },100);
+}
+function testAppVoice(){
+  if(isNativeMartinApp()&&!capacitorPlugin('TextToSpeech')){
+    tst('La voz nativa requiere instalar la nueva versión desde Actualizaciones',4500);return;
+  }
+  speak('La voz de MartinApp está funcionando.');
+  tst('Probando la voz de la inteligencia artificial',2500);
 }
 
 function speakBubble(index){
@@ -6463,6 +6619,7 @@ function _stopVoice(){
 async function interpretVoice(txt){
   const key=aiKey();
   if(!key){tst('Configurá '+AI_PROVIDERS[aiProvider()].label+' en Config → IA',3500);return;}
+  stopSpeaking();
   tst('🧠 Procesando…',2000);
   const now=new Date();
   const m=now.getMonth(),y=now.getFullYear();
@@ -6481,7 +6638,7 @@ async function interpretVoice(txt){
   routines.forEach(r=>{r.days.forEach(d=>{d.exercises.forEach((ex,ei)=>{exNameMap[r.id+'|'+d.id+'|'+ei]=ex.name;});});});
   const weightsArr=Object.entries(weights);
   const gymWeights=weightsArr.length?'\nPesos registrados: '+weightsArr.map(([k,v])=>(exNameMap[k]||'ej'+k.split('|').pop())+': '+v+'kg').join(', '):'';
-  const gymData=routines.length?'Rutinas: '+routines.map(r=>'"'+r.name+'"('+r.days.length+' días)').join(', ')+gymWeights+(gymHist.length?'\nHistorial reciente: '+gymHist.slice(0,15).map(h=>h.rn+'-'+h.dn+':'+h.pct+'%').join('; '):''):'(sin rutinas)';
+  const gymData=buildGymAIContext()+gymWeights+(gymHist.length?'\nHistorial reciente: '+gymHist.slice(0,15).map(h=>h.rn+'-'+h.dn+':'+h.pct+'%').join('; '):'');
   const proxEventos=events.filter(e=>e.date>=now.toISOString().slice(0,10)).slice(0,5).map(e=>e.title+' '+e.date+' '+e.time).join('; ');
   const dataCtx='DATOS DE LA APP:\n'+
     'Perfil y nutrición: '+profileStr+'\n\n'+
@@ -6507,6 +6664,7 @@ async function interpretVoice(txt){
     '- TARJETAS POR MES: para anotar lo pagado de una tarjeta en un mes, usá "fijo" con el id de la categoría de esa tarjeta (las que tienen tarjeta: en Categorías). Meses 0-11 (enero=0, abril=3, diciembre=11). Ej "1400 de OCA en abril" → fijo cat=<id OCA> m=3 y=<año> v=1400.\n'+
     '  * [ACCION]{"op":"evento","titulo":"...","fecha":"YYYY-MM-DD","hora":"HH:MM","recordatorio":15}[/ACCION]\n'+
     '  * [ACCION]{"op":"crear_rutina","name":"...","days":[...]}[/ACCION]\n'+
+    '  * [ACCION]{"op":"cambiar_ejercicio","rutina":"id o nombre exacto","dia":"Día 1","nombre_original":"press banca","nombre_nuevo":"press inclinado con mancuernas"}[/ACCION] (cambia solo ese ejercicio; conserva series, reps y músculo si no se indican)\n'+
     '  * [ACCION]{"op":"responder","texto":"texto a decir en voz alta"}[/ACCION]\n'+
     '- muscle debe ser: Pecho, Espalda, Hombros, Bíceps, Tríceps, Cuádriceps, Femoral, Gemelos, Abdomen\n'+
     '- IDs son los que ves arriba. NO inventes IDs.\n'+
@@ -6524,7 +6682,7 @@ async function interpretVoice(txt){
     if(toSay.trim()){
       spokenLen+=lastIdx;
       const clean=toSay.replace(/[✅•⚠️📅📊💪🔴🟢]/g,'').replace(/\*\*(.+?)\*\*/g,'$1').replace(/\n/g,' ').trim();
-      if(clean)speak(clean);
+      if(clean)speak(clean,null,true);
     }
   };
 
@@ -6544,7 +6702,7 @@ async function interpretVoice(txt){
       gastos=S.g('gst4',[]);pagosFijos=S.g('pf4',{});pagosEstado=S.g('pe4',{});events=S.g('evts1',[]);
       if(curPage==='gym')renderGym();else if(curPage==='gastos')renderGastos();else if(curPage==='agenda')renderAgenda();
       // hablar el resultado de la acción (no se incluyó en el stream)
-      if(resultados.length){const r=resultados.join('. ').replace(/[✅•⚠️📅📊💪🔴🟢]/g,'').trim();if(r)speak(r);}
+      if(resultados.length){const r=resultados.join('. ').replace(/[✅•⚠️📅📊💪🔴🟢]/g,'').trim();if(r)speak(r,null,true);}
     }
     tst('🎤 '+voz.slice(0,80)+'…',3500);
   }catch(e){
@@ -7693,6 +7851,7 @@ function openMemoria(){
   };
 }
 initAuth();
+setTimeout(()=>checkForAppUpdate(false),3500);
 </script>
 <button id="mic-btn" onclick="startVoice()" aria-label="Registrar gasto por voz">🎤</button>
 </body>
