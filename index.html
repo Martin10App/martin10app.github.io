@@ -2915,6 +2915,7 @@ function rMes(){
   }
 
   h+=`<button class="btn b-lg b-p" style="margin-top:14px" onclick="xTab(5)">+ Agregar gasto variable</button>`;
+  h+=`<button class="btn b-lg b-grn" style="margin-top:10px" onclick="openFinanceAI()">✨ Anotar o corregir con la IA</button>`;
   h+=`<button class="btn b-lg b-g" style="margin-top:10px" onclick="analizarGastos()" id="btn-analizar">🔍 Analizar mis gastos</button>`;
   return h+'</div>';
 }
@@ -2923,6 +2924,10 @@ function onSueldoChange(v){const val=parseMoney(v);setSueldo(curM,curY,val);}
 function onMontoChange(catId,m,y,v){const val=parseMoney(v);setMontoPago(catId,m,y,val);tst('Monto actualizado');renderGastos();}
 function onTogglePaid(catId,m,y){togPaid(catId,m,y);const c=cats.find(x=>x.id===catId);tst(isPaid(catId,m,y)?`✅ ${c?.n}`:`↩ ${c?.n}`);renderGastos();}
 function onVarChange(id,v){const g=gastos.find(x=>x._id===id);if(g){g.v=parseMoney(v);S.s('gst4',gastos);tst('Gasto actualizado');renderGastos();}}
+function openFinanceAI(){
+  page('chat');
+  setTimeout(()=>{const input=document.getElementById('chat-inp');if(input){input.placeholder='Ej: gasté $1.250 en el Disco ayer';input.focus();}},120);
+}
 
 async function analizarGastos(){
   const key=aiKey();
@@ -4963,6 +4968,89 @@ function buildGymAIContext(){
   }));
   return 'ESTRUCTURA EXACTA DE RUTINAS (usá estos nombres y días):\n'+JSON.stringify(data);
 }
+function resolveFinanceCategory(acc,categoryList=cats,expenseList=gastos){
+  const requested=String(acc?.cat||acc?.categoria||'').trim();
+  if(requested){
+    const q=normalizeGymLookup(requested);
+    const exact=categoryList.filter(c=>c.id===requested||normalizeGymLookup(c.n)===q);
+    if(exact.length===1)return {category:exact[0],source:'exact'};
+    const partial=categoryList.filter(c=>normalizeGymLookup(c.n).includes(q)||q.includes(normalizeGymLookup(c.n)));
+    if(partial.length===1)return {category:partial[0],source:'name'};
+  }
+  const desc=normalizeGymLookup(acc?.desc||acc?.detalle||'');
+  if(desc){
+    const scores=new Map();
+    expenseList.forEach(g=>{
+      const past=normalizeGymLookup(g.desc);
+      if(!past)return;
+      if(past===desc||past.includes(desc)||desc.includes(past))scores.set(g.c,(scores.get(g.c)||0)+3);
+      else{
+        const tokens=desc.split(' ').filter(t=>t.length>3);
+        if(tokens.some(t=>past.includes(t)))scores.set(g.c,(scores.get(g.c)||0)+1);
+      }
+    });
+    const ranked=[...scores.entries()].sort((a,b)=>b[1]-a[1]);
+    if(ranked.length&&(!ranked[1]||ranked[0][1]>ranked[1][1])){
+      const category=categoryList.find(c=>c.id===ranked[0][0]);if(category)return {category,source:'history'};
+    }
+    const hints=[
+      [/(super|disco|devoto|tienda inglesa|almacen|comida|verduler|carnicer|restaurante|delivery|pedido)/,['super','aliment','comida','almacen']],
+      [/(nafta|combustible|ancap|shell|axion|estacion)/,['nafta','combust','auto','vehiculo']],
+      [/(farmacia|medic|doctor|salud|mutualista)/,['salud','farmacia','medic']],
+      [/(ute|luz|electric)/,['ute','luz','electric']],
+      [/(ose|agua)/,['ose','agua']],
+      [/(antel|movistar|claro|telefono|celular|internet)/,['antel','internet','telefono','celular']],
+      [/(ropa|calzado|shopping)/,['ropa','indumentaria','personal']],
+      [/(escuela|colegio|liceo|curso|libro)/,['escuela','educacion','curso']],
+      [/(seguro|patente|service|mecanico|taller)/,['seguro','patente','auto','vehiculo']],
+      [/(cine|netflix|spotify|salida|ocio)/,['ocio','entretenimiento','salida']]
+    ];
+    const matched=hints.find(([pattern])=>pattern.test(desc));
+    if(matched){
+      const candidates=categoryList.filter(c=>matched[1].some(h=>normalizeGymLookup(c.n).includes(h)||normalizeGymLookup(c.id).includes(h)));
+      if(candidates.length===1)return {category:candidates[0],source:'keyword'};
+    }
+  }
+  return {error:requested?'No encontré una categoría única para "'+requested+'"':'Falta la categoría y no pude inferirla con seguridad'};
+}
+function normalizeFinanceDate(acc,now=new Date()){
+  let m=acc?.m!==undefined?Number(acc.m):now.getMonth();
+  let y=acc?.y!==undefined?Number(acc.y):now.getFullYear();
+  let day=now.getDate();
+  const iso=String(acc?.fecha||'').trim().match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  const short=String(acc?.f||'').trim().match(/^(\d{1,2})[\/-](\d{1,2})(?:[\/-](\d{2,4}))?$/);
+  if(iso){y=Number(iso[1]);m=Number(iso[2])-1;day=Number(iso[3]);}
+  else if(short){day=Number(short[1]);m=Number(short[2])-1;if(short[3])y=Number(short[3])+(Number(short[3])<100?2000:0);}
+  if(!Number.isInteger(m)||m<0||m>11||!Number.isInteger(y)||y<2000||y>2100)return {error:'La fecha indicada no es válida'};
+  const maxDay=new Date(y,m+1,0).getDate();
+  if(!iso&&!short)day=Math.min(day,maxDay);
+  if(!Number.isInteger(day)||day<1||day>maxDay)return {error:'El día indicado no existe en ese mes'};
+  return {m,y,f:String(day).padStart(2,'0')+'/'+String(m+1).padStart(2,'0')};
+}
+function prepareExpenseAction(acc,categoryList=cats,expenseList=gastos,now=new Date()){
+  const v=parseMoney(acc?.v??acc?.monto);
+  if(!Number.isFinite(v)||v<=0||v>999999999999)return {error:'El monto del gasto debe ser mayor a 0 y válido'};
+  const desc=String(acc?.desc||acc?.detalle||'').trim().slice(0,120);
+  const resolved=resolveFinanceCategory({...acc,desc},categoryList,expenseList);
+  if(resolved.error)return resolved;
+  const date=normalizeFinanceDate(acc,now);if(date.error)return date;
+  return {expense:{c:resolved.category.id,v:money(v),desc:desc||resolved.category.n,...date},category:resolved.category,categorySource:resolved.source};
+}
+function resolveExpenseTarget(acc,expenseList=gastos,categoryList=cats){
+  if(acc?.gasto_id!==undefined||acc?.id!==undefined){
+    const id=Number(acc.gasto_id??acc.id),index=expenseList.findIndex(g=>Number(g._id)===id);
+    return index>=0?{expense:expenseList[index],index}:{error:'No encontré el gasto con ID '+id};
+  }
+  let matches=expenseList.map((expense,index)=>({expense,index}));
+  const desc=normalizeGymLookup(acc?.desc_original||acc?.buscar||acc?.desc);
+  if(desc)matches=matches.filter(x=>{const value=normalizeGymLookup(x.expense.desc);return value.includes(desc)||desc.includes(value);});
+  if(acc?.v_original!==undefined)matches=matches.filter(x=>money(x.expense.v)===money(parseMoney(acc.v_original)));
+  if(acc?.cat){const resolved=resolveFinanceCategory(acc,categoryList,expenseList);if(resolved.error)return resolved;matches=matches.filter(x=>x.expense.c===resolved.category.id);}
+  matches.sort((a,b)=>Number(b.expense._id||0)-Number(a.expense._id||0));
+  if(!matches.length)return {error:'No encontré el gasto que querés corregir'};
+  if(matches.length>1&&!acc?.ultimo)return {error:'Hay varios gastos que coinciden; indicá el comercio, monto anterior o decí “el último”'};
+  return matches[0];
+}
 function aiActionContract(){
   return '\n\nCONTRATO DE EJECUCIÓN (prioridad alta):\n'+
     '- Detectá todos los pedidos explícitos que cambian datos. Si hay varios, emití un bloque [ACCION]{JSON válido}[/ACCION] por tarea, en orden, con máximo 8.\n'+
@@ -4970,15 +5058,19 @@ function aiActionContract(){
     '- Si falta un dato obligatorio que no puede inferirse de los DATOS DE LA APP o del contexto temporal, hacé una sola pregunta breve y no inventes la acción.\n'+
     '- Reutilizá IDs y nombres exactos del contexto. Nunca inventes IDs. Números como números, JSON sin comentarios ni markdown.\n'+
     '- Para borrar, sólo emití eliminar si el usuario lo pidió explícitamente; la app siempre pedirá confirmación.\n'+
+    '- FINANZAS: para cada gasto mencionado emití un gasto separado. Usá el ID exacto de categoría si es claro; si no es claro, preguntá una vez. Conservá comercio/detalle y fecha. No conviertas una compra con tarjeta en pago de tarjeta ni en gasto fijo.\n'+
+    '- Para corregir un gasto existente usá editar_gasto con gasto_id si está en el contexto. Si el usuario dice “el último”, usá por ejemplo {"op":"editar_gasto","ultimo":true,"desc_original":"Disco","v":1450}. Podés enviar desc_nueva, cat, fecha, m o y. No agregues otro gasto para corregir uno.\n'+
+    '- Para ingresos usá ingreso con v, m, y y modo "total" (reemplaza el ingreso del mes) o "sumar" (agrega otro ingreso). Para compromisos mensuales usá fijo; para marcar que se abonaron usá pago.\n'+
+    '- Fechas: m va de 0 (enero) a 11 (diciembre), y es año de cuatro dígitos. También podés usar fecha YYYY-MM-DD. Nunca uses montos negativos ni inventes importes.\n'+
     '- En Gym, registrar_serie debe conservar peso, repeticiones reales y RIR si el usuario los dijo. Nunca supongas reps ni RIR y nunca subas carga sólo porque una serie esté completa.\n'+
     '- Para reemplazar un solo ejercicio usá cambiar_ejercicio, nunca crear_rutina. Indicá rutina, dia, nombre_original y nombre_nuevo. Conservá series, reps y músculo si el usuario no pidió cambiarlos. “Día 1” refiere al primer día de la rutina activa. No modifiques ningún otro ejercicio.\n'+
     '- Al crear o cambiar ejercicios, usá únicamente nombres exactos del CATÁLOGO CON MOVIMIENTO. No inventes variantes fuera de esa lista.\n'+
     '- Para una biserie, marcá exactamente dos ejercicios consecutivos con el mismo campo "superset" (por ejemplo "A"). Cada ejercicio conserva sus propias series, reps, kg y RIR. No agrupes dos levantamientos pesados que comprometan la técnica.\n'+
     '- Para agrupar dos ejercicios ya existentes y consecutivos usá marcar_biserie con dia, ejercicio_1 y ejercicio_2. Para separarla usá quitar_biserie con dia y ejercicio.\n'+
-    '- Operaciones válidas: gasto, pago, fijo, ahorro, crear_meta, set_saldo_ahorro, compra, evento, crear_rutina, modificar_ejercicio, cambiar_ejercicio, marcar_biserie, quitar_biserie, registrar_serie, completar_ejercicio, comida, crear_dieta, cardio, sueno, comprar, recordar, olvidar, eliminar y responder.\n'+
+    '- Operaciones válidas: gasto, editar_gasto, ingreso, pago, fijo, ahorro, crear_meta, set_saldo_ahorro, compra, evento, crear_rutina, modificar_ejercicio, cambiar_ejercicio, marcar_biserie, quitar_biserie, registrar_serie, completar_ejercicio, comida, crear_dieta, cardio, sueno, comprar, recordar, olvidar, eliminar y responder.\n'+
     '- En pedidos compuestos, resolvé cada parte que tenga datos suficientes y explicá brevemente cualquier parte pendiente.';
 }
-const AI_ALLOWED_ACTIONS=new Set(['gasto','pago','fijo','ahorro','crear_meta','set_saldo_ahorro','crear_rutina','modificar_ejercicio','cambiar_ejercicio','marcar_biserie','quitar_biserie','registrar_serie','completar_ejercicio','compra','evento','responder','comprar','super','sueno','sueño','dormir','cardio','comida','crear_dieta','recordar','olvidar','eliminar','borrar']);
+const AI_ALLOWED_ACTIONS=new Set(['gasto','editar_gasto','ingreso','pago','fijo','ahorro','crear_meta','set_saldo_ahorro','crear_rutina','modificar_ejercicio','cambiar_ejercicio','marcar_biserie','quitar_biserie','registrar_serie','completar_ejercicio','compra','evento','responder','comprar','super','sueno','sueño','dormir','cardio','comida','crear_dieta','recordar','olvidar','eliminar','borrar']);
 function executeAIActionBlocks(reply,maxActions=8){
   const source=String(reply||'');
   const regex=/\[ACCION\]\s*([\s\S]*?)\s*\[\/ACCION\]/gi;
@@ -5079,51 +5171,60 @@ function ejecutarAccion(acc){
     return solicitarEliminacion(acc);
   }
   if(acc.op==='gasto'){
-    const cat=cats.find(c=>c.id===acc.cat);
-    if(!cat)return 'Categoría "'+acc.cat+'" no encontrada';
-    const gastos=S.g('gst4',[]);
-    const maxId=gastos.reduce((mx,g)=>Math.max(mx,g._id||0),0);
-    const now=new Date();
-    const m=acc.m!==undefined?acc.m:now.getMonth();
-    const y=acc.y!==undefined?acc.y:now.getFullYear();
-    const f=acc.f||(String(now.getDate())+'/'+String(now.getMonth()+1));
-    gastos.push({_id:maxId+1,c:acc.cat,v:parseMoney(acc.v),desc:acc.desc||'',m,y,f});
-    S.s('gst4',gastos);
-    return '$'+fmt((acc.v||0))+' agregado a "'+cat.n+'" ('+f+')';
+    const stored=S.g('gst4',[]);
+    const prepared=prepareExpenseAction(acc,cats,stored);
+    if(prepared.error)return prepared.error;
+    const maxId=stored.reduce((mx,g)=>Math.max(mx,Number(g._id)||0),0);
+    stored.push({_id:Math.max(Date.now(),maxId+1),...prepared.expense});
+    S.s('gst4',stored);gastos=stored;
+    return '$'+fmt(prepared.expense.v)+' agregado a "'+prepared.category.n+'" ('+prepared.expense.f+')'+(prepared.categorySource==='history'?' · categoría aprendida del historial':'');
+  }
+  if(acc.op==='editar_gasto'){
+    const stored=S.g('gst4',[]);
+    const target=resolveExpenseTarget(acc,stored,cats);if(target.error)return target.error;
+    const current=target.expense;
+    const merged={cat:acc.cat??current.c,v:acc.v??acc.monto??current.v,desc:acc.desc_nueva??acc.detalle_nuevo??current.desc,m:acc.m??current.m,y:acc.y??current.y,f:acc.f??current.f,fecha:acc.fecha};
+    const prepared=prepareExpenseAction(merged,cats,stored.filter((_,i)=>i!==target.index));if(prepared.error)return prepared.error;
+    const before={...current};Object.assign(current,prepared.expense);
+    S.s('gst4',stored);gastos=stored;
+    return 'Corregí el gasto ID '+current._id+': $'+fmt(before.v)+' '+(before.desc||'')+' → $'+fmt(current.v)+' '+(current.desc||'')+' ('+prepared.category.n+')';
+  }
+  if(acc.op==='ingreso'){
+    const amount=parseMoney(acc.v??acc.monto);if(!Number.isFinite(amount)||amount<=0||amount>999999999999)return 'El ingreso debe ser un monto mayor a 0 y válido';
+    const date=normalizeFinanceDate(acc);if(date.error)return date.error;
+    const current=getSueldo(date.m,date.y),mode=normalizeGymLookup(acc.modo)==='sumar'?'sumar':'total';
+    const next=mode==='sumar'?money(current+amount):money(amount);setSueldo(date.m,date.y,next);
+    return 'Ingreso de '+MONTHS[date.m]+' '+date.y+' actualizado a '+fmtFull(next)+(mode==='sumar'?' (sumé '+fmtFull(amount)+')':'');
   }
   if(acc.op==='pago'){
-    const cat=cats.find(c=>c.id===acc.cat);
-    if(!cat)return 'Categoría "'+acc.cat+'" no encontrada';
+    const resolved=resolveFinanceCategory(acc,cats,gastos);if(resolved.error)return resolved.error;const cat=resolved.category;
     const pe=S.g('pe4',{});
-    const now=new Date();
-    const m=acc.m!==undefined?acc.m:now.getMonth();
-    const y=acc.y!==undefined?acc.y:now.getFullYear();
-    pe[acc.cat+'_'+m+'_'+y]=true;
+    const date=normalizeFinanceDate(acc);if(date.error)return date.error;
+    pe[cat.id+'_'+date.m+'_'+date.y]=true;
     S.s('pe4',pe);
-    return cat.n+' marcado como pagado';
+    return cat.n+' marcado como pagado en '+MONTHS[date.m]+' '+date.y;
   }
   if(acc.op==='fijo'){
-    const cat=cats.find(c=>c.id===acc.cat);
-    if(!cat)return 'Categoría "'+acc.cat+'" no encontrada';
+    const resolved=resolveFinanceCategory(acc,cats,gastos);if(resolved.error)return resolved.error;const cat=resolved.category;
+    const amount=parseMoney(acc.v??acc.monto);if(!Number.isFinite(amount)||amount<0||amount>999999999999)return 'El monto fijo no es válido';
     const pf=S.g('pf4',{});
-    const now=new Date();
-    const m=acc.m!==undefined?acc.m:now.getMonth();
-    const y=acc.y!==undefined?acc.y:now.getFullYear();
-    pf[acc.cat+'_'+m+'_'+y]=parseMoney(acc.v);
+    const date=normalizeFinanceDate(acc);if(date.error)return date.error;
+    pf[cat.id+'_'+date.m+'_'+date.y]=money(amount);
     S.s('pf4',pf);pagosFijos=pf;
-    return cat.n+' actualizado a $'+fmt(parseMoney(acc.v));
+    return cat.n+' actualizado a $'+fmt(amount)+' en '+MONTHS[date.m]+' '+date.y;
   }
   if(acc.op==='ahorro'){
-    const cat=cats.find(c=>c.id===acc.cat&&c.ahorro)||cats.find(c=>c.ahorro);
+    const amount=parseMoney(acc.v??acc.monto);if(!Number.isFinite(amount)||amount<=0||amount>999999999999)return 'El ahorro debe ser un monto mayor a 0 y válido';
+    const requested=acc.cat?resolveFinanceCategory(acc,cats.filter(c=>c.ahorro),gastos):null;
+    if(requested?.error)return requested.error;
+    const cat=requested?.category||cats.find(c=>c.ahorro);
     if(!cat)return 'No hay ninguna meta de ahorro. Creá una primero.';
     const pf=S.g('pf4',{});
-    const now=new Date();
-    const m=acc.m!==undefined?acc.m:now.getMonth();
-    const y=acc.y!==undefined?acc.y:now.getFullYear();
-    const key=cat.id+'_'+m+'_'+y;
-    pf[key]=money((pf[key]||0)+parseMoney(acc.v));
+    const date=normalizeFinanceDate(acc);if(date.error)return date.error;
+    const key=cat.id+'_'+date.m+'_'+date.y;
+    pf[key]=money((pf[key]||0)+amount);
     S.s('pf4',pf);pagosFijos=pf;
-    return '🐷 $'+fmt(parseMoney(acc.v))+' guardado en "'+cat.n+'". Llevás $'+fmt(ahorroAcumCat(cat.id));
+    return '🐷 $'+fmt(amount)+' guardado en "'+cat.n+'". Llevás $'+fmt(ahorroAcumCat(cat.id));
   }
   if(acc.op==='crear_meta'){
     const nombre=acc.nombre||acc.name||'Meta de ahorro';
