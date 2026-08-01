@@ -2277,7 +2277,7 @@ function supersetMeta(day,exerciseIndex){
   const position=members.findIndex(x=>x.index===exerciseIndex)+1;
   return {id:ex.superset,label:String.fromCharCode(65+Math.max(0,ordered.indexOf(ex.superset))),position,members:members.map(x=>x.index),first:position===1};
 }
-function prepareMovementExercises(rawExercises,catalog,requireMovement=true){
+function prepareMovementExercises(rawExercises,catalog,requireMovement=false){
   const allowedMuscles=new Set(['Pecho','Espalda','Hombros','Bíceps','Tríceps','Cuádriceps','Femoral','Gemelos','Abdomen']);
   const invalid=[];
   const exercises=(Array.isArray(rawExercises)?rawExercises:[]).slice(0,10).map(raw=>{
@@ -2362,18 +2362,17 @@ async function askAIRoutine(){
   const objTxt={hipertrofia:'ganar masa muscular',fuerza:'ganar fuerza',resistencia:'definición y resistencia muscular',salud:'salud general y estar en forma',bajar_peso:'bajar de peso'}[obj];
   oOv1(`<div class="mt">✨ Creando tu rutina…</div><div style="text-align:center;padding:30px"><div style="font-size:32px;margin-bottom:12px">🏋️</div><div style="font-size:13px;color:var(--text2)">La IA está armando una rutina de ${dias} días para entrenar ${lugar.startsWith('casa')?'en casa':'en el gym'}…</div></div>`);
   try{
-    const movementCatalog=await loadExerciseMediaCatalog();
-    const movementList=exerciseMovementCatalogForAI(movementCatalog,lugar);
-    if(!movementList)throw new Error('No se pudo preparar el catálogo de movimientos.');
+    const movementCatalog=await loadExerciseMediaCatalog().catch(()=>null);
+    const movementList=movementCatalog?exerciseMovementCatalogForAI(movementCatalog,lugar):'';
     const prompt='Sos un entrenador personal experto. Armá una rutina de entrenamiento de '+dias+' días por semana para una persona que entrena '+lugarTxt+'.\n'+
       'Perfil: '+(p.weight?p.weight+'kg, ':'')+(p.height?p.height+'cm, ':'')+'nivel '+nivel+', objetivo: '+objTxt+(p.experience?', '+p.experience+' años de experiencia':'')+'. Duración máxima: '+mins+' minutos por sesión. Bloque: '+cycleLength+' semanas.'+(prioridad?' Prioridad: '+prioridad+'.':'')+(nota?' Limitaciones/preferencias: '+nota+'.':'')+'\n'+
       'PROGRAMACIÓN: elegí pocos ejercicios útiles y sostenibles; cubrí patrones de movimiento y volumen semanal coherente; evitá volumen basura. Usá rangos de repeticiones que permitan doble progresión. No prescribas cargas inventadas ni una descarga automática: la app decidirá según reps reales, RIR, adherencia y fatiga.\n'+
       'Para cada día indicá un nombre/foco y ejercicios apropiados al lugar. La sesión debe caber realmente en '+mins+' minutos incluyendo descansos.\n'+
-      'CATÁLOGO OBLIGATORIO: elegí TODOS los ejercicios únicamente de esta lista y copiá el nombre exactamente como aparece antes del primer separador. Cada uno tiene movimiento animado disponible:\n'+movementList+'\n'+
+      (movementList?'CATÁLOGO PREFERIDO: priorizá ejercicios de esta lista y copiá su nombre exactamente; tienen movimiento animado disponible. Podés elegir un ejercicio fuera de la lista sólo si aporta una ventaja clara para el objetivo, la limitación o el equipamiento de la persona; en ese caso la app ofrecerá buscar la técnica en YouTube:\n'+movementList+'\n':'No hay catálogo animado disponible ahora. Elegí ejercicios conocidos, seguros y apropiados; la app permitirá buscar su técnica en YouTube.\n')+
       (allowSupersets?'BISERIES: podés crear algunas sólo cuando sean prácticas y no comprometan la técnica. Marcá exactamente dos ejercicios consecutivos con el mismo valor "superset" (A, B, etc.). No agrupes dos ejercicios pesados que compitan entre sí; priorizá músculos distintos o un compuesto con un accesorio liviano.\n':'No uses biseries; omití el campo "superset".\n')+
       'IMPORTANTE: respondé SOLO con un JSON válido, sin texto extra ni markdown ni bloques de código, con esta forma EXACTA:\n'+
-      '{"name":"Nombre corto de la rutina","days":[{"label":"Foco del día","exercises":[{"name":"Nombre EXACTO del catálogo","muscle":"Pecho","series":4,"reps":"10-12","superset":"A"}]}]}\n'+
-      'El campo "muscle" debe ser uno de exactamente: Pecho, Espalda, Hombros, Bíceps, Tríceps, Cuádriceps, Femoral, Gemelos, Abdomen. No inventes ni traduzcas nombres fuera del catálogo.';
+      '{"name":"Nombre corto de la rutina","days":[{"label":"Foco del día","exercises":[{"name":"Nombre del ejercicio","muscle":"Pecho","series":4,"reps":"10-12","superset":"A"}]}]}\n'+
+      'El campo "muscle" debe ser uno de exactamente: Pecho, Espalda, Hombros, Bíceps, Tríceps, Cuádriceps, Femoral, Gemelos, Abdomen.';
     const raw=await _aiComplete(prompt);
     const m=raw.match(/\{[\s\S]*\}/);
     if(!m)throw new Error('La IA no devolvió una rutina válida. Probá de nuevo.');
@@ -2381,7 +2380,7 @@ async function askAIRoutine(){
     if(!Array.isArray(obj2.days)||obj2.days.length!==Number(dias))throw new Error('La IA no respetó la cantidad de días. Probá de nuevo.');
     // Normalizar al formato del editor y abrir para revisar antes de guardar
     window._draft={id:uid(),name:String(obj2.name||'Rutina IA').slice(0,60),createdAt:Date.now(),goal:obj,cycleLength,sessionMinutes:mins,progressionMethod:'double',
-      days:obj2.days.map(d=>{const prepared=prepareMovementExercises(d.exercises,movementCatalog,true);if(prepared.invalid.length)throw new Error('La IA usó ejercicios sin movimiento: '+prepared.invalid.join(', '));return {id:uid(),label:String(d.label||'Día').slice(0,50),exercises:prepared.exercises};})};
+      days:obj2.days.map(d=>{const prepared=prepareMovementExercises(d.exercises,movementCatalog,false);return {id:uid(),label:String(d.label||'Día').slice(0,50),exercises:prepared.exercises};})};
     if(window._draft.days.some(d=>!d.exercises.length))throw new Error('La IA dejó un día sin ejercicios. Probá de nuevo.');
     cOv1();
     rEditor(false); // abre el editor con la rutina cargada para revisar/ajustar y guardar
@@ -5065,7 +5064,7 @@ function aiActionContract(){
     '- Fechas: m va de 0 (enero) a 11 (diciembre), y es año de cuatro dígitos. También podés usar fecha YYYY-MM-DD. Nunca uses montos negativos ni inventes importes.\n'+
     '- En Gym, registrar_serie debe conservar peso, repeticiones reales y RIR si el usuario los dijo. Nunca supongas reps ni RIR y nunca subas carga sólo porque una serie esté completa.\n'+
     '- Para reemplazar un solo ejercicio usá cambiar_ejercicio, nunca crear_rutina. Indicá rutina, dia, nombre_original y nombre_nuevo. Conservá series, reps y músculo si el usuario no pidió cambiarlos. “Día 1” refiere al primer día de la rutina activa. No modifiques ningún otro ejercicio.\n'+
-    '- Al crear o cambiar ejercicios, usá únicamente nombres exactos del CATÁLOGO CON MOVIMIENTO. No inventes variantes fuera de esa lista.\n'+
+    '- Al crear o cambiar ejercicios, priorizá nombres exactos del CATÁLOGO CON MOVIMIENTO. Si un ejercicio fuera del catálogo es claramente mejor para el objetivo, limitación o equipamiento, podés usarlo: quedará sin GIF y la app ofrecerá buscar la técnica en YouTube.\n'+
     '- Para una biserie, marcá exactamente dos ejercicios consecutivos con el mismo campo "superset" (por ejemplo "A"). Cada ejercicio conserva sus propias series, reps, kg y RIR. No agrupes dos levantamientos pesados que comprometan la técnica.\n'+
     '- Para agrupar dos ejercicios ya existentes y consecutivos usá marcar_biserie con dia, ejercicio_1 y ejercicio_2. Para separarla usá quitar_biserie con dia y ejercicio.\n'+
     '- Operaciones válidas: gasto, editar_gasto, ingreso, pago, fijo, ajustar_monto, ahorro, crear_meta, set_saldo_ahorro, compra, evento, crear_rutina, modificar_ejercicio, cambiar_ejercicio, marcar_biserie, quitar_biserie, registrar_serie, completar_ejercicio, comida, crear_dieta, cardio, sueno, comprar, recordar, olvidar, eliminar y responder.\n'+
@@ -5149,11 +5148,11 @@ function applyGymExerciseReplacement(ex,acc){
   let newMuscle=ex.muscle,newMediaId=ex.mediaId||null;
   if(acc.nombre_nuevo!==undefined&&normalizeGymLookup(newName)!==normalizeGymLookup(ex.name)){
     const catalog=typeof _exerciseMediaData!=='undefined'?_exerciseMediaData:null;
-    if(!catalog)return {error:'No pude validar el movimiento nuevo. Revisá la conexión y probá otra vez'};
-    const canonical=canonicalExerciseMovement({name:newName},catalog);
-    if(!canonical)return {error:'"'+newName+'" no está en el catálogo de ejercicios con movimiento'};
-    if(acc.musculo===undefined&&normalizeGymLookup(canonical.muscle)!==normalizeGymLookup(ex.muscle))return {error:'El reemplazo no mantiene el mismo enfoque muscular ('+ex.muscle+')'};
-    newName=canonical.name;newMuscle=canonical.muscle;newMediaId=canonical.mediaId;
+    const canonical=catalog?canonicalExerciseMovement({name:newName},catalog):null;
+    if(canonical){
+      if(acc.musculo===undefined&&normalizeGymLookup(canonical.muscle)!==normalizeGymLookup(ex.muscle))return {error:'El reemplazo no mantiene el mismo enfoque muscular ('+ex.muscle+')'};
+      newName=canonical.name;newMuscle=canonical.muscle;newMediaId=canonical.mediaId;
+    }else newMediaId=null;
   }
   if(acc.musculo!==undefined){
     const allowed=['Pecho','Espalda','Hombros','Bíceps','Tríceps','Cuádriceps','Femoral','Gemelos','Abdomen'];
@@ -5258,11 +5257,8 @@ function ejecutarAccion(acc){
   if(acc.op==='crear_rutina'){
     if(!acc.name||!acc.days||!acc.days.length)return 'Faltan datos para crear la rutina';
     const movementCatalog=_exerciseMediaData;
-    if(!movementCatalog&&!acc.permitir_sin_movimiento)return 'No pude validar los movimientos. Revisá la conexión y volvé a pedir la rutina';
     const rid=uid();
-    const invalid=[];
-    const days=acc.days.map(d=>{const prepared=prepareMovementExercises(d.exercises,movementCatalog,!acc.permitir_sin_movimiento);invalid.push(...prepared.invalid);return {id:uid(),label:String(d.label||'Día').slice(0,50),exercises:prepared.exercises};});
-    if(invalid.length)return 'No guardé la rutina porque estos ejercicios no tienen movimiento validado: '+invalid.join(', ');
+    const days=acc.days.map(d=>{const prepared=prepareMovementExercises(d.exercises,movementCatalog,false);return {id:uid(),label:String(d.label||'Día').slice(0,50),exercises:prepared.exercises};});
     const r={id:rid,name:acc.name,days,createdAt:Date.now()};
     const rs=S.g('rt2',[]);
     rs.push(r);

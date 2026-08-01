@@ -1,7 +1,7 @@
 {
-  "version": "1.3.1",
+  "version": "1.3.2",
   "nativeBuild": 4,
   "publishedAt": "2026-08-01",
   "apkUrl": "https://martin10app.github.io/MartinApp-actualizada.apk",
-  "notes": "La IA puede sumar o restar importes al total mensual de una tarjeta o categoría sin reemplazarlo ni duplicar gastos."
+  "notes": "La IA prioriza ejercicios con movimiento, pero permite opciones útiles sin GIF y mantiene la búsqueda de técnica en YouTube."
 }
