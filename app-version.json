@@ -1,7 +1,7 @@
 {
-  "version": "1.4.1",
+  "version": "1.4.2",
   "nativeBuild": 4,
   "publishedAt": "2026-08-01",
   "apkUrl": "https://martin10app.github.io/MartinApp-actualizada.apk",
-  "notes": "Corrige rutinas donde los ejercicios aparecían como “Ejercicio”: reconoce nombres y campos en español, inglés o texto directo y bloquea registros sin nombre."
+  "notes": "Corrige la carga de rutinas de IA: acepta más formatos, abre la rutina aunque haya una fila incompleta y omite solamente elementos sin nombre."
 }
