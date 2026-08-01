@@ -3631,7 +3631,55 @@ async function cancelEventNotification(id){
 }
 
 // ── CENTRO DE PERMISOS (APK + navegador) ──
+function speechRecognitionPlugin(){
+  return window.Capacitor?.Plugins?.SpeechRecognition||null;
+}
+async function captureNativeSpeech(promptText='Hablá ahora'){
+  const native=speechRecognitionPlugin();
+  if(!native)return null;
+  const permission=await native.requestPermissions();
+  if(permission?.speechRecognition!=='granted')throw new Error('Android no concedió el permiso de micrófono');
+  const availability=await native.available();
+  if(!availability?.available)throw new Error('El reconocimiento de voz de Android no está disponible');
+  S.s('micPermissionGrantedV1',true);
+  const result=await native.start({
+    language:'es-UY',
+    maxResults:1,
+    prompt:promptText,
+    popup:true,
+    partialResults:false
+  });
+  return String(result?.matches?.[0]||'').trim();
+}
+async function runNativeSpeechFlow({buttonId,prompt,onTranscript,setActive,activeText,idleText}){
+  const native=speechRecognitionPlugin();
+  if(!native)return false;
+  const btn=document.getElementById(buttonId);
+  setActive(true,native);
+  if(btn){btn.classList.add('recording');if(activeText)btn.textContent=activeText;}
+  _showInterim('Abriendo el micrófono de Android…');
+  try{
+    const txt=await captureNativeSpeech(prompt);
+    if(txt)onTranscript(txt);
+    else tst('🎤 No te escuché, probá de nuevo',3000);
+  }catch(e){
+    console.error('Voz nativa',e);
+    tst('🎤 '+(e?.message||'No se pudo iniciar el micrófono'),5000);
+  }finally{
+    setActive(false,null);
+    if(btn){btn.classList.remove('recording');if(idleText)btn.textContent=idleText;}
+    _hideInterim();
+  }
+  return true;
+}
 async function getMicrophonePermissionState(){
+  const native=speechRecognitionPlugin();
+  if(native){
+    try{
+      const p=await native.checkPermissions();
+      return p?.speechRecognition||'prompt';
+    }catch(e){return 'prompt';}
+  }
   if(!navigator.mediaDevices?.getUserMedia&&!window.SpeechRecognition&&!window.webkitSpeechRecognition)return 'unsupported';
   try{
     if(navigator.permissions?.query){
@@ -3642,6 +3690,22 @@ async function getMicrophonePermissionState(){
   return S.g('micPermissionGrantedV1',false)?'granted':'prompt';
 }
 async function ensureMicrophonePermission(showFeedback=true){
+  const native=speechRecognitionPlugin();
+  if(native){
+    try{
+      const p=await native.requestPermissions();
+      if(p?.speechRecognition!=='granted')throw new Error('Permiso denegado');
+      const availability=await native.available();
+      if(!availability?.available)throw new Error('Reconocimiento no disponible');
+      S.s('micPermissionGrantedV1',true);
+      return true;
+    }catch(err){
+      S.s('micPermissionGrantedV1',false);
+      console.error('Permiso de micrófono nativo',err);
+      if(showFeedback)tst('Android bloqueó el micrófono. Revisá Ajustes > Aplicaciones > MartinApp > Permisos.',6000);
+      return false;
+    }
+  }
   if(navigator.mediaDevices?.getUserMedia){
     try{
       const stream=await navigator.mediaDevices.getUserMedia({audio:true});
@@ -4393,6 +4457,11 @@ async function startVoiceCoach(){
     _stopVoiceCoach();
     return;
   }
+  if(await runNativeSpeechFlow({
+    buttonId:'coach-mic-btn',prompt:'Hablá con tu Coach de MartinApp',
+    setActive:(active,rec)=>{_coachVoiceActive=active;_coachVoiceRec=rec;},
+    onTranscript:txt=>{const inp=document.getElementById('coach-inp');if(inp){inp.value=txt;_voiceSent=true;sendCoach();}}
+  }))return;
   const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
   if(!SR){tst('El reconocimiento de voz no está disponible en este dispositivo.',4000);openPermissionPrimer(true);return;}
   if(!await ensureMicrophonePermission(true)){openPermissionPrimer(true);return;}
@@ -5476,6 +5545,11 @@ async function startVoiceChat(){
     _stopVoiceChat();
     return;
   }
+  if(await runNativeSpeechFlow({
+    buttonId:'chat-mic-btn',prompt:'Hablá con la IA de MartinApp',
+    setActive:(active,rec)=>{_chatVoiceActive=active;_chatVoiceRec=rec;},
+    onTranscript:txt=>{const inp=document.getElementById('chat-inp');if(inp){inp.value=txt;_voiceSent=true;sendChat();}}
+  }))return;
   const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
   if(!SR){tst('El reconocimiento de voz no está disponible en este dispositivo.',4000);openPermissionPrimer(true);return;}
   if(!await ensureMicrophonePermission(true)){openPermissionPrimer(true);return;}
@@ -6146,6 +6220,11 @@ function _hideInterim(){
 
 async function startVoice(){
   if(_voiceActive){_stopVoice();return;}
+  if(await runNativeSpeechFlow({
+    buttonId:'mic-btn',prompt:'Decile a MartinApp qué querés hacer',activeText:'⏹',idleText:'🎤',
+    setActive:(active,rec)=>{_voiceActive=active;_voiceRec=rec;},
+    onTranscript:txt=>{if(curPage==='chat')chatVoiceInput(txt);else interpretVoice(txt);}
+  }))return;
   const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
   if(!SR){tst('El reconocimiento de voz no está disponible en este dispositivo.',4000);openPermissionPrimer(true);return;}
   if(!await ensureMicrophonePermission(true)){openPermissionPrimer(true);return;}
