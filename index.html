@@ -5061,16 +5061,17 @@ function aiActionContract(){
     '- FINANZAS: para cada gasto mencionado emití un gasto separado. Usá el ID exacto de categoría si es claro; si no es claro, preguntá una vez. Conservá comercio/detalle y fecha. No conviertas una compra con tarjeta en pago de tarjeta ni en gasto fijo.\n'+
     '- Para corregir un gasto existente usá editar_gasto con gasto_id si está en el contexto. Si el usuario dice “el último”, usá por ejemplo {"op":"editar_gasto","ultimo":true,"desc_original":"Disco","v":1450}. Podés enviar desc_nueva, cat, fecha, m o y. No agregues otro gasto para corregir uno.\n'+
     '- Para ingresos usá ingreso con v, m, y y modo "total" (reemplaza el ingreso del mes) o "sumar" (agrega otro ingreso). Para compromisos mensuales usá fijo; para marcar que se abonaron usá pago.\n'+
+    '- Si dice “sumale/agregale X más” a una tarjeta o categoría mensual, usá ajustar_monto con cat, delta positivo, m e y. Si dice “restale/descontale”, delta negativo. Esta acción modifica el total del mes; NO crees un gasto variable ni uses fijo, porque fijo reemplaza el total. Ejemplo: {"op":"ajustar_monto","cat":"brou","delta":1200,"m":7,"y":2026}.\n'+
     '- Fechas: m va de 0 (enero) a 11 (diciembre), y es año de cuatro dígitos. También podés usar fecha YYYY-MM-DD. Nunca uses montos negativos ni inventes importes.\n'+
     '- En Gym, registrar_serie debe conservar peso, repeticiones reales y RIR si el usuario los dijo. Nunca supongas reps ni RIR y nunca subas carga sólo porque una serie esté completa.\n'+
     '- Para reemplazar un solo ejercicio usá cambiar_ejercicio, nunca crear_rutina. Indicá rutina, dia, nombre_original y nombre_nuevo. Conservá series, reps y músculo si el usuario no pidió cambiarlos. “Día 1” refiere al primer día de la rutina activa. No modifiques ningún otro ejercicio.\n'+
     '- Al crear o cambiar ejercicios, usá únicamente nombres exactos del CATÁLOGO CON MOVIMIENTO. No inventes variantes fuera de esa lista.\n'+
     '- Para una biserie, marcá exactamente dos ejercicios consecutivos con el mismo campo "superset" (por ejemplo "A"). Cada ejercicio conserva sus propias series, reps, kg y RIR. No agrupes dos levantamientos pesados que comprometan la técnica.\n'+
     '- Para agrupar dos ejercicios ya existentes y consecutivos usá marcar_biserie con dia, ejercicio_1 y ejercicio_2. Para separarla usá quitar_biserie con dia y ejercicio.\n'+
-    '- Operaciones válidas: gasto, editar_gasto, ingreso, pago, fijo, ahorro, crear_meta, set_saldo_ahorro, compra, evento, crear_rutina, modificar_ejercicio, cambiar_ejercicio, marcar_biserie, quitar_biserie, registrar_serie, completar_ejercicio, comida, crear_dieta, cardio, sueno, comprar, recordar, olvidar, eliminar y responder.\n'+
+    '- Operaciones válidas: gasto, editar_gasto, ingreso, pago, fijo, ajustar_monto, ahorro, crear_meta, set_saldo_ahorro, compra, evento, crear_rutina, modificar_ejercicio, cambiar_ejercicio, marcar_biserie, quitar_biserie, registrar_serie, completar_ejercicio, comida, crear_dieta, cardio, sueno, comprar, recordar, olvidar, eliminar y responder.\n'+
     '- En pedidos compuestos, resolvé cada parte que tenga datos suficientes y explicá brevemente cualquier parte pendiente.';
 }
-const AI_ALLOWED_ACTIONS=new Set(['gasto','editar_gasto','ingreso','pago','fijo','ahorro','crear_meta','set_saldo_ahorro','crear_rutina','modificar_ejercicio','cambiar_ejercicio','marcar_biserie','quitar_biserie','registrar_serie','completar_ejercicio','compra','evento','responder','comprar','super','sueno','sueño','dormir','cardio','comida','crear_dieta','recordar','olvidar','eliminar','borrar']);
+const AI_ALLOWED_ACTIONS=new Set(['gasto','editar_gasto','ingreso','pago','fijo','ajustar_monto','ahorro','crear_meta','set_saldo_ahorro','crear_rutina','modificar_ejercicio','cambiar_ejercicio','marcar_biserie','quitar_biserie','registrar_serie','completar_ejercicio','compra','evento','responder','comprar','super','sueno','sueño','dormir','cardio','comida','crear_dieta','recordar','olvidar','eliminar','borrar']);
 function executeAIActionBlocks(reply,maxActions=8){
   const source=String(reply||'');
   const regex=/\[ACCION\]\s*([\s\S]*?)\s*\[\/ACCION\]/gi;
@@ -5212,6 +5213,16 @@ function ejecutarAccion(acc){
     pf[cat.id+'_'+date.m+'_'+date.y]=money(amount);
     S.s('pf4',pf);pagosFijos=pf;
     return cat.n+' actualizado a $'+fmt(amount)+' en '+MONTHS[date.m]+' '+date.y;
+  }
+  if(acc.op==='ajustar_monto'){
+    const resolved=resolveFinanceCategory(acc,cats,gastos);if(resolved.error)return resolved.error;const cat=resolved.category;
+    const delta=parseMoney(acc.delta??acc.v??acc.monto);if(!Number.isFinite(delta)||delta===0||Math.abs(delta)>999999999999)return 'El ajuste debe ser un monto distinto de 0 y válido';
+    const date=normalizeFinanceDate(acc);if(date.error)return date.error;
+    const pf=S.g('pf4',{}),key=cat.id+'_'+date.m+'_'+date.y;
+    const current=pf[key]!==undefined?money(pf[key]):cat.cardRef?money(getCardMonthAmt(cat.cardRef,date.m,date.y)):money(cat.base||0);
+    const next=money(current+delta);if(next<0)return 'No apliqué el ajuste porque dejaría "'+cat.n+'" con un total negativo';
+    pf[key]=next;S.s('pf4',pf);pagosFijos=pf;
+    return (delta>0?'Sumé ':'Resté ')+fmtFull(Math.abs(delta))+' en "'+cat.n+'" para '+MONTHS[date.m]+' '+date.y+'. Nuevo total: '+fmtFull(next);
   }
   if(acc.op==='ahorro'){
     const amount=parseMoney(acc.v??acc.monto);if(!Number.isFinite(amount)||amount<=0||amount>999999999999)return 'El ahorro debe ser un monto mayor a 0 y válido';
