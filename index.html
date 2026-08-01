@@ -2637,7 +2637,7 @@ function totalAhorroMes(m,y){
 function ahorroAcumCat(catId){
   let t=0;
   const c=cats.find(x=>x.id===catId);
-  if(c) t+=money(c.base||0);
+  if(c) t+=money(c.saldoInicial!==undefined?c.saldoInicial:c.base||0);
   const prefix=catId+'_';
   Object.keys(pagosFijos).forEach(key=>{
     if(!key.startsWith(prefix))return;
@@ -2650,6 +2650,32 @@ function ahorroAcumTotal(){
   let t=0;
   cats.forEach(c=>{if(c.ahorro)t=money(t+ahorroAcumCat(c.id));});
   return t;
+}
+function normalizeGoalDate(value){
+  const text=String(value||'').trim();if(!text)return '';
+  const match=text.match(/^(\d{4})-(\d{2})-(\d{2})$/);if(!match)return null;
+  const y=Number(match[1]),m=Number(match[2])-1,d=Number(match[3]);
+  const check=new Date(y,m,d,12);return check.getFullYear()===y&&check.getMonth()===m&&check.getDate()===d?text:null;
+}
+function financialGoalPlan(category,now=new Date()){
+  const saved=money(ahorroAcumCat(category.id)),target=money(category.objetivo||0),remaining=money(Math.max(0,target-saved));
+  const date=normalizeGoalDate(category.fechaObjetivo),planned=money(category.aportePlan||0);
+  let months=0;
+  if(date){const [y,m,d]=date.split('-').map(Number);months=Math.max(0,(y-now.getFullYear())*12+(m-1-now.getMonth())+(d>=now.getDate()?1:0));}
+  const required=date&&target>0&&remaining>0?(months>0?money(Math.ceil(remaining/months)):remaining):0;
+  const status=!target?'sin_monto':!remaining?'cumplida':!date?'sin_fecha':date&&!months?'vencida':planned>0&&required>planned?'insuficiente':planned>0&&required<=planned?'en_plan':'sin_aporte';
+  return {saved,target,remaining,date:date||'',months,required,planned,status};
+}
+function applyFinancialGoalFields(category,acc){
+  const amountFields=[['objetivo',acc.objetivo??acc.costo_neto],['saldoInicial',acc.saldo_inicial??acc.aporte_inicial??acc.aporte],['aportePlan',acc.aporte_mensual]];
+  for(const [field,raw] of amountFields){
+    if(raw===undefined)continue;
+    const value=parseMoney(raw);if(!Number.isFinite(value)||value<0||value>999999999999)return {error:'El monto de '+field+' no es válido'};
+    category[field]=money(value);
+  }
+  if(acc.fecha_objetivo!==undefined||acc.fechaObjetivo!==undefined){const date=normalizeGoalDate(acc.fecha_objetivo??acc.fechaObjetivo);if(date===null)return {error:'La fecha objetivo no es válida'};category.fechaObjetivo=date;}
+  if(acc.descripcion!==undefined||acc.detalle!==undefined)category.descripcionObjetivo=String(acc.descripcion??acc.detalle??'').trim().slice(0,160);
+  return {category};
 }
 function totalPagadoMes(m,y){
   let t=0;
@@ -2772,13 +2798,14 @@ function rMes(){
   if(catsAhorro.length){
     h+=`<div class="card" style="margin-bottom:14px;border-color:#A78BFA40">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-        <div style="font-size:10px;color:#A78BFA;letter-spacing:1.5px;font-weight:700;text-transform:uppercase">🐷 Mis metas de ahorro</div>
+        <div style="font-size:10px;color:#A78BFA;letter-spacing:1.5px;font-weight:700;text-transform:uppercase">🎯 Mis objetivos financieros</div>
         <div style="font-size:13px;font-weight:800;color:#A78BFA">${fmtFull(ahorroAcumTotal())}</div>
       </div>`;
     catsAhorro.forEach(c=>{
       const acum=ahorroAcumCat(c.id);
       const obj=money(c.objetivo||0);
       const mesAporta=montoCat(c,m,y);
+      const plan=financialGoalPlan(c);
       if(obj>0){
         const pct=Math.min(Math.round((acum/obj)*100),100);
         const falta=money(Math.max(0,obj-acum));
@@ -2794,10 +2821,11 @@ function rMes(){
             <span>${pct}% ${pct>=100?'🎉 ¡Meta cumplida!':''}</span>
             <span>${pct>=100?'':'Faltan '+fmtFull(falta)}${mesAporta>0?' · '+fmtFull(mesAporta)+'/mes':''}</span>
           </div>
+          ${plan.date&&pct<100?`<div style="margin-top:7px;padding:7px 9px;border-radius:8px;background:${plan.status==='insuficiente'||plan.status==='vencida'?'var(--red-d)':'rgba(167,139,250,.08)'};font-size:10px;color:${plan.status==='insuficiente'||plan.status==='vencida'?'var(--red)':'#A78BFA'}">📅 ${plan.date.split('-').reverse().join('/')} · Necesitás ${fmtFull(plan.required)}/mes${plan.planned?' · Plan: '+fmtFull(plan.planned)+'/mes':''}${plan.status==='insuficiente'?' · Faltan '+fmtFull(plan.required-plan.planned)+'/mes':''}</div>`:''}
         </div>`;
       } else {
         h+=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;cursor:pointer" onclick="editMetaModal('${c.id}')">
-          <div><div style="font-size:13px;font-weight:700">${esc(c.n)}</div><div style="font-size:10px;color:var(--text3)">Tocá para ponerle un objetivo</div></div>
+          <div><div style="font-size:13px;font-weight:700">${esc(c.n)}</div><div style="font-size:10px;color:var(--text3)">${plan.date?'Fecha: '+plan.date.split('-').reverse().join('/')+' · Falta definir costo':'Tocá para ponerle un objetivo'}</div></div>
           <div style="font-size:13px;font-weight:800;color:#A78BFA">${fmtFull(acum)}</div>
         </div>`;
       }
@@ -3661,17 +3689,22 @@ function confNC(){const n=document.getElementById('nc-n')?.value.trim();const p=
 function editMetaModal(catId){
   const c=cats.find(x=>x.id===catId);if(!c)return;
   const acum=ahorroAcumCat(c.id);
-  oOv1(`<div class="mt">🐷 Meta de ahorro</div>
+  oOv1(`<div class="mt">🎯 Objetivo financiero</div>
   <div style="font-size:13px;font-weight:700;margin-bottom:4px">${esc(c.n)}</div>
   <div style="font-size:11px;color:var(--text2);margin-bottom:14px">Llevás ahorrado <b style="color:#A78BFA">${fmtFull(acum)}</b></div>
-  <div class="fld"><label>Aporte mensual</label><input class="inp" id="meta-base" type="text" inputmode="decimal" placeholder="0" value="${c.base||''}"></div>
+  <div class="fld"><label>Saldo inicial / base acumulada</label><input class="inp" id="meta-base" type="text" inputmode="decimal" placeholder="0" value="${c.saldoInicial!==undefined?c.saldoInicial:(c.base||'')}"></div>
   <div class="fld"><label>Objetivo total (ej: auto 500000) — 0 si no tenés meta fija</label><input class="inp" id="meta-obj" type="text" inputmode="decimal" placeholder="0" value="${c.objetivo||''}"></div>
+  <div class="inp-r"><div class="fld"><label>Fecha objetivo</label><input class="inp" id="meta-fecha" type="date" value="${esc(c.fechaObjetivo||'')}"></div>
+  <div class="fld"><label>Aporte mensual planificado</label><input class="inp" id="meta-plan" type="text" inputmode="decimal" placeholder="0" value="${c.aportePlan||''}"></div></div>
+  <div class="fld"><label>Detalle del objetivo</label><input class="inp" id="meta-desc" maxlength="160" placeholder="Ej: entregar mi auto y pasarme a un eléctrico" value="${esc(c.descripcionObjetivo||'')}"></div>
   <button class="btn b-lg b-p" onclick="saveMeta('${c.id}')">Guardar meta</button>`);
 }
 function saveMeta(catId){
   const c=cats.find(x=>x.id===catId);if(!c)return;
-  c.base=parseMoney(document.getElementById('meta-base')?.value);
-  c.objetivo=parseMoney(document.getElementById('meta-obj')?.value);
+  const date=normalizeGoalDate(document.getElementById('meta-fecha')?.value);if(date===null){tst('Fecha objetivo inválida');return;}
+  const base=parseMoney(document.getElementById('meta-base')?.value),target=parseMoney(document.getElementById('meta-obj')?.value),planned=parseMoney(document.getElementById('meta-plan')?.value);
+  if(base<0||target<0||planned<0){tst('Los montos de la meta no pueden ser negativos');return;}
+  c.saldoInicial=base;c.objetivo=target;c.fechaObjetivo=date;c.aportePlan=planned;c.descripcionObjetivo=String(document.getElementById('meta-desc')?.value||'').trim().slice(0,160);
   S.s('cats4',cats);cOv1();tst('✓ Meta actualizada');renderGastos();
 }
 function toggleAhorro(catId){
@@ -5061,16 +5094,18 @@ function aiActionContract(){
     '- Para corregir un gasto existente usá editar_gasto con gasto_id si está en el contexto. Si el usuario dice “el último”, usá por ejemplo {"op":"editar_gasto","ultimo":true,"desc_original":"Disco","v":1450}. Podés enviar desc_nueva, cat, fecha, m o y. No agregues otro gasto para corregir uno.\n'+
     '- Para ingresos usá ingreso con v, m, y y modo "total" (reemplaza el ingreso del mes) o "sumar" (agrega otro ingreso). Para compromisos mensuales usá fijo; para marcar que se abonaron usá pago.\n'+
     '- Si dice “sumale/agregale X más” a una tarjeta o categoría mensual, usá ajustar_monto con cat, delta positivo, m e y. Si dice “restale/descontale”, delta negativo. Esta acción modifica el total del mes; NO crees un gasto variable ni uses fijo, porque fijo reemplaza el total. Ejemplo: {"op":"ajustar_monto","cat":"brou","delta":1200,"m":7,"y":2026}.\n'+
+    '- OBJETIVOS FINANCIEROS: si quiere comprar/cambiar algo en una fecha (auto eléctrico, casa, viaje, etc.), ayudalo a convertirlo en un plan. No inventes precios ni valor de reventa: preguntá por costo neto estimado, fecha objetivo y ahorro inicial que falten. Creá la meta con crear_meta usando nombre, objetivo, fecha_objetivo, saldo_inicial, aporte_mensual y descripcion. Si ya existe, usá actualizar_meta con cat.\n'+
+    '- Al analizar una meta, compará lo ahorrado, lo que falta, meses disponibles, aporte mensual necesario y dinero disponible real. Si el aporte no alcanza, proponé ajustar fecha, costo o ahorro mensual; no prometas resultados ni des asesoramiento financiero profesional.\n'+
     '- Fechas: m va de 0 (enero) a 11 (diciembre), y es año de cuatro dígitos. También podés usar fecha YYYY-MM-DD. Nunca uses montos negativos ni inventes importes.\n'+
     '- En Gym, registrar_serie debe conservar peso, repeticiones reales y RIR si el usuario los dijo. Nunca supongas reps ni RIR y nunca subas carga sólo porque una serie esté completa.\n'+
     '- Para reemplazar un solo ejercicio usá cambiar_ejercicio, nunca crear_rutina. Indicá rutina, dia, nombre_original y nombre_nuevo. Conservá series, reps y músculo si el usuario no pidió cambiarlos. “Día 1” refiere al primer día de la rutina activa. No modifiques ningún otro ejercicio.\n'+
     '- Al crear o cambiar ejercicios, priorizá nombres exactos del CATÁLOGO CON MOVIMIENTO. Si un ejercicio fuera del catálogo es claramente mejor para el objetivo, limitación o equipamiento, podés usarlo: quedará sin GIF y la app ofrecerá buscar la técnica en YouTube.\n'+
     '- Para una biserie, marcá exactamente dos ejercicios consecutivos con el mismo campo "superset" (por ejemplo "A"). Cada ejercicio conserva sus propias series, reps, kg y RIR. No agrupes dos levantamientos pesados que comprometan la técnica.\n'+
     '- Para agrupar dos ejercicios ya existentes y consecutivos usá marcar_biserie con dia, ejercicio_1 y ejercicio_2. Para separarla usá quitar_biserie con dia y ejercicio.\n'+
-    '- Operaciones válidas: gasto, editar_gasto, ingreso, pago, fijo, ajustar_monto, ahorro, crear_meta, set_saldo_ahorro, compra, evento, crear_rutina, modificar_ejercicio, cambiar_ejercicio, marcar_biserie, quitar_biserie, registrar_serie, completar_ejercicio, comida, crear_dieta, cardio, sueno, comprar, recordar, olvidar, eliminar y responder.\n'+
+    '- Operaciones válidas: gasto, editar_gasto, ingreso, pago, fijo, ajustar_monto, ahorro, crear_meta, actualizar_meta, set_saldo_ahorro, compra, evento, crear_rutina, modificar_ejercicio, cambiar_ejercicio, marcar_biserie, quitar_biserie, registrar_serie, completar_ejercicio, comida, crear_dieta, cardio, sueno, comprar, recordar, olvidar, eliminar y responder.\n'+
     '- En pedidos compuestos, resolvé cada parte que tenga datos suficientes y explicá brevemente cualquier parte pendiente.';
 }
-const AI_ALLOWED_ACTIONS=new Set(['gasto','editar_gasto','ingreso','pago','fijo','ajustar_monto','ahorro','crear_meta','set_saldo_ahorro','crear_rutina','modificar_ejercicio','cambiar_ejercicio','marcar_biserie','quitar_biserie','registrar_serie','completar_ejercicio','compra','evento','responder','comprar','super','sueno','sueño','dormir','cardio','comida','crear_dieta','recordar','olvidar','eliminar','borrar']);
+const AI_ALLOWED_ACTIONS=new Set(['gasto','editar_gasto','ingreso','pago','fijo','ajustar_monto','ahorro','crear_meta','actualizar_meta','set_saldo_ahorro','crear_rutina','modificar_ejercicio','cambiar_ejercicio','marcar_biserie','quitar_biserie','registrar_serie','completar_ejercicio','compra','evento','responder','comprar','super','sueno','sueño','dormir','cardio','comida','crear_dieta','recordar','olvidar','eliminar','borrar']);
 function executeAIActionBlocks(reply,maxActions=8){
   const source=String(reply||'');
   const regex=/\[ACCION\]\s*([\s\S]*?)\s*\[\/ACCION\]/gi;
@@ -5237,10 +5272,22 @@ function ejecutarAccion(acc){
     return '🐷 $'+fmt(amount)+' guardado en "'+cat.n+'". Llevás $'+fmt(ahorroAcumCat(cat.id));
   }
   if(acc.op==='crear_meta'){
-    const nombre=acc.nombre||acc.name||'Meta de ahorro';
-    const nueva={id:uid(),n:nombre,c:'#A78BFA',base:parseMoney(acc.aporte),objetivo:parseMoney(acc.objetivo),ahorro:true};
+    const nombre=String(acc.nombre||acc.name||'Meta de ahorro').trim().slice(0,80);if(!nombre)return 'La meta necesita un nombre';
+    if(cats.some(c=>c.ahorro&&normalizeGymLookup(c.n)===normalizeGymLookup(nombre)))return 'Ya existe la meta "'+nombre+'". Usá actualizar_meta para completarla o cambiarla';
+    const nueva={id:uid(),n:nombre,c:'#A78BFA',base:0,saldoInicial:0,objetivo:0,aportePlan:0,fechaObjetivo:'',descripcionObjetivo:'',ahorro:true};
+    const applied=applyFinancialGoalFields(nueva,acc);if(applied.error)return applied.error;
     cats.push(nueva);S.s('cats4',cats);
-    return '🎯 Meta "'+nombre+'" creada'+(nueva.objetivo>0?' (objetivo $'+fmt(nueva.objetivo)+')':'');
+    const plan=financialGoalPlan(nueva);
+    return '🎯 Meta "'+nombre+'" creada'+(nueva.objetivo>0?' (objetivo '+fmtFull(nueva.objetivo)+')':'')+(nueva.fechaObjetivo?' para '+nueva.fechaObjetivo:'')+(plan.required>0?' · Necesitás '+fmtFull(plan.required)+'/mes':'');
+  }
+  if(acc.op==='actualizar_meta'){
+    const requested=acc.cat||acc.nombre||acc.name;if(!requested)return 'Falta indicar qué meta querés actualizar';
+    const resolved=resolveFinanceCategory({cat:requested},cats.filter(c=>c.ahorro),gastos);if(resolved.error)return resolved.error;
+    const meta=resolved.category;
+    if(acc.nombre_nuevo!==undefined){const name=String(acc.nombre_nuevo).trim().slice(0,80);if(!name)return 'El nombre nuevo de la meta no es válido';meta.n=name;}
+    const applied=applyFinancialGoalFields(meta,acc);if(applied.error)return applied.error;
+    S.s('cats4',cats);const plan=financialGoalPlan(meta);
+    return '🎯 Meta "'+meta.n+'" actualizada'+(plan.target?' · Falta '+fmtFull(plan.remaining):' · Falta definir el costo')+(plan.date?' · Fecha '+plan.date:'')+(plan.required?' · Necesitás '+fmtFull(plan.required)+'/mes':'');
   }
   if(acc.op==='set_saldo_ahorro'){
     const cat=cats.find(c=>c.id===acc.cat&&c.ahorro)||cats.find(c=>c.ahorro);
@@ -5248,11 +5295,11 @@ function ejecutarAccion(acc){
     const pf=S.g('pf4',{});
     const prefix=cat.id+'_';
     Object.keys(pf).forEach(k=>{ if(k.startsWith(prefix)) delete pf[k]; });
-    cat.base = parseMoney(acc.v);
+    cat.saldoInicial = parseMoney(acc.v);
     S.s('cats4', cats);
     S.s('pf4', pf);
     pagosFijos=pf;
-    return '🐷 El saldo total de "'+cat.n+'" se ajustó a $'+fmt(cat.base)+'.';
+    return '🐷 El saldo total de "'+cat.n+'" se ajustó a $'+fmt(cat.saldoInicial)+'.';
   }
   if(acc.op==='crear_rutina'){
     if(!acc.name||!acc.days||!acc.days.length)return 'Faltan datos para crear la rutina';
