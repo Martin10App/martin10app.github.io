@@ -1,7 +1,7 @@
 {
-  "version": "1.4.0",
+  "version": "1.4.1",
   "nativeBuild": 4,
   "publishedAt": "2026-08-01",
   "apkUrl": "https://martin10app.github.io/MartinApp-actualizada.apk",
-  "notes": "Objetivos financieros con costo, fecha, ahorro inicial, aporte planificado y cálculo automático de cuánto necesitás por mes."
+  "notes": "Corrige rutinas donde los ejercicios aparecían como “Ejercicio”: reconoce nombres y campos en español, inglés o texto directo y bloquea registros sin nombre."
 }

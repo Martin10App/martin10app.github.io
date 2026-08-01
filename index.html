@@ -2280,14 +2280,33 @@ function supersetMeta(day,exerciseIndex){
 function prepareMovementExercises(rawExercises,catalog,requireMovement=false){
   const allowedMuscles=new Set(['Pecho','Espalda','Hombros','Bíceps','Tríceps','Cuádriceps','Femoral','Gemelos','Abdomen']);
   const invalid=[];
-  const exercises=(Array.isArray(rawExercises)?rawExercises:[]).slice(0,10).map(raw=>{
-    const base={name:String(raw.name||'Ejercicio').slice(0,80),muscle:allowedMuscles.has(raw.muscle)?raw.muscle:'Pecho',series:Math.max(1,Math.min(8,parseInt(raw.series)||3)),reps:String(raw.reps||'10').slice(0,20)};
-    if(raw.superset||raw.biserie)base.superset=String(raw.superset||raw.biserie).slice(0,20);
+  if(!Array.isArray(rawExercises))return {exercises:[],invalid:['lista de ejercicios inválida']};
+  const exercises=rawExercises.slice(0,10).map((raw,index)=>{
+    const item=typeof raw==='string'?{name:raw}:raw&&typeof raw==='object'?raw:{};
+    const name=String(item.name||item.nombre||item.exercise||item.ejercicio||'').trim().slice(0,80);
+    if(!name){invalid.push('ejercicio '+(index+1)+' sin nombre');return null;}
+    const muscleRaw=String(item.muscle||item.musculo||item.grupo_muscular||item.target||'').trim();
+    let muscle=[...allowedMuscles].find(value=>normalizeGymLookup(value)===normalizeGymLookup(muscleRaw));
+    if(!muscle){
+      const hint=normalizeGymLookup(muscleRaw+' '+name);
+      if(/pecho|pectoral|press banca|apertura/.test(hint))muscle='Pecho';
+      else if(/espalda|dorsal|remo|dominada|jalon/.test(hint))muscle='Espalda';
+      else if(/hombro|deltoide|elevacion lateral|press militar/.test(hint))muscle='Hombros';
+      else if(/bicep|curl/.test(hint))muscle='Bíceps';
+      else if(/tricep|extension de codo|press frances/.test(hint))muscle='Tríceps';
+      else if(/femoral|isquio|curl femoral|peso muerto rumano/.test(hint))muscle='Femoral';
+      else if(/gemelo|pantorrilla|calf/.test(hint))muscle='Gemelos';
+      else if(/abdomen|abdominal|core|plancha/.test(hint))muscle='Abdomen';
+      else if(/cuadricep|pierna|sentadilla|prensa|zancada/.test(hint))muscle='Cuádriceps';
+      else muscle='Pecho';
+    }
+    const base={name,muscle,series:Math.max(1,Math.min(8,parseInt(item.series??item.sets??item.num_series)||3)),reps:String(item.reps??item.repeticiones??item.rango_reps??'10').trim().slice(0,20)||'10'};
+    if(item.superset||item.biserie||item.superserie)base.superset=String(item.superset||item.biserie||item.superserie).slice(0,20);
     const canonical=catalog?canonicalExerciseMovement(base,catalog):null;
     if(canonical)return canonical;
     if(requireMovement)invalid.push(base.name);
     return base;
-  });
+  }).filter(Boolean);
   normalizeSupersetAssignments(exercises);
   return {exercises,invalid};
 }
@@ -2377,10 +2396,11 @@ async function askAIRoutine(){
     const m=raw.match(/\{[\s\S]*\}/);
     if(!m)throw new Error('La IA no devolvió una rutina válida. Probá de nuevo.');
     const obj2=JSON.parse(m[0]);
-    if(!Array.isArray(obj2.days)||obj2.days.length!==Number(dias))throw new Error('La IA no respetó la cantidad de días. Probá de nuevo.');
+    const generatedDays=obj2.days||obj2.dias;
+    if(!Array.isArray(generatedDays)||generatedDays.length!==Number(dias))throw new Error('La IA no respetó la cantidad de días. Probá de nuevo.');
     // Normalizar al formato del editor y abrir para revisar antes de guardar
-    window._draft={id:uid(),name:String(obj2.name||'Rutina IA').slice(0,60),createdAt:Date.now(),goal:obj,cycleLength,sessionMinutes:mins,progressionMethod:'double',
-      days:obj2.days.map(d=>{const prepared=prepareMovementExercises(d.exercises,movementCatalog,false);return {id:uid(),label:String(d.label||'Día').slice(0,50),exercises:prepared.exercises};})};
+    window._draft={id:uid(),name:String(obj2.name||obj2.nombre||'Rutina IA').slice(0,60),createdAt:Date.now(),goal:obj,cycleLength,sessionMinutes:mins,progressionMethod:'double',
+      days:generatedDays.map((d,di)=>{const prepared=prepareMovementExercises(d.exercises||d.ejercicios,movementCatalog,false);if(prepared.invalid.length)throw new Error('El día '+(di+1)+' tiene '+prepared.invalid.join(', ')+'. Probá generar otra vez.');return {id:uid(),label:String(d.label||d.nombre||'Día').slice(0,50),exercises:prepared.exercises};})};
     if(window._draft.days.some(d=>!d.exercises.length))throw new Error('La IA dejó un día sin ejercicios. Probá de nuevo.');
     cOv1();
     rEditor(false); // abre el editor con la rutina cargada para revisar/ajustar y guardar
@@ -5302,18 +5322,21 @@ function ejecutarAccion(acc){
     return '🐷 El saldo total de "'+cat.n+'" se ajustó a $'+fmt(cat.saldoInicial)+'.';
   }
   if(acc.op==='crear_rutina'){
-    if(!acc.name||!acc.days||!acc.days.length)return 'Faltan datos para crear la rutina';
+    const routineName=acc.name||acc.nombre,rawDays=acc.days||acc.dias;
+    if(!routineName||!Array.isArray(rawDays)||!rawDays.length)return 'Faltan datos para crear la rutina';
     const movementCatalog=_exerciseMediaData;
     const rid=uid();
-    const days=acc.days.map(d=>{const prepared=prepareMovementExercises(d.exercises,movementCatalog,false);return {id:uid(),label:String(d.label||'Día').slice(0,50),exercises:prepared.exercises};});
-    const r={id:rid,name:acc.name,days,createdAt:Date.now()};
+    const invalid=[];
+    const days=rawDays.map((d,di)=>{const prepared=prepareMovementExercises(d.exercises||d.ejercicios,movementCatalog,false);invalid.push(...prepared.invalid.map(message=>'Día '+(di+1)+': '+message));return {id:uid(),label:String(d.label||d.nombre||'Día').slice(0,50),exercises:prepared.exercises};});
+    if(invalid.length)return 'No guardé la rutina porque faltan nombres reales: '+invalid.join('; ');
+    const r={id:rid,name:String(routineName).slice(0,60),days,createdAt:Date.now()};
     const rs=S.g('rt2',[]);
     rs.push(r);
     S.s('rt2',rs);
     routines=rs;
     activeRid=rid;
     S.s('arid',rid);
-    return 'Rutina "'+acc.name+'" creada con '+days.length+' días y '+(days.reduce((s,d)=>s+d.exercises.length,0))+' ejercicios';
+    return 'Rutina "'+r.name+'" creada con '+days.length+' días y '+(days.reduce((s,d)=>s+d.exercises.length,0))+' ejercicios';
   }
   if(acc.op==='marcar_biserie'||acc.op==='quitar_biserie'){
     const rs=S.g('rt2',[]);if(!rs.length)return 'No hay rutinas creadas';
