@@ -305,6 +305,10 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
 .ex-media-status{font-size:10px;color:var(--amber);line-height:1.45;margin-top:8px}
 .ex-motion-badge{display:inline-flex;align-items:center;gap:4px;margin-top:5px;color:var(--accent2);font-size:9px;font-weight:700;letter-spacing:.5px;text-transform:uppercase}
 .ex-motion-badge svg{width:13px;height:13px}
+.superset-banner{display:flex;align-items:center;gap:10px;margin:15px 0 8px;padding:10px 12px;border-radius:11px;border:1px solid var(--purple-b,rgba(168,85,247,.28));background:rgba(168,85,247,.08);color:var(--text1)}
+.superset-code{display:inline-flex;align-items:center;justify-content:center;min-width:46px;height:28px;padding:0 8px;border-radius:7px;background:var(--purple,#a855f7);color:#fff;font-size:10px;font-weight:800;letter-spacing:1px}
+.superset-card{border-left:3px solid var(--purple,#a855f7)!important}
+.superset-chip{display:inline-flex;align-items:center;min-height:24px;padding:3px 8px;border-radius:6px;background:rgba(168,85,247,.14);border:1px solid var(--purple-b,rgba(168,85,247,.3));color:var(--purple,#c084fc);font-size:9px;font-weight:800;letter-spacing:.8px}
 @keyframes mediaShimmer{from{background-position:150% 0}to{background-position:-70% 0}}
 @media (prefers-reduced-motion:reduce){.ex-media-skeleton{animation:none}.ex-media-card *{scroll-behavior:auto!important}}
 
@@ -529,7 +533,7 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
   <div class="perm-sheet" onclick="event.stopPropagation()" id="permission-sheet"></div>
 </div>
 
-<script src="exercise-media.js?v=2"></script>
+<script src="exercise-media.js?v=3"></script>
 <script>
 'use strict';
 
@@ -687,7 +691,7 @@ function ensureActiveWeek(){
     nw.days[d.id]={
       label:d.label,
       exercises:d.exercises.map(e=>({
-        name:e.name,muscle:e.muscle,series:e.series,reps:e.reps,
+        name:e.name,muscle:e.muscle,series:e.series,reps:e.reps,mediaId:e.mediaId||null,superset:e.superset||null,
         weight:'',completedSets:0,totalSets:e.series,setLogs:[]
       }))
     };
@@ -1031,11 +1035,13 @@ function openDay(rid,did){
     const mcl=MC[ex.muscle]||'#aaa';
     const previous=getPreviousExerciseLog(rid,did,ex.name);
     const advice=exerciseProgression(rid,did,ei,ex);
-    h+=`<div id="er-${ei}" style="background:${allDone?'rgba(0,196,140,.04)':'var(--bg2)'};border:1px solid ${allDone?'rgba(0,196,140,.2)':'var(--border)'};border-radius:var(--r-sm);padding:14px;margin-bottom:9px;transition:all .3s">
+    const ss=supersetMeta(d,ei);
+    if(ss?.first)h+=`<div class="superset-banner"><span class="superset-code">BISERIE ${ss.label}</span><span style="font-size:10.5px;line-height:1.45;color:var(--text2)">Hacé ${ss.label}1 y ${ss.label}2 seguidos; descansá después de completar ambos.</span></div>`;
+    h+=`<div id="er-${ei}" class="${ss?'superset-card':''}" style="background:${allDone?'rgba(0,196,140,.04)':'var(--bg2)'};border:1px solid ${allDone?'rgba(0,196,140,.2)':'var(--border)'};border-radius:var(--r-sm);padding:14px;margin-bottom:${ss&&!ss.first?'14':'9'}px;transition:all .3s">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
         <div style="flex:1">
           <button style="padding:0;text-align:left;min-height:44px" aria-label="Ver movimiento y detalles de ${esc(ex.name)}" data-rid="${esc(rid)}" data-did="${esc(did)}" data-ei="${ei}" onclick="openExInfo(this)">
-            <div style="font-size:14px;font-weight:700;color:${allDone?'var(--text2)':'var(--text0)'};${allDone?'text-decoration:line-through':''}">${esc(ex.name)}</div>
+            <div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap">${ss?`<span class="superset-chip">${ss.label}${ss.position}</span>`:''}<span style="font-size:14px;font-weight:700;color:${allDone?'var(--text2)':'var(--text0)'};${allDone?'text-decoration:line-through':''}">${esc(ex.name)}</span></div>
             <span class="ex-motion-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m10 8 6 4-6 4z"/></svg>Ver movimiento</span>
           </button>
           <div style="display:flex;align-items:center;gap:8px;margin-top:6px">
@@ -2248,6 +2254,54 @@ function drawTimerRing(){const c=document.getElementById('tr');if(!c)return;cons
 function setTP(p){timerP=p;timerS=p;timerOn=false;clearInterval(timerIv);renderGym();}
 function togTimer(){if(timerOn){timerOn=false;clearInterval(timerIv);}else{timerOn=true;clearInterval(timerIv);timerIv=setInterval(()=>{if(timerS>0){timerS--;drawTimerRing();}else{timerOn=false;clearInterval(timerIv);tst('⏱ ¡Fin del descanso!');renderGym();}},1000);}renderGym();setTimeout(drawTimerRing,60);}
 
+function cleanupSupersetGroups(exercises){
+  const groups={};
+  (exercises||[]).forEach((ex,i)=>{if(ex.superset)(groups[ex.superset]||(groups[ex.superset]=[])).push(i);});
+  Object.entries(groups).forEach(([id,indices])=>{if(indices.length!==2||indices[1]!==indices[0]+1)indices.forEach(i=>delete exercises[i].superset);});
+  return exercises;
+}
+function normalizeSupersetAssignments(exercises){
+  const groupIds=new Map();
+  (exercises||[]).forEach(ex=>{
+    const raw=String(ex.superset||ex.biserie||'').trim();
+    if(!raw){delete ex.superset;return;}
+    if(!groupIds.has(raw))groupIds.set(raw,'ss_'+uid());
+    ex.superset=groupIds.get(raw);delete ex.biserie;
+  });
+  return cleanupSupersetGroups(exercises||[]);
+}
+function supersetMeta(day,exerciseIndex){
+  const ex=day?.exercises?.[exerciseIndex];if(!ex?.superset)return null;
+  const ordered=[];(day.exercises||[]).forEach(item=>{if(item.superset&&!ordered.includes(item.superset))ordered.push(item.superset);});
+  const members=day.exercises.map((item,index)=>({item,index})).filter(x=>x.item.superset===ex.superset);
+  const position=members.findIndex(x=>x.index===exerciseIndex)+1;
+  return {id:ex.superset,label:String.fromCharCode(65+Math.max(0,ordered.indexOf(ex.superset))),position,members:members.map(x=>x.index),first:position===1};
+}
+function prepareMovementExercises(rawExercises,catalog,requireMovement=true){
+  const allowedMuscles=new Set(['Pecho','Espalda','Hombros','Bíceps','Tríceps','Cuádriceps','Femoral','Gemelos','Abdomen']);
+  const invalid=[];
+  const exercises=(Array.isArray(rawExercises)?rawExercises:[]).slice(0,10).map(raw=>{
+    const base={name:String(raw.name||'Ejercicio').slice(0,80),muscle:allowedMuscles.has(raw.muscle)?raw.muscle:'Pecho',series:Math.max(1,Math.min(8,parseInt(raw.series)||3)),reps:String(raw.reps||'10').slice(0,20)};
+    if(raw.superset||raw.biserie)base.superset=String(raw.superset||raw.biserie).slice(0,20);
+    const canonical=catalog?canonicalExerciseMovement(base,catalog):null;
+    if(canonical)return canonical;
+    if(requireMovement)invalid.push(base.name);
+    return base;
+  });
+  normalizeSupersetAssignments(exercises);
+  return {exercises,invalid};
+}
+function toggleDraftSuperset(dayId,exerciseIndex){
+  const day=window._draft?.days?.find(x=>x.id===dayId);if(!day)return;
+  const ex=day.exercises[exerciseIndex];if(!ex)return;
+  if(ex.superset){const id=ex.superset;day.exercises.forEach(item=>{if(item.superset===id)delete item.superset;});}
+  else{
+    const next=day.exercises[exerciseIndex+1];if(!next){tst('Elegí un ejercicio que tenga otro debajo');return;}
+    if(next.superset){const old=next.superset;day.exercises.forEach(item=>{if(item.superset===old)delete item.superset;});}
+    const id='ss_'+uid();ex.superset=id;next.superset=id;
+  }
+  cleanupSupersetGroups(day.exercises);refreshExL(dayId);
+}
 function newRoutine(editId=null){const ex=editId?routines.find(r=>r.id===editId):null;window._draft=ex?JSON.parse(JSON.stringify(ex)):{id:uid(),name:'',days:[],createdAt:Date.now()};rEditor(!!editId);}
 
 // ── Crear rutina con IA (incluye opción de entrenar en casa) ──
@@ -2282,6 +2336,9 @@ function openAIRoutine(){
     </div>
     <div class="fld"><label>Prioridad (opcional)</label><input class="inp" id="air-prioridad" placeholder="Ej: mejorar press banca, glúteos, dominadas…"></div>
     <div class="fld"><label>Limitaciones y preferencias</label><input class="inp" id="air-nota" placeholder="Ej: evito sentadilla, prefiero máquinas…"></div>
+    <label style="display:flex;align-items:center;gap:10px;min-height:48px;margin-bottom:14px;padding:10px 12px;border:1px solid var(--border);border-radius:10px;background:var(--bg2);font-size:12px;color:var(--text1)">
+      <input type="checkbox" id="air-biseries" checked style="width:18px;height:18px"><span><strong>Permitir biseries útiles</strong><br><span style="font-size:10px;color:var(--text2)">La IA podrá agrupar dos ejercicios como A1/A2 cuando ayude a ahorrar tiempo.</span></span>
+    </label>
     <button class="btn b-lg b-p" onclick="askAIRoutine()">✨ Generar mi rutina</button>`);
 }
 async function askAIRoutine(){
@@ -2294,6 +2351,7 @@ async function askAIRoutine(){
   const cycleLength=Math.max(3,Math.min(12,Number(document.getElementById('air-cycle')?.value)||6));
   const prioridad=document.getElementById('air-prioridad')?.value.trim()||'';
   const nota=document.getElementById('air-nota')?.value.trim()||'';
+  const allowSupersets=document.getElementById('air-biseries')?.checked!==false;
   const p=gymProfile||{};
   const lugarTxt={
     gym:'en un gimnasio con acceso a máquinas, barras, mancuernas y poleas',
@@ -2304,22 +2362,26 @@ async function askAIRoutine(){
   const objTxt={hipertrofia:'ganar masa muscular',fuerza:'ganar fuerza',resistencia:'definición y resistencia muscular',salud:'salud general y estar en forma',bajar_peso:'bajar de peso'}[obj];
   oOv1(`<div class="mt">✨ Creando tu rutina…</div><div style="text-align:center;padding:30px"><div style="font-size:32px;margin-bottom:12px">🏋️</div><div style="font-size:13px;color:var(--text2)">La IA está armando una rutina de ${dias} días para entrenar ${lugar.startsWith('casa')?'en casa':'en el gym'}…</div></div>`);
   try{
+    const movementCatalog=await loadExerciseMediaCatalog();
+    const movementList=exerciseMovementCatalogForAI(movementCatalog,lugar);
+    if(!movementList)throw new Error('No se pudo preparar el catálogo de movimientos.');
     const prompt='Sos un entrenador personal experto. Armá una rutina de entrenamiento de '+dias+' días por semana para una persona que entrena '+lugarTxt+'.\n'+
       'Perfil: '+(p.weight?p.weight+'kg, ':'')+(p.height?p.height+'cm, ':'')+'nivel '+nivel+', objetivo: '+objTxt+(p.experience?', '+p.experience+' años de experiencia':'')+'. Duración máxima: '+mins+' minutos por sesión. Bloque: '+cycleLength+' semanas.'+(prioridad?' Prioridad: '+prioridad+'.':'')+(nota?' Limitaciones/preferencias: '+nota+'.':'')+'\n'+
       'PROGRAMACIÓN: elegí pocos ejercicios útiles y sostenibles; cubrí patrones de movimiento y volumen semanal coherente; evitá volumen basura. Usá rangos de repeticiones que permitan doble progresión. No prescribas cargas inventadas ni una descarga automática: la app decidirá según reps reales, RIR, adherencia y fatiga.\n'+
       'Para cada día indicá un nombre/foco y ejercicios apropiados al lugar. La sesión debe caber realmente en '+mins+' minutos incluyendo descansos.\n'+
+      'CATÁLOGO OBLIGATORIO: elegí TODOS los ejercicios únicamente de esta lista y copiá el nombre exactamente como aparece antes del primer separador. Cada uno tiene movimiento animado disponible:\n'+movementList+'\n'+
+      (allowSupersets?'BISERIES: podés crear algunas sólo cuando sean prácticas y no comprometan la técnica. Marcá exactamente dos ejercicios consecutivos con el mismo valor "superset" (A, B, etc.). No agrupes dos ejercicios pesados que compitan entre sí; priorizá músculos distintos o un compuesto con un accesorio liviano.\n':'No uses biseries; omití el campo "superset".\n')+
       'IMPORTANTE: respondé SOLO con un JSON válido, sin texto extra ni markdown ni bloques de código, con esta forma EXACTA:\n'+
-      '{"name":"Nombre corto de la rutina","days":[{"label":"Foco del día","exercises":[{"name":"Nombre del ejercicio","muscle":"Pecho","series":4,"reps":"10-12"}]}]}\n'+
-      'El campo "muscle" debe ser uno de exactamente: Pecho, Espalda, Hombros, Bíceps, Tríceps, Cuádriceps, Femoral, Gemelos, Abdomen. Usá nombres de ejercicios claros y conocidos.';
+      '{"name":"Nombre corto de la rutina","days":[{"label":"Foco del día","exercises":[{"name":"Nombre EXACTO del catálogo","muscle":"Pecho","series":4,"reps":"10-12","superset":"A"}]}]}\n'+
+      'El campo "muscle" debe ser uno de exactamente: Pecho, Espalda, Hombros, Bíceps, Tríceps, Cuádriceps, Femoral, Gemelos, Abdomen. No inventes ni traduzcas nombres fuera del catálogo.';
     const raw=await _aiComplete(prompt);
     const m=raw.match(/\{[\s\S]*\}/);
     if(!m)throw new Error('La IA no devolvió una rutina válida. Probá de nuevo.');
     const obj2=JSON.parse(m[0]);
     if(!Array.isArray(obj2.days)||obj2.days.length!==Number(dias))throw new Error('La IA no respetó la cantidad de días. Probá de nuevo.');
-    const allowedMuscles=new Set(['Pecho','Espalda','Hombros','Bíceps','Tríceps','Cuádriceps','Femoral','Gemelos','Abdomen']);
     // Normalizar al formato del editor y abrir para revisar antes de guardar
     window._draft={id:uid(),name:String(obj2.name||'Rutina IA').slice(0,60),createdAt:Date.now(),goal:obj,cycleLength,sessionMinutes:mins,progressionMethod:'double',
-      days:obj2.days.map(d=>({id:uid(),label:String(d.label||'Día').slice(0,50),exercises:(Array.isArray(d.exercises)?d.exercises:[]).slice(0,10).map(e=>({name:String(e.name||'Ejercicio').slice(0,80),muscle:allowedMuscles.has(e.muscle)?e.muscle:'Pecho',series:Math.max(1,Math.min(8,parseInt(e.series)||3)),reps:String(e.reps||'10').slice(0,20)}))}))};
+      days:obj2.days.map(d=>{const prepared=prepareMovementExercises(d.exercises,movementCatalog,true);if(prepared.invalid.length)throw new Error('La IA usó ejercicios sin movimiento: '+prepared.invalid.join(', '));return {id:uid(),label:String(d.label||'Día').slice(0,50),exercises:prepared.exercises};})};
     if(window._draft.days.some(d=>!d.exercises.length))throw new Error('La IA dejó un día sin ejercicios. Probá de nuevo.');
     cOv1();
     rEditor(false); // abre el editor con la rutina cargada para revisar/ajustar y guardar
@@ -2347,14 +2409,18 @@ function rDayCard(day,i){const col=DC[i%DC.length];
       <button class="btn b-sm b-g" style="flex:1" onclick="addManual('${day.id}')">+ Manual</button>
       <button class="btn b-sm b-grn" style="flex:1" onclick="browseAPI('${day.id}')">+ Buscar ejercicio</button>
     </div></div>`;}
-function rExChip(ex,ei,dayId){const mc=MC[ex.muscle]||'#aaa';
-  return`<div id="ec-${dayId}-${ei}" style="display:flex;align-items:center;gap:8px;background:var(--bg3);border:1px solid var(--border);border-radius:9px;padding:9px 11px;margin-bottom:7px">
-    <div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(ex.name)}</div>
-    <div style="font-size:10px;color:${mc};margin-top:2px">${esc(ex.muscle)} · ${ex.series}×${esc(ex.reps)}</div></div>
-    <button onclick="rmEx('${dayId}',${ei})" style="color:var(--text2);font-size:14px;flex-shrink:0">✕</button></div>`;}
+function rExChip(ex,ei,dayId){const mc=MC[ex.muscle]||'#aaa';const day=window._draft?.days?.find(x=>x.id===dayId);const ss=supersetMeta(day,ei);const hasNext=ei<(day?.exercises?.length||0)-1;
+  return`<div id="ec-${dayId}-${ei}" style="background:var(--bg3);border:1px solid ${ss?'var(--purple-b,rgba(168,85,247,.3))':'var(--border)'};border-radius:9px;padding:9px 11px;margin-bottom:7px">
+    <div style="display:flex;align-items:center;gap:8px">
+      <div style="flex:1;min-width:0"><div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap">${ss?`<span class="superset-chip">${ss.label}${ss.position}</span>`:''}<span style="font-size:12px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(ex.name)}</span></div>
+      <div style="font-size:10px;color:${mc};margin-top:3px">${esc(ex.muscle)} · ${ex.series}×${esc(ex.reps)}${ex.mediaId?' · movimiento':''}</div></div>
+      <button onclick="rmEx('${dayId}',${ei})" aria-label="Quitar ${esc(ex.name)}" style="color:var(--text2);font-size:14px;flex-shrink:0;min-width:44px;min-height:44px">✕</button>
+    </div>
+    ${(ss||hasNext)?`<button class="btn b-xs ${ss?'b-g':'b-blu'}" style="width:100%;min-height:44px;margin-top:7px" onclick="toggleDraftSuperset('${dayId}',${ei})">${ss?'Separar biserie '+ss.label:'Unir con el siguiente en biserie'}</button>`:''}
+  </div>`;}
 function addDay(){const d=window._draft;d.days.push({id:uid(),label:'',exercises:[]});const c=document.getElementById('ed-days');const i=d.days.length-1;const t=document.createElement('div');t.innerHTML=rDayCard(d.days[i],i);c.appendChild(t.firstElementChild);}
 function rmDay(dayId){window._draft.days=window._draft.days.filter(x=>x.id!==dayId);document.getElementById('dc-'+dayId)?.remove();}
-function rmEx(dayId,ei){const day=window._draft.days.find(x=>x.id===dayId);if(!day)return;day.exercises.splice(ei,1);refreshExL(dayId);}
+function rmEx(dayId,ei){const day=window._draft.days.find(x=>x.id===dayId);if(!day)return;day.exercises.splice(ei,1);cleanupSupersetGroups(day.exercises);refreshExL(dayId);}
 function refreshExL(dayId){const day=window._draft.days.find(x=>x.id===dayId);if(!day)return;const c=document.getElementById('exl-'+dayId);if(c)c.innerHTML=day.exercises.map((ex,i)=>rExChip(ex,i,dayId)).join('');}
 function addManual(dayId){oOv2(`<div class="mt">Ejercicio manual</div>
   <div class="fld"><label>Nombre</label><input class="inp" id="en" placeholder="Press banca, Sentadilla..."></div>
@@ -2363,15 +2429,27 @@ function addManual(dayId){oOv2(`<div class="mt">Ejercicio manual</div>
   <div class="fld"><label>Reps</label><input class="inp" id="er" placeholder="8–10"></div></div>
   <button class="btn b-lg b-p" onclick="confMan('${dayId}')">Agregar</button>`);}
 function confMan(dayId){const n=document.getElementById('en')?.value.trim();const m=document.getElementById('em')?.value;const s=parseInt(document.getElementById('es')?.value)||3;const r=document.getElementById('er')?.value.trim()||'10';if(!n){tst('Escribí el nombre');return;}const day=window._draft.days.find(x=>x.id===dayId);if(!day)return;day.exercises.push({name:n,muscle:m,series:s,reps:r});refreshExL(dayId);cOv2();tst('✓ '+n);}
-function browseAPI(dayId){const cats=Object.keys(API.ex);if(!cats.length){tst('Sin ejercicios disponibles');return;}oOv2(`<div class="mt">Explorar ejercicios</div>
+async function browseAPI(dayId){
+  try{
+    const catalog=await loadExerciseMediaCatalog();
+    const groups={};
+    (catalog.exercises||[]).forEach(item=>{
+      const muscle=exerciseMovementMuscle(item);
+      if(!groups[muscle])groups[muscle]=[];
+      groups[muscle].push({nombre:exerciseMovementName(item),descripcion:item.instructions_es||'',mediaId:item.id,muscle});
+    });
+    Object.values(groups).forEach(items=>items.sort((a,b)=>a.nombre.localeCompare(b.nombre,'es')));
+    window._movementExercisePicker=groups;
+  }catch(_err){window._movementExercisePicker=API.ex;tst('Usando el catálogo sin conexión');}
+  const source=window._movementExercisePicker||API.ex;const cats=Object.keys(source);if(!cats.length){tst('Sin ejercicios disponibles');return;}oOv2(`<div class="mt">Explorar ejercicios con movimiento</div>
   <div class="fld"><label>Categoría muscular</label><select class="inp" id="api-cat" onchange="rAPIL('${dayId}')">${cats.map(c=>`<option value="${esc(c)}">${esc(c)}</option>`).join('')}</select></div>
   <div id="api-list"></div>`);setTimeout(()=>rAPIL(dayId),50);}
-function rAPIL(dayId){const cat=document.getElementById('api-cat')?.value;const exs=(API.ex[cat]||[]);const el=document.getElementById('api-list');if(!el)return;if(!exs.length){el.innerHTML=`<div style="text-align:center;padding:20px;color:var(--text2)">Sin ejercicios</div>`;return;}el.innerHTML=`<div class="sec-t" style="margin-top:14px">${exs.length} ejercicios · Toca para agregar</div>`+exs.slice(0,25).map((ex,i)=>`
+function rAPIL(dayId){const source=window._movementExercisePicker||API.ex;const cat=document.getElementById('api-cat')?.value;const exs=(source[cat]||[]);const el=document.getElementById('api-list');if(!el)return;if(!exs.length){el.innerHTML=`<div style="text-align:center;padding:20px;color:var(--text2)">Sin ejercicios</div>`;return;}el.innerHTML=`<div class="sec-t" style="margin-top:14px">${exs.length} ejercicios con movimiento · Tocá para agregar</div>`+exs.map((ex,i)=>`
     <div style="display:flex;align-items:flex-start;gap:10px;background:var(--bg2);border:1px solid var(--border);border-radius:11px;padding:11px 13px;margin-bottom:8px;cursor:pointer" onclick="pickAPI('${dayId}','${esc(cat)}',${i})">
       <div style="flex:1"><div style="font-size:13px;font-weight:600">${esc(ex.nombre||ex.name||'')}</div>
       ${ex.descripcion?`<div style="font-size:10px;color:var(--text2);margin-top:3px;line-height:1.5">${esc((ex.descripcion||'').slice(0,70))}…</div>`:''}</div>
       <div style="color:var(--green);font-size:20px;flex-shrink:0">+</div></div>`).join('');}
-function pickAPI(dayId,cat,idx){const ex=API.ex[cat]?.[idx];if(!ex)return;document.getElementById('api-list').innerHTML=`
+function pickAPI(dayId,cat,idx){const ex=(window._movementExercisePicker||API.ex)[cat]?.[idx];if(!ex)return;document.getElementById('api-list').innerHTML=`
   <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--r-sm);padding:14px;margin:14px 0">
     <div style="font-size:15px;font-weight:700;margin-bottom:6px">${esc(ex.nombre||ex.name||'')}</div>
     ${ex.descripcion?`<div style="font-size:12px;color:var(--text2);line-height:1.6;margin-bottom:12px">${esc(ex.descripcion||'')}</div>`:''}</div>
@@ -2379,8 +2457,8 @@ function pickAPI(dayId,cat,idx){const ex=API.ex[cat]?.[idx];if(!ex)return;docume
   <div class="fld"><label>Reps</label><input class="inp" id="pr" placeholder="8–10" value="10"></div></div>
   <button class="btn b-lg b-p" onclick="confAPI('${dayId}','${esc(cat)}',${idx})">Agregar a la rutina</button>
   <button class="btn b-md b-g" style="width:100%;margin-top:8px" onclick="rAPIL('${dayId}')">← Volver</button>`;}
-function confAPI(dayId,cat,idx){const ex=API.ex[cat]?.[idx];if(!ex)return;const s=parseInt(document.getElementById('ps')?.value)||3;const r=document.getElementById('pr')?.value.trim()||'10';const cm={Pecho:'Pecho',Espalda:'Espalda',Hombros:'Hombros',Brazos:'Bíceps',Piernas:'Cuádriceps',Abdomen:'Abdomen'};const day=window._draft.days.find(x=>x.id===dayId);if(!day)return;const n=ex.nombre||ex.name||'Ejercicio';day.exercises.push({name:n,muscle:cm[cat]||cat,series:s,reps:r,fromAPI:true});refreshExL(dayId);cOv2();tst('✓ '+n);}
-function saveRoutine(did,isE){const d=window._draft;const n=document.getElementById('rn')?.value.trim()||'Mi rutina';d.name=n;d.days.forEach(day=>{const lv=document.getElementById('dl-'+day.id)?.value.trim();if(lv)day.label=lv;});if(isE){const i=routines.findIndex(r=>r.id===did);if(i>=0)routines[i]=d;else routines.push(d);}else{routines.push(d);if(routines.length===1)activeRid=d.id;}S.s('rt2',routines);S.s('arid',activeRid);if(d.cycleLength||d.goal){gymCycles[d.id]={...(gymCycles[d.id]||{}),startedAt:gymCycles[d.id]?.startedAt||Date.now(),length:d.cycleLength||6,goal:d.goal||gymProfile?.goal||'hipertrofia'};S.s('gymCycles1',gymCycles);}cOv1();tst(`✓ "${n}" guardada`);renderGym();}
+function confAPI(dayId,cat,idx){const ex=(window._movementExercisePicker||API.ex)[cat]?.[idx];if(!ex)return;const s=parseInt(document.getElementById('ps')?.value)||3;const r=document.getElementById('pr')?.value.trim()||'10';const cm={Pecho:'Pecho',Espalda:'Espalda',Hombros:'Hombros',Brazos:'Bíceps',Piernas:'Cuádriceps',Abdomen:'Abdomen'};const day=window._draft.days.find(x=>x.id===dayId);if(!day)return;const n=ex.nombre||ex.name||'Ejercicio';day.exercises.push({name:n,muscle:ex.muscle||cm[cat]||cat,series:s,reps:r,mediaId:ex.mediaId||undefined,fromAPI:true});refreshExL(dayId);cOv2();tst('✓ '+n);}
+function saveRoutine(did,isE){const d=window._draft;const n=document.getElementById('rn')?.value.trim()||'Mi rutina';d.name=n;d.days.forEach(day=>{const lv=document.getElementById('dl-'+day.id)?.value.trim();if(lv)day.label=lv;cleanupSupersetGroups(day.exercises);});if(isE){const i=routines.findIndex(r=>r.id===did);if(i>=0)routines[i]=d;else routines.push(d);}else{routines.push(d);if(routines.length===1)activeRid=d.id;}S.s('rt2',routines);S.s('arid',activeRid);if(d.cycleLength||d.goal){gymCycles[d.id]={...(gymCycles[d.id]||{}),startedAt:gymCycles[d.id]?.startedAt||Date.now(),length:d.cycleLength||6,goal:d.goal||gymProfile?.goal||'hipertrofia'};S.s('gymCycles1',gymCycles);}cOv1();tst(`✓ "${n}" guardada`);renderGym();}
 function setActiveR(id){activeRid=id;S.s('arid',id);ensureGymCycle(id);tst('✓ Rutina activada');renderGym();}
 function delRoutine(id){if(!confirm('¿Eliminar esta rutina?'))return;routines=routines.filter(r=>r.id!==id);if(activeRid===id)activeRid=routines[0]?.id||null;delete gymCycles[id];S.s('rt2',routines);S.s('arid',activeRid);S.s('gymCycles1',gymCycles);tst('Rutina eliminada');renderGym();}
 
@@ -2433,6 +2511,11 @@ function updateWeekLogFromCurrent(){
         if(perf.done)completed++;
         logs.push({weight:perf.weight,reps:perf.reps,rir:perf.rir,done:perf.done,updatedAt:perf.updatedAt||null});
       }
+      w.days[d.id].exercises[ei].name=ex.name;
+      w.days[d.id].exercises[ei].muscle=ex.muscle;
+      w.days[d.id].exercises[ei].reps=ex.reps;
+      w.days[d.id].exercises[ei].mediaId=ex.mediaId||null;
+      w.days[d.id].exercises[ei].superset=ex.superset||null;
       w.days[d.id].exercises[ei].completedSets=completed;
       w.days[d.id].exercises[ei].totalSets=ex.series;
       w.days[d.id].exercises[ei].setLogs=logs;
@@ -2473,7 +2556,7 @@ function startNewWeek(){
     nw.days[d.id]={
       label:d.label,
       exercises:d.exercises.map(e=>({
-        name:e.name,muscle:e.muscle,series:e.series,reps:e.reps,
+        name:e.name,muscle:e.muscle,series:e.series,reps:e.reps,mediaId:e.mediaId||null,superset:e.superset||null,
         weight:'',completedSets:0,totalSets:e.series,setLogs:[]
       }))
     };
@@ -4295,7 +4378,9 @@ async function sendChat(){
   routines.forEach(r=>{r.days.forEach(d=>{d.exercises.forEach((ex,ei)=>{exNameMap[r.id+'|'+d.id+'|'+ei]=ex.name;});});});
   const weightsArr=Object.entries(weights);
   const gymWeights=weightsArr.length?'\nPesos registrados: '+weightsArr.map(([k,v])=>(exNameMap[k]||'ej'+k.split('|').pop())+': '+v+'kg').join(', '):'';
-  const gymData=buildGymAIContext()+gymWeights+(gymHist.length?'\nHistorial reciente: '+gymHist.slice(0,15).map(h=>h.rn+'-'+h.dn+':'+h.pct+'%').join('; '):'');
+  const movementCatalog=await loadExerciseMediaCatalog().catch(()=>null);
+  const gymMovementList=movementCatalog?exerciseMovementCatalogForAI(movementCatalog,'gym'):'';
+  const gymData=buildGymAIContext()+gymWeights+(gymHist.length?'\nHistorial reciente: '+gymHist.slice(0,15).map(h=>h.rn+'-'+h.dn+':'+h.pct+'%').join('; '):'')+(gymMovementList?'\nCATÁLOGO CON MOVIMIENTO (usar nombres exactos al crear o cambiar ejercicios):\n'+gymMovementList:'');
   const proxEventos=events.filter(e=>e.date>=now.toISOString().slice(0,10)).slice(0,5).map(e=>e.title+' el '+e.date+' a las '+e.time).join('; ');
   const _cd7=cardioLog.filter(c=>_last7Keys().includes(c.date));
   const cardioData=_cd7.length?_cd7.reduce((s,c)=>s+c.mins,0)+' min, '+_cd7.reduce((s,c)=>s+(+c.km||0),0).toFixed(1)+' km en '+_cd7.length+' sesiones ('+_cd7.map(c=>(CARDIO_TYPES[c.type]||{}).label||c.type).join(', ')+')':'sin registros esta semana';
@@ -4873,7 +4958,7 @@ function buildGymAIContext(){
       id:d.id,
       referencia:'Día '+(di+1),
       nombre:d.label,
-      ejercicios:(d.exercises||[]).map((e,ei)=>({posicion:ei+1,nombre:e.name,musculo:e.muscle,series:e.series,reps:e.reps}))
+      ejercicios:(d.exercises||[]).map((e,ei)=>{const ss=supersetMeta(d,ei);return {posicion:ei+1,nombre:e.name,musculo:e.muscle,series:e.series,reps:e.reps,movimiento:!!e.mediaId,biserie:ss?ss.label+ss.position:null};})
     }))
   }));
   return 'ESTRUCTURA EXACTA DE RUTINAS (usá estos nombres y días):\n'+JSON.stringify(data);
@@ -4887,10 +4972,13 @@ function aiActionContract(){
     '- Para borrar, sólo emití eliminar si el usuario lo pidió explícitamente; la app siempre pedirá confirmación.\n'+
     '- En Gym, registrar_serie debe conservar peso, repeticiones reales y RIR si el usuario los dijo. Nunca supongas reps ni RIR y nunca subas carga sólo porque una serie esté completa.\n'+
     '- Para reemplazar un solo ejercicio usá cambiar_ejercicio, nunca crear_rutina. Indicá rutina, dia, nombre_original y nombre_nuevo. Conservá series, reps y músculo si el usuario no pidió cambiarlos. “Día 1” refiere al primer día de la rutina activa. No modifiques ningún otro ejercicio.\n'+
-    '- Operaciones válidas: gasto, pago, fijo, ahorro, crear_meta, set_saldo_ahorro, compra, evento, crear_rutina, modificar_ejercicio, cambiar_ejercicio, registrar_serie, completar_ejercicio, comida, crear_dieta, cardio, sueno, comprar, recordar, olvidar, eliminar y responder.\n'+
+    '- Al crear o cambiar ejercicios, usá únicamente nombres exactos del CATÁLOGO CON MOVIMIENTO. No inventes variantes fuera de esa lista.\n'+
+    '- Para una biserie, marcá exactamente dos ejercicios consecutivos con el mismo campo "superset" (por ejemplo "A"). Cada ejercicio conserva sus propias series, reps, kg y RIR. No agrupes dos levantamientos pesados que comprometan la técnica.\n'+
+    '- Para agrupar dos ejercicios ya existentes y consecutivos usá marcar_biserie con dia, ejercicio_1 y ejercicio_2. Para separarla usá quitar_biserie con dia y ejercicio.\n'+
+    '- Operaciones válidas: gasto, pago, fijo, ahorro, crear_meta, set_saldo_ahorro, compra, evento, crear_rutina, modificar_ejercicio, cambiar_ejercicio, marcar_biserie, quitar_biserie, registrar_serie, completar_ejercicio, comida, crear_dieta, cardio, sueno, comprar, recordar, olvidar, eliminar y responder.\n'+
     '- En pedidos compuestos, resolvé cada parte que tenga datos suficientes y explicá brevemente cualquier parte pendiente.';
 }
-const AI_ALLOWED_ACTIONS=new Set(['gasto','pago','fijo','ahorro','crear_meta','set_saldo_ahorro','crear_rutina','modificar_ejercicio','cambiar_ejercicio','registrar_serie','completar_ejercicio','compra','evento','responder','comprar','super','sueno','sueño','dormir','cardio','comida','crear_dieta','recordar','olvidar','eliminar','borrar']);
+const AI_ALLOWED_ACTIONS=new Set(['gasto','pago','fijo','ahorro','crear_meta','set_saldo_ahorro','crear_rutina','modificar_ejercicio','cambiar_ejercicio','marcar_biserie','quitar_biserie','registrar_serie','completar_ejercicio','compra','evento','responder','comprar','super','sueno','sueño','dormir','cardio','comida','crear_dieta','recordar','olvidar','eliminar','borrar']);
 function executeAIActionBlocks(reply,maxActions=8){
   const source=String(reply||'');
   const regex=/\[ACCION\]\s*([\s\S]*?)\s*\[\/ACCION\]/gi;
@@ -4959,20 +5047,29 @@ function resolveGymExerciseTarget(rs,acc){
 }
 function applyGymExerciseReplacement(ex,acc){
   const before={name:ex.name,series:ex.series,reps:ex.reps,muscle:ex.muscle};
-  const newName=acc.nombre_nuevo===undefined?ex.name:String(acc.nombre_nuevo).trim();
+  let newName=acc.nombre_nuevo===undefined?ex.name:String(acc.nombre_nuevo).trim();
   const newSeries=acc.series===undefined?ex.series:Number.parseInt(acc.series,10);
   const newReps=acc.reps===undefined?ex.reps:String(acc.reps).trim();
   if(!newName||newName.length>80)return {error:'El nombre nuevo del ejercicio no es válido'};
   if(!Number.isInteger(newSeries)||newSeries<1||newSeries>12)return {error:'Las series deben ser un número entre 1 y 12'};
   if(!newReps||newReps.length>20)return {error:'El rango de repeticiones no es válido'};
-  let newMuscle=ex.muscle;
+  let newMuscle=ex.muscle,newMediaId=ex.mediaId||null;
+  if(acc.nombre_nuevo!==undefined&&normalizeGymLookup(newName)!==normalizeGymLookup(ex.name)){
+    const catalog=typeof _exerciseMediaData!=='undefined'?_exerciseMediaData:null;
+    if(!catalog)return {error:'No pude validar el movimiento nuevo. Revisá la conexión y probá otra vez'};
+    const canonical=canonicalExerciseMovement({name:newName},catalog);
+    if(!canonical)return {error:'"'+newName+'" no está en el catálogo de ejercicios con movimiento'};
+    if(acc.musculo===undefined&&normalizeGymLookup(canonical.muscle)!==normalizeGymLookup(ex.muscle))return {error:'El reemplazo no mantiene el mismo enfoque muscular ('+ex.muscle+')'};
+    newName=canonical.name;newMuscle=canonical.muscle;newMediaId=canonical.mediaId;
+  }
   if(acc.musculo!==undefined){
     const allowed=['Pecho','Espalda','Hombros','Bíceps','Tríceps','Cuádriceps','Femoral','Gemelos','Abdomen'];
     const muscle=allowed.find(x=>normalizeGymLookup(x)===normalizeGymLookup(acc.musculo));
     if(!muscle)return {error:'El grupo muscular indicado no es válido'};
+    if(newMediaId&&normalizeGymLookup(muscle)!==normalizeGymLookup(newMuscle))return {error:'El músculo indicado no coincide con el ejercicio del catálogo'};
     newMuscle=muscle;
   }
-  Object.assign(ex,{name:newName,series:newSeries,reps:newReps,muscle:newMuscle});
+  Object.assign(ex,{name:newName,series:newSeries,reps:newReps,muscle:newMuscle,mediaId:newMediaId});
   return {before,after:{...ex}};
 }
 function ejecutarAccion(acc){
@@ -5048,8 +5145,12 @@ function ejecutarAccion(acc){
   }
   if(acc.op==='crear_rutina'){
     if(!acc.name||!acc.days||!acc.days.length)return 'Faltan datos para crear la rutina';
+    const movementCatalog=_exerciseMediaData;
+    if(!movementCatalog&&!acc.permitir_sin_movimiento)return 'No pude validar los movimientos. Revisá la conexión y volvé a pedir la rutina';
     const rid=uid();
-    const days=acc.days.map(d=>({id:uid(),label:d.label,exercises:(d.exercises||[]).map(e=>({name:e.name,muscle:e.muscle,series:e.series||3,reps:e.reps||'10'}))}));
+    const invalid=[];
+    const days=acc.days.map(d=>{const prepared=prepareMovementExercises(d.exercises,movementCatalog,!acc.permitir_sin_movimiento);invalid.push(...prepared.invalid);return {id:uid(),label:String(d.label||'Día').slice(0,50),exercises:prepared.exercises};});
+    if(invalid.length)return 'No guardé la rutina porque estos ejercicios no tienen movimiento validado: '+invalid.join(', ');
     const r={id:rid,name:acc.name,days,createdAt:Date.now()};
     const rs=S.g('rt2',[]);
     rs.push(r);
@@ -5058,6 +5159,28 @@ function ejecutarAccion(acc){
     activeRid=rid;
     S.s('arid',rid);
     return 'Rutina "'+acc.name+'" creada con '+days.length+' días y '+(days.reduce((s,d)=>s+d.exercises.length,0))+' ejercicios';
+  }
+  if(acc.op==='marcar_biserie'||acc.op==='quitar_biserie'){
+    const rs=S.g('rt2',[]);if(!rs.length)return 'No hay rutinas creadas';
+    const firstName=acc.ejercicio_1||acc.ejercicio;
+    const first=resolveGymExerciseTarget(rs,{...acc,nombre_original:firstName});
+    if(first.error)return first.error;
+    const day=first.day;
+    if(acc.op==='quitar_biserie'){
+      if(!first.exercise.superset)return 'Ese ejercicio no está dentro de una biserie';
+      const group=first.exercise.superset;day.exercises.forEach(ex=>{if(ex.superset===group)delete ex.superset;});
+      cleanupSupersetGroups(day.exercises);S.s('rt2',rs);routines=rs;updateWeekLogFromCurrent();if(typeof renderGym==='function')renderGym();
+      return 'Separé la biserie de '+first.exercise.name+'. Los registros de series quedaron intactos';
+    }
+    if(!acc.ejercicio_2)return 'Falta indicar el segundo ejercicio de la biserie';
+    const second=resolveGymExerciseTarget(rs,{...acc,nombre_original:acc.ejercicio_2});
+    if(second.error)return second.error;
+    if(second.routine.id!==first.routine.id||second.day.id!==day.id)return 'Los dos ejercicios deben estar en el mismo día';
+    if(Math.abs(second.exerciseIndex-first.exerciseIndex)!==1)return 'Para marcar una biserie, los dos ejercicios deben estar consecutivos en el día';
+    [first.exercise,second.exercise].forEach(ex=>{if(ex.superset){const old=ex.superset;day.exercises.forEach(item=>{if(item.superset===old)delete item.superset;});}});
+    const group='ss_'+uid();first.exercise.superset=group;second.exercise.superset=group;
+    cleanupSupersetGroups(day.exercises);S.s('rt2',rs);routines=rs;updateWeekLogFromCurrent();if(typeof renderGym==='function')renderGym();
+    return 'Marqué como biserie '+first.exercise.name+' + '+second.exercise.name+'. Cada ejercicio conserva sus kg, reps y RIR';
   }
   if(acc.op==='modificar_ejercicio'||acc.op==='cambiar_ejercicio'){
     const rs=S.g('rt2',[]);
@@ -5078,7 +5201,7 @@ function ejecutarAccion(acc){
     delete weights[`${r.id}|${day.id}|${exIndex}`];
     const activeWeek=gymWeekLog.find(w=>w.id===activeWeekId&&w.routineId===r.id);
     const weekExercise=activeWeek?.days?.[day.id]?.exercises?.[exIndex];
-    if(weekExercise){Object.assign(weekExercise,{name:ex.name,muscle:ex.muscle,series:ex.series,reps:ex.reps,weight:'',completedSets:0,totalSets:ex.series,setLogs:[]});S.s('gymWeekLog',gymWeekLog);}
+    if(weekExercise){Object.assign(weekExercise,{name:ex.name,muscle:ex.muscle,series:ex.series,reps:ex.reps,mediaId:ex.mediaId||null,superset:ex.superset||null,weight:'',completedSets:0,totalSets:ex.series,setLogs:[]});S.s('gymWeekLog',gymWeekLog);}
     S.s('sets2',sets);S.s('setPerf3',setPerformance);S.s('wts2',weights);
     if(typeof renderGym==='function')renderGym();
     return 'Cambié solo '+day.label+': "'+oldName+'" ('+oldSeries+'x'+oldReps+') por "'+ex.name+'" ('+ex.series+'x'+ex.reps+'). El resto de la rutina quedó igual';
@@ -6248,7 +6371,7 @@ Nota para gastos: Determina cuál columna representa el valor/monto, cuál la fe
       chatHist.push({role:'assistant',text:`🏋️ **Rutina detectada:** ${obj.name||'Sin nombre'}\n${days.length} días · ${nEj} ejercicios\n\n${preview}`});
       saveChat();renderChat();
       if(confirm(`¿Crear la rutina "${obj.name||'Sin nombre'}" con ${days.length} días y ${nEj} ejercicios?`)){
-        const r=ejecutarAccion({op:'crear_rutina',name:obj.name,days});
+        const r=ejecutarAccion({op:'crear_rutina',name:obj.name,days,permitir_sin_movimiento:true});
         routines=S.g('rt2',[]);
         chatHist.push({role:'assistant',text:'✅ '+r});saveChat();renderChat();
         if(curPage==='gym')renderGym();
@@ -6638,7 +6761,9 @@ async function interpretVoice(txt){
   routines.forEach(r=>{r.days.forEach(d=>{d.exercises.forEach((ex,ei)=>{exNameMap[r.id+'|'+d.id+'|'+ei]=ex.name;});});});
   const weightsArr=Object.entries(weights);
   const gymWeights=weightsArr.length?'\nPesos registrados: '+weightsArr.map(([k,v])=>(exNameMap[k]||'ej'+k.split('|').pop())+': '+v+'kg').join(', '):'';
-  const gymData=buildGymAIContext()+gymWeights+(gymHist.length?'\nHistorial reciente: '+gymHist.slice(0,15).map(h=>h.rn+'-'+h.dn+':'+h.pct+'%').join('; '):'');
+  const movementCatalog=await loadExerciseMediaCatalog().catch(()=>null);
+  const gymMovementList=movementCatalog?exerciseMovementCatalogForAI(movementCatalog,'gym'):'';
+  const gymData=buildGymAIContext()+gymWeights+(gymHist.length?'\nHistorial reciente: '+gymHist.slice(0,15).map(h=>h.rn+'-'+h.dn+':'+h.pct+'%').join('; '):'')+(gymMovementList?'\nCATÁLOGO CON MOVIMIENTO (usar nombres exactos al crear o cambiar ejercicios):\n'+gymMovementList:'');
   const proxEventos=events.filter(e=>e.date>=now.toISOString().slice(0,10)).slice(0,5).map(e=>e.title+' '+e.date+' '+e.time).join('; ');
   const dataCtx='DATOS DE LA APP:\n'+
     'Perfil y nutrición: '+profileStr+'\n\n'+

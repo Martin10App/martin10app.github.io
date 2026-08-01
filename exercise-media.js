@@ -1,6 +1,6 @@
 'use strict';
 
-const EXERCISE_MEDIA_CATALOG='exercise-media.json?v=2';
+const EXERCISE_MEDIA_CATALOG='exercise-media.json?v=3';
 const EXERCISE_MEDIA_BASE='https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/main/';
 let _exerciseMediaData=null,_exerciseMediaPromise=null;
 
@@ -42,6 +42,45 @@ function findExerciseMovement(ex,catalog){
     }
   }
   return bestScore>=58?best:null;
+}
+function exerciseMovementMuscle(item){
+  const target=normExerciseMediaName(item?.target);
+  if(/pectoral|chest/.test(target))return 'Pecho';
+  if(/lat|back|trap|spine/.test(target))return 'Espalda';
+  if(/delt|shoulder/.test(target))return 'Hombros';
+  if(/bicep/.test(target))return 'Bíceps';
+  if(/tricep/.test(target))return 'Tríceps';
+  if(/hamstring/.test(target))return 'Femoral';
+  if(/calf|calves/.test(target))return 'Gemelos';
+  if(/abs|waist/.test(target))return 'Abdomen';
+  if(/quad|glute|adductor/.test(target))return 'Cuádriceps';
+  const body=normExerciseMediaName(item?.body_part);
+  return body==='upper arms'?'Bíceps':body==='upper legs'?'Cuádriceps':body==='lower legs'?'Gemelos':body==='waist'?'Abdomen':'Espalda';
+}
+function exerciseMovementName(item){return String(item?.aliases?.[0]||item?.name||'Ejercicio').trim();}
+function canonicalExerciseMovement(ex,catalog){
+  const query=String(ex?.name||'').trim();if(!query||!catalog?.exercises)return null;
+  const normalized=normExerciseMediaName(query);
+  let movement=catalog.exercises.find(item=>item.id===ex.mediaId||[item.name,...(item.aliases||[])].some(n=>normExerciseMediaName(n)===normalized));
+  if(!movement){
+    const candidate=findExerciseMovement(ex,catalog);
+    if(candidate){
+      const best=Math.max(...[candidate.name,...(candidate.aliases||[])].map(n=>exerciseMediaScore(query,n)));
+      if(best>=76)movement=candidate;
+    }
+  }
+  if(!movement)return null;
+  return {...ex,name:exerciseMovementName(movement),muscle:exerciseMovementMuscle(movement),mediaId:movement.id};
+}
+function exerciseMovementCatalogForAI(catalog,place='gym'){
+  if(!catalog?.exercises)return '';
+  const allowed=catalog.exercises.filter(item=>{
+    const eq=normExerciseMediaName(item.equipment);
+    if(place==='casa_sin')return eq==='body weight';
+    if(place==='casa_basico')return ['body weight','dumbbell','weighted','resistance band'].includes(eq);
+    return true;
+  });
+  return allowed.map(item=>exerciseMovementName(item)+' | '+exerciseMovementMuscle(item)+' | '+exerciseMediaLabel(item.equipment,'equipment')).join('\n');
 }
 function exerciseMediaUrl(path){
   if(!/^(images|videos)\/[a-zA-Z0-9._-]+$/.test(String(path||'')))return '';
