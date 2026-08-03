@@ -4496,7 +4496,7 @@ async function sendChat(){
     });
 
     // ejecutar acciones embebidas
-    const run=executeAIActionBlocks(full);
+    const run=await executeAIActionResponse(full,txt);
     let reply=run.clean;
     const summary=actionExecutionSummary(run);
     if(summary)reply+=(reply?'\n\n':'')+summary;
@@ -4834,7 +4834,7 @@ async function coachStream(userMsg){
       const visible=acc.split('[ACCION')[0];
       if(bubble){bubble.innerHTML=`<div style="white-space:normal">${_mdHtml(visible)}<span class="ai-caret">▍</span></div>`;const cont=document.getElementById('coach-msgs');if(cont)cont.scrollTop=cont.scrollHeight;}
     });
-    const run=executeAIActionBlocks(full);
+    const run=await executeAIActionResponse(full,userMsg);
     let reply=run.clean;
     const summary=actionExecutionSummary(run,true);
     if(summary)reply+=(reply?'\n\n':'')+summary;
@@ -5146,23 +5146,90 @@ function aiActionContract(){
 const AI_ALLOWED_ACTIONS=new Set(['gasto','editar_gasto','ingreso','pago','fijo','ajustar_monto','ahorro','crear_meta','actualizar_meta','set_saldo_ahorro','crear_rutina','modificar_ejercicio','cambiar_ejercicio','marcar_biserie','quitar_biserie','registrar_serie','completar_ejercicio','compra','evento','responder','comprar','super','sueno','sueño','dormir','cardio','comida','crear_dieta','recordar','olvidar','eliminar','borrar']);
 function executeAIActionBlocks(reply,maxActions=8){
   const source=String(reply||'');
-  const regex=/\[ACCION\]\s*([\s\S]*?)\s*\[\/ACCION\]/gi;
-  const done=[],errors=[],seen=new Set();let match,count=0;
-  while((match=regex.exec(source))!==null){
-    if(count>=maxActions){errors.push('Se alcanzó el límite seguro de '+maxActions+' acciones');break;}
-    count++;
-    try{
-      const acc=JSON.parse(match[1]);
-      if(!acc||Array.isArray(acc)||typeof acc!=='object')throw new Error('el bloque no contiene un objeto');
-      acc.op=String(acc.op||'').trim().toLowerCase();
-      if(!AI_ALLOWED_ACTIONS.has(acc.op))throw new Error('operación "'+(acc.op||'vacía')+'" no permitida');
-      const signature=JSON.stringify(acc);
-      if(seen.has(signature))continue;
-      seen.add(signature);
-      done.push(ejecutarAccion(acc));
-    }catch(e){errors.push(e.message||String(e));}
+  const markerRegex=/(?:\[(?:ACCION|ACCIÓN|ACTION)\]|<(?:ACCION|ACCIÓN|ACTION)>)[ \t\r\n]*([\s\S]*?)[ \t\r\n]*(?:\[\/(?:ACCION|ACCIÓN|ACTION)\]|<\/(?:ACCION|ACCIÓN|ACTION)>)/gi;
+  const fenceRegex=/```(?:json)?\s*([\s\S]*?)\s*```/gi;
+  const candidates=[],removals=[];let match;
+  while((match=markerRegex.exec(source))!==null){candidates.push(match[1]);removals.push(match[0]);}
+  // Algunos modelos envuelven el JSON en markdown o devuelven directamente un array.
+  if(!candidates.length){
+    while((match=fenceRegex.exec(source))!==null){if(/"op"\s*:/.test(match[1]))candidates.push(match[1]);}
+    const firstChar=source.trim().charAt(0);
+    if(!candidates.length&&(firstChar==='['||firstChar==='{')&&/"op"\s*:/.test(source))candidates.push(source.trim());
   }
-  return {clean:source.replace(regex,'').trim(),done,errors};
+  const done=[],errors=[],seen=new Set();let count=0,recognized=0;
+  const runCandidate=raw=>{
+    let clean=String(raw||'').trim().replace(/^```(?:json)?\s*/i,'').replace(/\s*```$/,'');
+    let parsed;
+    try{parsed=JSON.parse(clean);}catch(e){errors.push('bloque de acción con JSON inválido');return;}
+    const actions=Array.isArray(parsed)?parsed:[parsed];
+    actions.forEach(acc=>{
+      if(count>=maxActions){if(!errors.some(x=>x.includes('límite seguro')))errors.push('Se alcanzó el límite seguro de '+maxActions+' acciones');return;}
+      if(!acc||Array.isArray(acc)||typeof acc!=='object'){errors.push('el bloque no contiene una acción válida');return;}
+      acc.op=String(acc.op||'').trim().toLowerCase();
+      if(!AI_ALLOWED_ACTIONS.has(acc.op)){errors.push('operación "'+(acc.op||'vacía')+'" no permitida');return;}
+      recognized++;count++;
+      const signature=JSON.stringify(acc);
+      if(seen.has(signature))return;
+      seen.add(signature);
+      try{done.push(ejecutarAccion(acc));}catch(e){errors.push(e.message||String(e));}
+    });
+  };
+  candidates.forEach(runCandidate);
+  let clean=source;
+  removals.forEach(block=>{clean=clean.replace(block,'');});
+  if(!removals.length&&recognized&&candidates.length===1&&candidates[0].trim()===source.trim())clean='';
+  return {clean:clean.trim(),done,errors,matched:recognized};
+}
+function expectsAIAction(userText){
+  const text=normalizeGymLookup(userText);
+  if(!text||/^(como|que pasos|me explicas|puedo|podria)\b/.test(text))return false;
+  const verb=/(anota|anotame|agrega|agregame|registra|registrame|guarda|guardame|crea|creame|cambia|cambiame|modifica|modificame|corrige|corregime|edita|editame|elimina|eliminame|borra|borrame|marca|marcame|suma|sumale|resta|restale|gaste|pague|comi|dormi)/;
+  const target=/(gasto|ingreso|sueldo|pago|tarjeta|ahorro|meta|rutina|ejercicio|serie|evento|agenda|comida|dieta|cardio|sueno|super|memoria|dato)/;
+  return verb.test(text)&&target.test(text);
+}
+function inferDirectExpenseAction(userText,now=new Date()){
+  const raw=String(userText||'').trim();
+  if(!/(gast[eé]|gaste|pagu[eé]|pague|anot[aá](?:me)?(?:\s+un)?\s+gasto|agreg[aá](?:me)?(?:\s+un)?\s+gasto|registr[aá](?:me)?(?:\s+un)?\s+gasto)/i.test(raw))return null;
+  const amountMatch=raw.match(/\$\s*([\d][\d.,]*)/i)||raw.match(/(?:gast[eé]|gaste|pagu[eé]|pague|gasto(?:\s+de)?)\s+(?:uyu\s*)?([\d][\d.,]*)/i);
+  if(!amountMatch)return null;
+  const amount=parseMoney(amountMatch[1]);if(!Number.isFinite(amount)||amount<=0)return null;
+  const detailMatch=raw.match(/\b(?:en|por|para)\s+(.+?)(?:\s+(?:hoy|ayer|anteayer))?[.!?]*$/i);
+  const desc=detailMatch?detailMatch[1].trim():'';if(!desc)return null;
+  const date=new Date(now.getFullYear(),now.getMonth(),now.getDate());
+  if(/\banteayer\b/i.test(raw))date.setDate(date.getDate()-2);else if(/\bayer\b/i.test(raw))date.setDate(date.getDate()-1);
+  const action={op:'gasto',v:amount,desc,fecha:date.getFullYear()+'-'+String(date.getMonth()+1).padStart(2,'0')+'-'+String(date.getDate()).padStart(2,'0')};
+  const prepared=prepareExpenseAction(action,cats,S.g('gst4',[]),now);
+  return prepared.error?null:action;
+}
+function buildAIActionRecoveryContext(){
+  return JSON.stringify({
+    hoy:todayStr(),
+    categorias:cats.map(c=>({id:c.id,nombre:c.n,tarjeta:c.cardRef||null,ahorro:!!c.ahorro})),
+    ultimos_gastos:gastos.slice(-30).map(g=>({id:g._id,categoria:g.c,monto:g.v,detalle:g.desc,mes:g.m,anio:g.y,fecha:g.f})),
+    rutinas:routines.map(r=>({id:r.id,nombre:r.name,activa:r.id===activeRid,dias:(r.days||[]).map(d=>({id:d.id,nombre:d.label,ejercicios:(d.exercises||[]).map(e=>e.name)}))})),
+    proximos_eventos:events.filter(e=>e.date>=todayStr()).slice(0,20).map(e=>({id:e.id,titulo:e.title,fecha:e.date,hora:e.time}))
+  });
+}
+async function executeAIActionResponse(reply,userText,maxActions=8){
+  const initial=executeAIActionBlocks(reply,maxActions);
+  if(initial.matched||!expectsAIAction(userText))return initial;
+  // Respaldo determinista para el pedido más frecuente: registrar un gasto simple.
+  const directExpense=inferDirectExpenseAction(userText);
+  if(directExpense){
+    const local=executeAIActionBlocks(JSON.stringify([directExpense]),maxActions);
+    return {clean:initial.clean,done:local.done,errors:initial.errors.concat(local.errors),matched:local.matched,recovered:true};
+  }
+  try{
+    const recoveryPrompt='Convertí el pedido del usuario en acciones de MartinApp. Respondé EXCLUSIVAMENTE con un array JSON de objetos, sin markdown ni explicación. Si el pedido no cambia datos o falta un dato obligatorio, devolvé []. No afirmes que ejecutaste nada. Máximo '+maxActions+' acciones. Operaciones permitidas: '+Array.from(AI_ALLOWED_ACTIONS).join(', ')+'.\n'+
+      'Reglas clave: gasto usa {op:"gasto",cat:"id",v:monto,desc:"detalle",fecha:"YYYY-MM-DD"}; ingreso usa modo total o sumar; fijo reemplaza el total mensual; ajustar_monto suma o resta delta; para cambiar un ejercicio usá cambiar_ejercicio y nombres existentes. Meses: enero=0. No inventes IDs.\n'+
+      'DATOS DISPONIBLES:\n'+buildAIActionRecoveryContext()+'\nPEDIDO:\n'+String(userText||'');
+    const recoveredRaw=await _aiComplete(recoveryPrompt);
+    const recovered=executeAIActionBlocks(recoveredRaw,maxActions);
+    if(recovered.matched)return {clean:initial.clean,done:recovered.done,errors:initial.errors.concat(recovered.errors),matched:recovered.matched,recovered:true};
+    return {clean:initial.clean,done:initial.done,errors:initial.errors.concat(recovered.errors,'La IA respondió, pero no generó una acción ejecutable'),matched:0};
+  }catch(e){
+    return {clean:initial.clean,done:initial.done,errors:initial.errors.concat('No pude recuperar la acción solicitada: '+(e.message||String(e))),matched:0};
+  }
 }
 function actionExecutionSummary(run,compact=false){
   const parts=[];
@@ -7009,7 +7076,7 @@ async function interpretVoice(txt){
     const full=await _geminiStream(prompt,key,(chunk,acc)=>flushSpeech(acc,false));
     flushSpeech(full,true);
 
-    const run=executeAIActionBlocks(full);
+    const run=await executeAIActionResponse(full,txt);
     const resultados=run.done;
     let voz=run.clean;
     const summary=actionExecutionSummary(run,true);
