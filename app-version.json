@@ -1,7 +1,7 @@
 {
-  "version": "1.4.2",
-  "nativeBuild": 4,
-  "publishedAt": "2026-08-01",
+  "version": "1.5.0",
+  "nativeBuild": 5,
+  "publishedAt": "2026-09-24",
   "apkUrl": "https://martin10app.github.io/MartinApp-actualizada.apk",
-  "notes": "Corrige la carga de rutinas de IA: acepta más formatos, abre la rutina aunque haya una fila incompleta y omite solamente elementos sin nombre."
+  "notes": "Respaldo que funciona: en Configuración → Respaldo guardás tus datos y los mandás por WhatsApp, Drive o Gmail. Instalala encima de la que tenés: no se borra nada."
 }
