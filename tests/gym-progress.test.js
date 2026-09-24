@@ -143,3 +143,11 @@ test('[T2] plural: "1 día", "1 serie", "2 días"',()=>{
   const msg=ctx.ejecutarAccion({op:'crear_rutina',name:'Full',days:[{label:'Full',exercises:[{name:'Sentadilla',muscle:'Cuádriceps',series:3,reps:'8'}]}]});
   assert.match(msg,/creada con 1 día y 1 ejercicio$/);
 });
+
+test('[T2b] el encabezado del Gym no repite el anillo y todos los títulos se ajustan al ancho',()=>{
+  const header=html.slice(html.indexOf('<div class="pg on" id="pg-gym">'),html.indexOf('<div class="tabs tab-line">'));
+  assert.doesNotMatch(header,/id="wring"/);
+  assert.doesNotMatch(header,/api-pill/);
+  assert.match(extractFunction('page'),/fitHeaderTitle\(\);/);
+  assert.match(extractFunction('fitHeaderTitle'),/scrollWidth>t\.clientWidth/);
+});

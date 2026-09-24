@@ -65,7 +65,9 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
 
 .ph{position:sticky;top:0;z-index:50;background:rgba(10,11,17,.82);backdrop-filter:blur(28px) saturate(180%);-webkit-backdrop-filter:blur(28px) saturate(180%);border-bottom:1px solid var(--border);padding:calc(16px + env(safe-area-inset-top, 24px)) 20px 0}
 .ph-r{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:14px}
-.ph-title{min-width:0;flex:1}
+.ph-title,.ph-r>div:first-child{min-width:0;flex:1 1 auto}
+.ph-r>:not(:first-child){flex-shrink:0}
+.ph-t{white-space:nowrap}
 @media(max-width:420px){.ph-title .ph-s{letter-spacing:1.6px;line-height:1.35}}
 .ph-actions{display:flex;align-items:center;gap:8px;flex-shrink:0}
 .ph-icon-btn{width:44px;height:44px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;background:var(--bg3);border:1px solid var(--border2);font-size:17px;flex-shrink:0}
@@ -429,7 +431,6 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
         <div class="ph-s">Entrenamiento Personal</div>
       </div>
       <div class="ph-actions">
-        <div class="ring-w" title="Avance de la rutina activa"><canvas id="wring" width="46" height="46"></canvas><span class="ring-l" id="wring-lbl">0%</span></div>
         <button class="ph-icon-btn" onclick="openGymProfile()" title="Mi perfil físico" aria-label="Mi perfil físico">💪</button>
         <button class="user-avatar" id="user-avatar-gym" onclick="openUserMgmt()" title="Mi cuenta"></button>
       </div>
@@ -496,7 +497,7 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
       </div>
       <button class="user-avatar" id="user-avatar-chat" onclick="openUserMgmt()" title="Mi cuenta"></button>
     </div>
-    <div id="chat-ph-bar" style="padding:10px 20px 0"></div>
+    <div id="chat-ph-bar" style="padding:10px 0 0"></div>
   </div>
   <div id="chat-b" style="display:flex;flex-direction:column;flex:1;min-height:0"></div>
 </div>
@@ -510,7 +511,7 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
       </div>
       <button class="user-avatar" id="user-avatar-coach" onclick="openUserMgmt()" title="Mi cuenta"></button>
     </div>
-    <div id="coach-ph-bar" style="padding:10px 20px 0"></div>
+    <div id="coach-ph-bar" style="padding:10px 0 0"></div>
   </div>
   <div id="coach-b" style="display:flex;flex-direction:column;flex:1;min-height:0"></div>
 </div>
@@ -980,7 +981,18 @@ function page(p){
   if(p==='gym')renderGym();else if(p==='agenda')renderAgenda();else if(p==='chat')renderChat();else if(p==='coach')renderCoach();else renderGastos();
   const mic=document.getElementById('mic-btn');
   if(mic)mic.style.display=(p==='chat'||p==='coach')?'none':'flex';
+  fitHeaderTitle();
 }
+function fitHeaderTitle(){
+  // Syne es muy ancha: el título de la pantalla visible se achica hasta entrar al lado de sus botones.
+  const t=document.querySelector('.pg.on .ph-t');if(!t||!t.clientWidth)return;
+  t.style.fontSize='';
+  let size=parseFloat(getComputedStyle(t).fontSize)||23;
+  while(t.scrollWidth>t.clientWidth&&size>14){size-=.5;t.style.fontSize=size+'px';}
+}
+window.addEventListener('resize',()=>fitHeaderTitle());
+document.fonts?.ready?.then(()=>fitHeaderTitle());
+document.fonts?.addEventListener?.('loadingdone',()=>fitHeaderTitle());
 
 function oOv1(h){document.getElementById('m1').innerHTML=h;document.getElementById('ov1').classList.add('on')}
 function cOv1(){document.getElementById('ov1').classList.remove('on')}
@@ -7616,6 +7628,7 @@ function onLoginSuccess(){
   applySeedIfNeeded();
   updateUserAvatars();
   renderGym();
+  fitHeaderTitle();
   startNotifCheck();
   consolidarMemoriaDiaria();
   setTimeout(()=>openPermissionPrimer(false),700);
