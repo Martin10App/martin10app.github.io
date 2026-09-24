@@ -82,7 +82,7 @@ function financeActionFixture(){
     sueldos:db.sld4,pagosFijos:db.pf4,getCardMonthAmt:()=>0,uid:(()=>{let id=0;return()=>`goal-${++id}`;})(),db
   });
   vm.runInContext([
-    extractFunction('km'),extractFunction('getSueldo'),extractFunction('setSueldo'),extractFunction('ejecutarAccion')
+    extractFunction('km'),extractFunction('getSueldo'),extractFunction('setSueldo'),extractFunction('shownCommitmentAmount'),extractFunction('commitmentCategories'),extractFunction('ejecutarAccion')
   ].join('\n'),base);
   return base;
 }
