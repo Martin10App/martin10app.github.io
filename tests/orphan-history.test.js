@@ -21,7 +21,7 @@ function extractFunction(name){
   throw new Error(`Función ${name} incompleta`);
 }
 
-const FUNCTIONS=['normalizeGymLookup','findOrphanHistory','orphanSlotLabel','orphanLabel','suggestOrphanTarget','planOrphanLink','applyOrphanLink','undoOrphanLink'];
+const FUNCTIONS=['normalizeGymLookup','findOrphanHistory','orphanSlotLabel','orphanLabel','suggestOrphanTarget','planOrphanLink','orphanSignature','orphanDefaultUntil','applyOrphanLink','undoOrphanLink'];
 
 // Categorías recreadas con ids nuevos; el historial viejo quedó con ids cortos que ya no existen.
 function makeContext(){
@@ -102,4 +102,27 @@ test('dos grupos al mismo destino: el primero gana y el segundo no pisa',()=>{
   const plan=plain(ctx.planOrphanLink({alarma:'n3',seguro:'n3'},ctx.db.pf4,ctx.db.pe4));
   assert.equal(plan.filled,1);assert.equal(plan.kept,1);
   assert.equal(Object.keys(plan.pf).length,1);
+});
+
+test('tope de año: "solo hasta diciembre 2025" no toca 2026 (lo de este año ya lo carga el usuario)',()=>{
+  const ctx=makeContext();
+  const plan=plain(ctx.applyOrphanLink({visa:'n1',prest:'n5'},[],2025));
+  assert.equal(plan.filled,3);assert.equal(plan.kept,0,'enero 2026 ni se mira');
+  assert.deepEqual(plan.byYear,{2025:3});
+  assert.equal(ctx.db.pf4.visa_0_2026,9999,'el mes de 2026 queda guardado donde estaba');
+  assert.equal(ctx.db.pe4.visa_0_2026,true);
+  assert.equal(ctx.db.pf4.n1_0_2026,10100);
+  // Lo que quedó sin vincular ya cuenta como revisado: el aviso no vuelve a insistir.
+  const left=ctx.findOrphanHistory(ctx.db.cats4,ctx.db.pf4,ctx.db.pe4);
+  assert.equal(ctx.db.orphanReviewed1,ctx.orphanSignature(left));
+  assert.ok(left.some(g=>g.id==='visa'&&g.months===1));
+  ctx.undoOrphanLink();
+  assert.equal(ctx.db.pf4.visa_0_2025,7900);assert.equal(ctx.db.pf4.n1_0_2025,undefined);
+});
+
+test('el tope recomendado es el año anterior al actual',()=>{
+  const ctx=makeContext();
+  assert.equal(ctx.orphanDefaultUntil([2025,2026],new Date(2026,8,24)),2025);
+  assert.equal(ctx.orphanDefaultUntil([2024,2025,2026],new Date(2026,0,5)),2025);
+  assert.equal(ctx.orphanDefaultUntil([2026],new Date(2026,8,24)),2026,'si solo hay de este año, ese');
 });
