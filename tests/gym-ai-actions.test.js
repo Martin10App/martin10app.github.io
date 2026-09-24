@@ -156,7 +156,7 @@ test('el ejecutor crea, persiste y activa una rutina generada por IA',()=>{
   context.routines=[];
   context.activeRid=null;
   context.S={g:(key,fallback)=>db[key]??fallback,s:(key,value)=>{db[key]=structuredClone(value);}};
-  vm.runInContext(extractFunction('ejecutarAccion'),context);
+  vm.runInContext(extractFunction('plural')+'\n'+extractFunction('ejecutarAccion'),context);
   const result=context.ejecutarAccion({
     op:'crear_rutina',name:'Torso pierna',days:[
       {label:'Torso',exercises:[{name:'Press de banca',muscle:'Pecho',series:4,reps:'8-10'}]},

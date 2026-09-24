@@ -24,7 +24,7 @@ function extractFunction(name,source=html){
 const FUNCTIONS=['todayStr','gymSetKey','parseRepRange','clampGymNumber','getSetPerformance','normStr','normalizeGymLookup','gymLookupMatches',
   'resolveGymExerciseTarget','getPreviousExerciseLog','progressionForLogs','exerciseProgression','ensureGymCycle','getCycleStatus',
   'gymNumberInput','gymSetSummary','exerciseLoadHistory','buildGymProgressContext','gymDayKey','findGymLogTarget','suggestedSetValues',
-  'cleanupSupersetGroups','normalizeSupersetAssignments','supersetMeta','ejecutarAccion'];
+  'cleanupSupersetGroups','normalizeSupersetAssignments','supersetMeta','plural','prepareMovementExercises','normalizeAIRoutinePayload','ejecutarAccion'];
 
 function routinesFixture(){
   return [{id:'r1',name:'Hipertrofia',days:[
@@ -45,7 +45,7 @@ function makeContext({setPerformance={},gymWeekLog=[],activeWeekId='w3'}={}){
   const context={
     routines:routinesFixture(),activeRid:'r1',activeWeekId,gymWeekLog,setPerformance,
     sets:{},weights:{},gymCycles:{},gymProfile:{goal:'hipertrofia',loadIncrement:2.5},
-    uid:()=>String(++n),updateWeekLogFromCurrent:()=>{},db,
+    uid:()=>String(++n),updateWeekLogFromCurrent:()=>{},db,_exerciseMediaData:null,
     S:{g:(key,fallback)=>db[key]??fallback,s:(key,value)=>{db[key]=structuredClone(value);return true;}}
   };
   db.rt2=structuredClone(context.routines);
@@ -132,4 +132,14 @@ test('[T2] una semana salteada no borra la última carga ni la sugerencia de pro
   assert.equal(advice.kind,'up');
   const plan=ctx.suggestedSetValues(ex,previous,advice,0,false);
   assert.deepEqual({weight:plan.weight,reps:plan.reps,source:plan.source},{weight:62.5,reps:8,source:'progression'});
+});
+
+test('[T2] plural: "1 día", "1 serie", "2 días"',()=>{
+  const ctx=makeContext();
+  assert.equal(ctx.plural(1,'día','días'),'1 día');
+  assert.equal(ctx.plural(2,'día','días'),'2 días');
+  assert.equal(ctx.plural(0,'serie','series'),'0 series');
+  const db={rt2:[]};ctx.S={g:(k,f)=>db[k]??f,s:(k,v)=>{db[k]=structuredClone(v);}};
+  const msg=ctx.ejecutarAccion({op:'crear_rutina',name:'Full',days:[{label:'Full',exercises:[{name:'Sentadilla',muscle:'Cuádriceps',series:3,reps:'8'}]}]});
+  assert.match(msg,/creada con 1 día y 1 ejercicio$/);
 });
