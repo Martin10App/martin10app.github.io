@@ -5328,7 +5328,7 @@ async function sendChat(){
   const memInstr='\n\nMEMORIA / APRENDIZAJE:\n- ESTO ES CRÍTICO: Si en el mensaje hay CUALQUIER info DURADERA de la persona (preferencias, hábitos, restricciones, objetivos, pesos levantados habitualmente, fechas fijas, etc.), TENÉS QUE GUARDARLA vos mismo usando [ACCION]{"op":"recordar","dato":"frase en 3ra persona","tag":"dieta|gym|finanzas|agenda|general","importante":true|false}[/ACCION]. Poné importante:true SOLO para datos permanentes de fondo (alergias, lesiones, objetivos de vida); el resto false.\n- Si te piden olvidar algo: [ACCION]{"op":"olvidar","dato":"texto a borrar"}[/ACCION].\n- NO te olvides de guardar las cosas importantes, o tu memoria fallará.\n- No repitas en memoria algo que ya figura arriba.';
   const ctxHist=chatHist.slice(-20).map(msg=>'['+msg.role+']: '+msg.text).join('\n');
   const voiceGuide = _voiceSent ? '\n\nIMPORTANTE: El usuario te está hablando por voz. Respondé de forma muy corta (máximo 2 o 3 oraciones breves), directa y conversacional en español uruguayo, sin usar viñetas, listas ni formato markdown largo.' : '';
-  const prompt='Sos MARTIN·APP AI: asistente personal con control total de los datos.\n\n'+_hoy+dataCtx+memCtx+memInstr+voiceGuide+'\n\nREGLAS:\n- Respondé en español uruguayo, natural, amigable y con confianza.\n- Revisá los datos con cuidado. Si te preguntan por pesos o registros, verificá exactamente lo que dice el registro antes de responder. No inventes números.\n- Si el usuario pide agregar/modificar datos, usá [ACCION] al final.\n- ACCIONES DISPONIBLES:\n  * [ACCION]{"op":"gasto","cat":"id","v":monto,"desc":"...","f":"d/m"}[/ACCION]\n  * [ACCION]{"op":"pago","cat":"id","m":mes,"y":año}[/ACCION]\n  * [ACCION]{"op":"fijo","cat":"id","m":mes,"y":año,"v":monto}[/ACCION]\n  * [ACCION]{"op":"compra","cardId":"id","v":monto,"desc":"...","cuotas":1}[/ACCION]\n  * [ACCION]{"op":"crear_rutina","name":"Nombre","days":[{"label":"Día1","exercises":[{"name":"Ej1","muscle":"Pecho","series":4,"reps":"10"}]}]}[/ACCION]\n  * [ACCION]{"op":"modificar_ejercicio","dia":"Lunes","nombre_original":"press banca","nombre_nuevo":"press banca con mancuernas","series":4,"reps":"10","musculo":"Pecho"}[/ACCION] (usá esto para cambiar ejercicios existentes de rutinas)\n  * [ACCION]{"op":"registrar_serie","ejercicio":"aperturas","serie":3,"peso":30,"reps":10}[/ACCION] (usá esto para registrar tu peso en una serie específica)\n  * [ACCION]{"op":"completar_ejercicio","ejercicio":"aperturas"}[/ACCION] (usá esto para marcar todas las series de un ejercicio como hechas)\n  * [ACCION]{"op":"evento","titulo":"...","fecha":"YYYY-MM-DD","hora":"HH:MM","recordatorio":15}[/ACCION]\n- NUTRICIÓN: si la persona dice qué comió, registralo con [ACCION]{"op":"comida","nombre":"...","cal":número,"prot":número}[/ACCION] (estimá calorías vos). Para CARDIO: [ACCION]{"op":"cardio","tipo":"correr","min":30,"km":5}[/ACCION]. Para SUEÑO: [ACCION]{"op":"sueno","horas":7.5,"calidad":"buena"}[/ACCION]. Para la LISTA DEL SÚPER: [ACCION]{"op":"comprar","item":"2kg de pollo","cat":"carniceria"}[/ACCION]. Para ELIMINAR algo: [ACCION]{"op":"eliminar","tipo":"gasto|rutina|evento|comida|cardio|super|categoria|memoria","desc":"texto para identificarlo"}[/ACCION].\n- AHORRO MENSUAL: [ACCION]{"op":"ahorro","cat":"id_meta","v":monto}[/ACCION] (para sumar al mes).\n- AHORRO TOTAL: Si la persona dice que tiene un saldo TOTAL acumulado de X (ej. "tengo 2000 ahorrados"): [ACCION]{"op":"set_saldo_ahorro","cat":"id_meta","v":monto}[/ACCION].\n- Crear meta: [ACCION]{"op":"crear_meta","nombre":"Auto","objetivo":500000,"aporte":1500}[/ACCION].\n- TARJETAS POR MES: op \"fijo\" con el id de la CATEGORÍA de esa tarjeta. Meses de 0 a 11. Ej \"anotá 1400 de la Visa en abril\" -> [ACCION]{\"op\":\"fijo\",\"cat\":\"<id categoría Visa>\",\"m\":3,\"y\":<año>,\"v\":1400}[/ACCION].\n- muscle debe ser uno de: Pecho, Espalda, Hombros, Bíceps, Tríceps, Cuádriceps, Femoral, Gemelos, Abdomen\n- IDs son los que ves arriba. NO inventes IDs.\n- Podés ANALIZAR entrenamientos: y recomendar ajustes.\n- Podés dar consejos de DIETA y NUTRICIÓN según el perfil y objetivo del usuario.\n- Si te piden hacer algo que no sea una acción, respondé normal pero útil.\n- Siempre respondé optimista y motivador como un entrenador personal.\n\nConversación:\n'+ctxHist+'\n\n['+txt+']:';
+  const prompt='Sos MARTIN·APP AI: asistente personal con control total de los datos.\n\n'+_hoy+dataCtx+memCtx+memInstr+voiceGuide+'\n\nREGLAS:\n- Respondé en español uruguayo, natural, amigable y con confianza.\n- Revisá los datos con cuidado. Si te preguntan por pesos o registros, verificá exactamente lo que dice el registro antes de responder. No inventes números.\n- Si el usuario pide agregar/modificar datos, usá [ACCION] al final.\n- ACCIONES DISPONIBLES:\n  * [ACCION]{"op":"gasto","cat":"id","v":monto,"desc":"...","f":"d/m"}[/ACCION]\n  * [ACCION]{"op":"pago","cat":"id","m":mes,"y":año}[/ACCION]\n  * [ACCION]{"op":"fijo","cat":"id","m":mes,"y":año,"v":monto}[/ACCION]\n  * [ACCION]{"op":"compra","cardId":"id","v":monto,"desc":"...","cuotas":1}[/ACCION]\n  * [ACCION]{"op":"crear_rutina","name":"Nombre","days":[{"label":"Día1","exercises":[{"name":"Ej1","muscle":"Pecho","series":4,"reps":"10"}]}]}[/ACCION]\n  * [ACCION]{"op":"modificar_ejercicio","dia":"Lunes","nombre_original":"press banca","nombre_nuevo":"press banca con mancuernas","series":4,"reps":"10","musculo":"Pecho"}[/ACCION] (usá esto para cambiar ejercicios existentes de rutinas)\n  * [ACCION]{"op":"registrar_serie","ejercicio":"aperturas","serie":3,"peso":30,"reps":10}[/ACCION] (usá esto para registrar tu peso en una serie específica)\n  * [ACCION]{"op":"completar_ejercicio","ejercicio":"aperturas"}[/ACCION] (usá esto para marcar todas las series de un ejercicio como hechas)\n  * [ACCION]{"op":"evento","titulo":"...","fecha":"YYYY-MM-DD","hora":"HH:MM","recordatorio":15}[/ACCION]\n- NUTRICIÓN: si la persona dice qué comió, registralo con [ACCION]{"op":"comida","nombre":"...","cal":número,"prot":número}[/ACCION] (estimá calorías vos). Para CARDIO: [ACCION]{"op":"cardio","tipo":"correr","min":30,"km":5}[/ACCION]. Para SUEÑO: [ACCION]{"op":"sueno","horas":7.5,"calidad":"buena"}[/ACCION]. Para la LISTA DEL SÚPER: [ACCION]{"op":"comprar","item":"2kg de pollo","cat":"carniceria"}[/ACCION]. Para ELIMINAR algo: [ACCION]{"op":"eliminar","tipo":"gasto|rutina|evento|comida|cardio|super|categoria|memoria","desc":"texto para identificarlo"}[/ACCION].\n- AHORRO MENSUAL: [ACCION]{"op":"ahorro","cat":"id_meta","v":monto}[/ACCION] (para sumar al mes).\n- AHORRO TOTAL: Si la persona dice que tiene un saldo TOTAL acumulado de X (ej. "tengo 2000 ahorrados"): [ACCION]{"op":"set_saldo_ahorro","cat":"id_meta","v":monto}[/ACCION].\n- Crear meta: [ACCION]{"op":"crear_meta","nombre":"Auto","objetivo":500000,"aporte":1500}[/ACCION].\n- TARJETAS POR MES: \"anotá/sumame X de la tarjeta Y\" SUMA al monto de ese mes: op \"ajustar_monto\" con el id de la CATEGORÍA de esa tarjeta y delta=X. Solo \"poné/cambiá a X\" usa \"fijo\" (reemplaza el total). Meses de 0 a 11. Ej \"anotá 1400 de la Visa en abril\" -> [ACCION]{\"op\":\"ajustar_monto\",\"cat\":\"<id categoría Visa>\",\"m\":3,\"y\":<año>,\"delta\":1400}[/ACCION].\n- muscle debe ser uno de: Pecho, Espalda, Hombros, Bíceps, Tríceps, Cuádriceps, Femoral, Gemelos, Abdomen\n- IDs son los que ves arriba. NO inventes IDs.\n- Podés ANALIZAR entrenamientos: y recomendar ajustes.\n- Podés dar consejos de DIETA y NUTRICIÓN según el perfil y objetivo del usuario.\n- Si te piden hacer algo que no sea una acción, respondé normal pero útil.\n- Siempre respondé optimista y motivador como un entrenador personal.\n\nConversación:\n'+ctxHist+'\n\n['+txt+']:';
 
   // ---- Burbuja del asistente que se va llenando en vivo ----
   chatHist.push({role:'assistant',text:'',streaming:true});
@@ -5958,6 +5958,7 @@ function resolveFinanceCategory(acc,categoryList=cats,expenseList=gastos){
 function normalizeFinanceDate(acc,now=new Date()){
   let m=acc?.m!==undefined?Number(acc.m):now.getMonth();
   let y=acc?.y!==undefined?Number(acc.y):now.getFullYear();
+  if(acc?.mes!==undefined&&acc?.m===undefined){const pm=parseFinanceMonth(String(acc.mes),now);if(pm.explicit){m=pm.m;y=acc?.y!==undefined?Number(acc.y):pm.y;}}
   let day=now.getDate();
   const iso=String(acc?.fecha||'').trim().match(/^(\d{4})-(\d{2})-(\d{2})$/);
   const short=String(acc?.f||'').trim().match(/^(\d{1,2})[\/-](\d{1,2})(?:[\/-](\d{2,4}))?$/);
@@ -6003,6 +6004,7 @@ function aiActionContract(){
     '- FINANZAS: para cada gasto mencionado emití un gasto separado. Usá el ID exacto de categoría si es claro; si no es claro, preguntá una vez. Conservá comercio/detalle y fecha. No conviertas una compra con tarjeta en pago de tarjeta ni en gasto fijo.\n'+
     '- Para corregir un gasto existente usá editar_gasto con gasto_id si está en el contexto. Si el usuario dice “el último”, usá por ejemplo {"op":"editar_gasto","ultimo":true,"desc_original":"Disco","v":1450}. Podés enviar desc_nueva, cat, fecha, m o y. No agregues otro gasto para corregir uno.\n'+
     '- Para ingresos usá ingreso con v, m, y y modo "total" (reemplaza el ingreso del mes) o "sumar" (agrega otro ingreso). Para compromisos mensuales usá fijo; para marcar que se abonaron usá pago.\n'+
+    '- Tarjetas: se manejan como categorías con monto mensual. "Anotame/sumame X de la tarjeta Y para <mes>" es ajustar_monto con cat = nombre de la categoría como lo dijo y "mes" = el mes como lo dijo ("el mes que viene", "octubre 2026"); "poné/cambiá Y en X" es fijo. No uses compra salvo que la tarjeta tenga compras en cuotas. Si hay dos categorías posibles, preguntá cuál.\n'+
     '- Si dice “sumale/agregale X más” a una tarjeta o categoría mensual, usá ajustar_monto con cat, delta positivo, m e y. Si dice “restale/descontale”, delta negativo. Esta acción modifica el total del mes; NO crees un gasto variable ni uses fijo, porque fijo reemplaza el total. Ejemplo: {"op":"ajustar_monto","cat":"visa","delta":1200,"m":7,"y":2026}.\n'+
     '- OBJETIVOS FINANCIEROS: si quiere comprar/cambiar algo en una fecha (auto eléctrico, casa, viaje, etc.), ayudalo a convertirlo en un plan. No inventes precios ni valor de reventa: preguntá por costo neto estimado, fecha objetivo y ahorro inicial que falten. Creá la meta con crear_meta usando nombre, objetivo, fecha_objetivo, saldo_inicial, aporte_mensual y descripcion. Si ya existe, usá actualizar_meta con cat.\n'+
     '- Al analizar una meta, compará lo ahorrado, lo que falta, meses disponibles, aporte mensual necesario y dinero disponible real. Si el aporte no alcanza, proponé ajustar fecha, costo o ahorro mensual; no prometas resultados ni des asesoramiento financiero profesional.\n'+
@@ -6022,7 +6024,7 @@ function isAIActionExecutionError(result){
   const text=String(result||'').trim();
   return /^(falta|faltan|no\s|el .*(debe|no es)|la .*(necesita|no es)|hay varios|los dos|para marcar|ejercicio .* no encontrado|serie invalida|tarjeta no encontrada|necesito|sin comidas|nada para|operacion .* no soportada|ya existe)/i.test(normalizeGymLookup(text));
 }
-function executeAIActionBlocks(reply,maxActions=8){
+function executeAIActionBlocks(reply,maxActions=8,skipOps=null){
   const source=String(reply||'');
   const markerRegex=/(?:\[(?:ACCION|ACCIÓN|ACTION)\]|<(?:ACCION|ACCIÓN|ACTION)>)[ \t\r\n]*([\s\S]*?)[ \t\r\n]*(?:\[\/(?:ACCION|ACCIÓN|ACTION)\]|<\/(?:ACCION|ACCIÓN|ACTION)>)/gi;
   const fenceRegex=/```(?:json)?\s*([\s\S]*?)\s*```/gi;
@@ -6045,6 +6047,7 @@ function executeAIActionBlocks(reply,maxActions=8){
       if(!acc||Array.isArray(acc)||typeof acc!=='object'){errors.push('el bloque no contiene una acción válida');return;}
       acc.op=String(acc.op||'').trim().toLowerCase();
       if(!AI_ALLOWED_ACTIONS.has(acc.op)){errors.push('operación "'+(acc.op||'vacía')+'" no permitida');return;}
+      if(skipOps&&skipOps.has(acc.op)){recognized++;return;}
       recognized++;count++;
       const signature=JSON.stringify(acc);
       if(seen.has(signature))return;
@@ -6064,6 +6067,80 @@ function expectsAIAction(userText){
   const verb=/(anota|anotame|agrega|agregame|registra|registrame|guarda|guardame|crea|creame|hace|haceme|arma|armame|genera|generame|carga|cargame|pone|poneme|actualiza|actualizame|anade|anadime|cambia|cambiame|reemplaza|reemplazame|modifica|modificame|corrige|corregime|edita|editame|elimina|eliminame|borra|borrame|marca|marcame|suma|sumale|resta|restale|gaste|pague|comi|dormi)/;
   const target=/(gasto|ingreso|sueldo|pago|tarjeta|ahorro|meta|rutina|ejercicio|serie|evento|agenda|comida|dieta|cardio|sueno|super|memoria|dato)/;
   return verb.test(text)&&target.test(text);
+}
+// ── Montos por mes de tarjetas y compromisos ("anotame 1200 de la oca para el mes que viene") ──
+// Martín maneja sus tarjetas como categorías comunes con monto mensual (pf4). Las card_ de cards1
+// solo cuentan si esa tarjeta tiene compras en cuotas; si no, "sumar" iría a una categoría que no usa.
+const FINANCE_MONTH_NAMES=['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+const CATEGORY_STOPWORDS=new Set(['card','tarjeta','tarjetas','de','del','la','el','los','las','credito','debito','cuenta','pago','pagos','mi','mis','en','para','por','con','y','a','al','o','un','una','que']);
+function parseFinanceMonth(text,now){
+  now=now||new Date();
+  const t=normalizeGymLookup(text),cm=now.getMonth(),cy=now.getFullYear();
+  const shift=n=>{const d=new Date(cy,cm+n,1);return {m:d.getMonth(),y:d.getFullYear(),explicit:true,phrase:''};};
+  if(/\b(mes que viene|proximo mes|mes proximo|siguiente mes|mes siguiente)\b/.test(t))return shift(1);
+  if(/\b(mes pasado|mes anterior)\b/.test(t))return shift(-1);
+  if(/\beste mes\b/.test(t))return shift(0);
+  const found=t.match(/\b(enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|setiembre|octubre|noviembre|diciembre)\b(?:\s+(?:de\s+|del\s+)?(20\d\d)\b)?/);
+  if(found){
+    const m=found[1]==='setiembre'?8:FINANCE_MONTH_NAMES.indexOf(found[1]);
+    const year=found[2]?Number(found[2]):null;
+    // Un año solo cuenta si es razonable (un monto como "octubre 2000" no es un año).
+    const y=year&&year>=cy-1&&year<=cy+3?year:(m>=cm||cm-m<=2?cy:cy+1);
+    return {m,y,explicit:true,year:year&&year>=cy-1&&year<=cy+3?year:null};
+  }
+  return {m:cm,y:cy,explicit:false};
+}
+function categoryTokens(c){return normalizeGymLookup(c?.n).split(' ').filter(w=>w&&!CATEGORY_STOPWORDS.has(w));}
+function commitmentCategories(categoryList,purchases){
+  // Categorías donde tiene sentido anotar el monto del mes: todas las no archivadas, incluidas las
+  // de tarjeta. Una tarjeta sin compras en cuotas se maneja como planilla (monto del mes en pf4).
+  // Las metas de ahorro quedan afuera: tienen su propia acción y sus nombres ("reducir gasto en
+  // tarjetas") no tienen que competir con una tarjeta.
+  return (categoryList||[]).filter(c=>!c.archived&&!c.ahorro);
+}
+function cardHasPurchases(cardId,purchases){return !!cardId&&(purchases||[]).some(p=>p.cardId===cardId);}
+function shownCommitmentAmount(cat,pf,m,y){
+  const key=cat.id+'_'+m+'_'+y;
+  if(pf&&pf[key]!==undefined)return money(pf[key]);
+  return cat.cardRef?money(getCardMonthAmt(cat.cardRef,m,y)):money(cat.base||0);
+}
+function resolveCommitmentCategory(text,categoryList,purchases){
+  const words=new Set(normalizeGymLookup(text).split(' ').filter(Boolean));
+  const pool=commitmentCategories(categoryList,purchases);
+  const vocabulary=new Set(pool.flatMap(categoryTokens));
+  const query=[...words].filter(w=>vocabulary.has(w));
+  const asked=(normalizeGymLookup(text).match(/\btarjeta\s+([a-z0-9]+(?:\s+[a-z0-9]+)?)/)||[])[1]||'';
+  if(!query.length)return {error:asked?'No encontré la tarjeta "'+asked+'". Las que tenés: '+pool.filter(c=>!c.ahorro).map(c=>c.n).join(', '):'No encontré a qué categoría va ese monto'};
+  const candidates=pool.filter(c=>{const tk=new Set(categoryTokens(c));return query.every(w=>tk.has(w));});
+  if(candidates.length===1)return {category:candidates[0]};
+  if(candidates.length>1)return {error:'Hay '+candidates.length+' que coinciden: '+candidates.map(c=>c.n).join(' y ')+'. ¿Cuál?',ambiguous:candidates.map(c=>c.id)};
+  // Nadie tiene todas las palabras: gana la que comparte más palabras con el pedido; si empatan, preguntar.
+  const scored=pool.map(c=>({c,n:categoryTokens(c).filter(w=>query.includes(w)).length})).filter(x=>x.n>0).sort((a,b)=>b.n-a.n);
+  if(scored.length&&(scored.length===1||scored[0].n>scored[1].n))return {category:scored[0].c};
+  const partial=scored.filter(x=>x.n===scored[0]?.n).map(x=>x.c);
+  if(partial.length>1)return {error:'Hay '+partial.length+' que coinciden: '+partial.map(c=>c.n).join(' y ')+'. ¿Cuál?',ambiguous:partial.map(c=>c.id)};
+  return {error:'No encontré a qué categoría va ese monto'};
+}
+function inferCommitmentAmountAction(userText,now,categoryList,purchases){
+  // Devuelve la acción lista (ajustar_monto / fijo / compra), {error} si el pedido es claro pero no se puede, o null.
+  now=now||new Date();categoryList=categoryList||cats;purchases=purchases||cpurch;
+  const raw=String(userText||'').trim(),t=normalizeGymLookup(raw);
+  const setVerb=/\b(pone|pon|poneme|ponele|ponelo|ponela|cambia|cambiame|cambiale|deja|dejala|dejalo|actualiza|actualizame|actualizale|corregi|corregime|fija|fijame|fijale)\b/.test(t);
+  const subVerb=/\b(resta|restame|restale|desconta|descontame|descontale|saca|sacame|sacale|quita|quitame|quitale)\b/.test(t);
+  const addVerb=/\b(anota|anotame|anotale|suma|sumame|sumale|agrega|agregame|agregale|carga|cargame|cargale|mete|meteme|metele)\b/.test(t)||/\bmas\b/.test(t);
+  if(!setVerb&&!subVerb&&!addVerb)return null;
+  if(/\b(gaste|gasto|gastos|compre|rutina|serie|ejercicio|evento|comida)\b/.test(t)&&!/\btarjeta\b/.test(t))return null;
+  const month=parseFinanceMonth(raw,now);
+  const numbers=[...raw.matchAll(/\$?\s*(\d[\d.,]*)/g)].map(x=>x[1]).filter(n=>!(month.year&&Number(n)===month.year));
+  if(!numbers.length)return null;
+  const amount=parseMoney(numbers[0]);if(!Number.isFinite(amount)||amount<=0)return null;
+  const resolved=resolveCommitmentCategory(raw,categoryList,purchases);
+  if(resolved.error)return /\btarjeta\b/.test(t)||resolved.ambiguous?{error:resolved.error}:null;
+  const cat=resolved.category;
+  if(setVerb&&!subVerb)return {op:'fijo',cat:cat.id,v:amount,m:month.m,y:month.y};
+  // Solo una tarjeta con compras en cuotas recibe una compra; sin compras es un monto mensual más.
+  if(cat.cardRef&&cardHasPurchases(cat.cardRef,purchases)&&!subVerb)return {op:'compra',cardId:cat.cardRef,v:amount,desc:'Ajuste del mes',m:month.m,y:month.y};
+  return {op:'ajustar_monto',cat:cat.id,delta:subVerb?-amount:amount,m:month.m,y:month.y};
 }
 function inferDirectExpenseAction(userText,now=new Date()){
   const raw=String(userText||'').trim();
@@ -6090,6 +6167,14 @@ function buildAIActionRecoveryContext(){
 }
 async function executeAIActionResponse(reply,userText,maxActions=8){
   refreshAIAppState();
+  // Montos de tarjeta/compromiso: se resuelven acá, siempre igual, y se ignoran los montos que proponga la IA.
+  const commitment=inferCommitmentAmountAction(userText);
+  if(commitment){
+    const others=executeAIActionBlocks(reply,maxActions,new Set(['gasto','ajustar_monto','fijo','compra']));
+    if(commitment.error)return {clean:others.clean,done:others.done,errors:others.errors.concat(commitment.error),matched:others.matched};
+    const local=executeAIActionBlocks(JSON.stringify([commitment]),maxActions);
+    return {clean:others.clean,done:others.done.concat(local.done),errors:others.errors.concat(local.errors),matched:others.matched+local.matched,recovered:true};
+  }
   const initial=executeAIActionBlocks(reply,maxActions);
   if(initial.done.length||!expectsAIAction(userText))return initial;
   // Respaldo determinista para el pedido más frecuente: registrar un gasto simple.
@@ -6224,23 +6309,26 @@ function ejecutarAccion(acc){
     return cat.n+' marcado como pagado en '+MONTHS[date.m]+' '+date.y;
   }
   if(acc.op==='fijo'){
-    const resolved=resolveFinanceCategory(acc,cats,gastos);if(resolved.error)return resolved.error;const cat=resolved.category;
+    const resolved=resolveFinanceCategory(acc,commitmentCategories(cats,S.g('cpurch1',[])),gastos);if(resolved.error)return resolved.error;const cat=resolved.category;
     const amount=parseMoney(acc.v??acc.monto);if(!Number.isFinite(amount)||amount<0||amount>999999999999)return 'El monto fijo no es válido';
     const pf=S.g('pf4',{});
     const date=normalizeFinanceDate(acc);if(date.error)return date.error;
-    pf[cat.id+'_'+date.m+'_'+date.y]=money(amount);
+    const key=cat.id+'_'+date.m+'_'+date.y,before=shownCommitmentAmount(cat,pf,date.m,date.y);
+    pf[key]=money(amount);
     S.s('pf4',pf);pagosFijos=pf;
-    return cat.n+' actualizado a $'+fmt(amount)+' en '+MONTHS[date.m]+' '+date.y;
+    return cat.n+' · '+MONTHS[date.m]+' '+date.y+': '+fmtFull(before)+' → '+fmtFull(amount);
   }
   if(acc.op==='ajustar_monto'){
-    const resolved=resolveFinanceCategory(acc,cats,gastos);if(resolved.error)return resolved.error;const cat=resolved.category;
+    const resolved=resolveFinanceCategory(acc,commitmentCategories(cats,S.g('cpurch1',[])),gastos);if(resolved.error)return resolved.error;const cat=resolved.category;
     const delta=parseMoney(acc.delta??acc.v??acc.monto);if(!Number.isFinite(delta)||delta===0||Math.abs(delta)>999999999999)return 'El ajuste debe ser un monto distinto de 0 y válido';
     const date=normalizeFinanceDate(acc);if(date.error)return date.error;
     const pf=S.g('pf4',{}),key=cat.id+'_'+date.m+'_'+date.y;
-    const current=pf[key]!==undefined?money(pf[key]):cat.cardRef?money(getCardMonthAmt(cat.cardRef,date.m,date.y)):money(cat.base||0);
+    if(cat.cardRef&&(S.g('cpurch1',[])||[]).some(p=>p.cardId===cat.cardRef)&&delta>0)
+      return ejecutarAccion({op:'compra',cardId:cat.cardRef,v:delta,desc:acc.desc||'Ajuste del mes',m:date.m,y:date.y});
+    const current=shownCommitmentAmount(cat,pf,date.m,date.y);
     const next=money(current+delta);if(next<0)return 'No apliqué el ajuste porque dejaría "'+cat.n+'" con un total negativo';
     pf[key]=next;S.s('pf4',pf);pagosFijos=pf;
-    return (delta>0?'Sumé ':'Resté ')+fmtFull(Math.abs(delta))+' en "'+cat.n+'" para '+MONTHS[date.m]+' '+date.y+'. Nuevo total: '+fmtFull(next);
+    return (delta>0?'Sumé ':'Resté ')+fmtFull(Math.abs(delta))+' en "'+cat.n+'" · '+MONTHS[date.m]+' '+date.y+': '+fmtFull(current)+' → '+fmtFull(next)+'. Nuevo total: '+fmtFull(next);
   }
   if(acc.op==='ahorro'){
     const amount=parseMoney(acc.v??acc.monto);if(!Number.isFinite(amount)||amount<=0||amount>999999999999)return 'El ahorro debe ser un monto mayor a 0 y válido';
@@ -6391,20 +6479,27 @@ function ejecutarAccion(acc){
   }
   if(acc.op==='compra'){
     const cards=(S.g('cards1',[])||[]);
-    const card=cards.find(c=>c.id===acc.cardId)||cards.find(c=>c.n.toLowerCase()===((acc.n||'').toLowerCase()))||cards.find(c=>cats.some(cat=>cat.cardRef===c.id&&cat.id===acc.cat));
-    if(!card)return 'Tarjeta no encontrada. IDs disponibles: '+cards.map(c=>c.id+'('+c.n+')').join(', ');
+    const wanted=normalizeGymLookup(acc.tarjeta||acc.n||acc.nombre||'');
+    const card=cards.find(c=>c.id===acc.cardId)||cards.find(c=>cats.some(cat=>cat.cardRef===c.id&&cat.id===acc.cat))||(wanted?cards.find(c=>normalizeGymLookup(c.name)===wanted):null);
+    if(!card)return 'No encontré esa tarjeta entre las que tienen compras en cuotas: '+(cards.map(c=>c.name).join(', ')||'no hay tarjetas');
     const cpurch=S.g('cpurch1',[])||[];
     const now=new Date();
     const v=parseMoney(acc.v);
-    const installments=acc.cuotas||1;
-    const _paid=(acc.pagadas||0);
-    let _sm=now.getMonth()-_paid,_sy=now.getFullYear();_sy+=Math.floor(_sm/12);_sm=((_sm%12)+12)%12;
+    if(!Number.isFinite(v)||v<=0)return 'El monto de la compra no es válido';
+    const installments=Math.max(1,parseInt(acc.cuotas)||1);
+    const _paid=Math.max(0,Math.min(installments,parseInt(acc.pagadas)||0));
+    // Si dice el mes (m/y o "mes"), la primera cuota cae ahí; si no, este mes menos las ya pagadas.
+    const target=acc.m!==undefined||acc.y!==undefined||acc.mes?normalizeFinanceDate(acc,now):null;if(target?.error)return target.error;
+    let _sm=(target?target.m:now.getMonth())-_paid,_sy=target?target.y:now.getFullYear();_sy+=Math.floor(_sm/12);_sm=((_sm%12)+12)%12;
+    const beforeMonth=target?money(getCardMonthAmt(card.id,target.m,target.y,cpurch)):0;
     cpurch.push({id:uid(),cardId:card.id,commerce:acc.desc||'Gasto',total:v,instAmt:(installments>0?money(v/installments):money(v)),installments,paidInstallments:_paid,category:'otro',date:now.toISOString().slice(0,10),startM:_sm,startY:_sy,addedM:now.getMonth(),addedY:now.getFullYear()});
     S.s('cpurch1',cpurch);
     // ensure card category exists
     ensureCardCats();
     cats=S.g('cats4',[]);
-    return '$'+fmt(v)+' agregado a tarjeta '+card.n+(installments>1?' en '+installments+' cuotas':'');
+    // En el mes pedido cae una cuota de esta compra (la primera, o la siguiente a las ya pagadas).
+    if(target)return card.name+' · '+MONTHS[target.m]+' '+target.y+': '+fmtFull(beforeMonth)+' → '+fmtFull(money(beforeMonth+money(v/installments)))+(installments>1?' ('+installments+' cuotas)':'');
+    return fmtFull(v)+' agregado a la tarjeta '+card.name+(installments>1?' en '+installments+' cuotas':'');
   }
   if(acc.op==='evento'){
     const title=acc.titulo||acc.title||'Evento';
@@ -7936,7 +8031,7 @@ async function interpretVoice(txt){
     '  * [ACCION]{"op":"gasto","cat":"id","v":monto,"desc":"...","f":"d/m"}[/ACCION]\n'+
     '  * [ACCION]{"op":"pago","cat":"id","m":mes,"y":año}[/ACCION]\n'+
     '  * [ACCION]{"op":"fijo","cat":"id","m":mes,"y":año,"v":monto}[/ACCION]\n'+
-    '- TARJETAS POR MES: para anotar lo pagado de una tarjeta en un mes, usá "fijo" con el id de la categoría de esa tarjeta (las que tienen tarjeta: en Categorías). Meses 0-11 (enero=0, abril=3, diciembre=11). Ej "1400 de la Visa en abril" → fijo cat=<id Visa> m=3 y=<año> v=1400.\n'+
+    '- TARJETAS POR MES: "anotame/sumame X de la tarjeta Y (para tal mes)" SUMA al monto de ese mes → ajustar_monto cat=<id> delta=X m y. Solo si dice "poné/cambiá/dejá en X" usá fijo (reemplaza el total). Meses 0-11 (enero=0, abril=3, diciembre=11); "el mes que viene" es el mes actual + 1. Ej "sumame 1400 de la Visa en abril" → ajustar_monto cat=<id Visa> delta=1400 m=3 y=<año>.\n'+
     '  * [ACCION]{"op":"evento","titulo":"...","fecha":"YYYY-MM-DD","hora":"HH:MM","recordatorio":15}[/ACCION]\n'+
     '  * [ACCION]{"op":"crear_rutina","name":"...","days":[...]}[/ACCION]\n'+
     '  * [ACCION]{"op":"cambiar_ejercicio","rutina":"id o nombre exacto","dia":"Día 1","nombre_original":"press banca","nombre_nuevo":"press inclinado con mancuernas"}[/ACCION] (cambia solo ese ejercicio; conserva series, reps y músculo si no se indican)\n'+
@@ -8434,10 +8529,11 @@ function pStartY(p){return p.startY!=null?p.startY:(p.addedY!=null?p.addedY:new 
 function instMonthYear(p,kk){let mm=pStartM(p)+(kk-1),yy=pStartY(p);yy+=Math.floor(mm/12);mm=((mm%12)+12)%12;return {m:mm,y:yy};}
 function getCardDebt(cardId){return sumMoney(getCardPurchs(cardId),p=>pInstAmt(p)*pRemaining(p));}
 // Suma de cuotas que VENCEN en (m,y). Cuenta también la última cuota (X==N). Sin m,y => mes actual.
-function getCardMonthAmt(cardId,m,y){
+// purchases opcional: la lista recién leída de cpurch1 cuando la global todavía no se refrescó.
+function getCardMonthAmt(cardId,m,y,purchases){
   if(m==null||y==null){const n=new Date();m=n.getMonth();y=n.getFullYear();}
   let t=0;
-  getCardPurchs(cardId).forEach(p=>{
+  (purchases?purchases.filter(p=>p.cardId===cardId):getCardPurchs(cardId)).forEach(p=>{
     const N=p.installments||1;
     for(let kk=1;kk<=N;kk++){const im=instMonthYear(p,kk);if(im.m===m&&im.y===y){t=money(t+pInstAmt(p));break;}}
   });
