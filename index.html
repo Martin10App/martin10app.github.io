@@ -133,6 +133,10 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
 .set-log-input:focus{border-color:var(--accent);box-shadow:0 0 0 2px rgba(110,91,255,.18)}
 .set-done{width:48px;height:44px;border-radius:10px;border:1px solid var(--border2);background:var(--bg3);color:var(--text2);font-weight:800;transition:background .18s,border-color .18s,color .18s}
 .set-done.ck{border-color:var(--green-b);background:var(--green-d);color:var(--green)}
+.backup-status{display:flex;flex-direction:column;gap:3px;font-size:12px;color:var(--text1);background:var(--bg2);border:1px solid var(--border2);border-radius:var(--r-sm);padding:10px 12px;margin-bottom:10px}
+.backup-status strong{color:var(--text0)}
+.backup-status.stale{background:var(--gold-d);border-color:var(--gold-b)}
+.backup-status small{font-size:10.5px;color:var(--gold);line-height:1.45}
 .progression-note{margin-top:10px;padding:10px 12px;border-radius:10px;border:1px solid var(--blue-b);background:rgba(59,127,255,.06);font-size:11px;line-height:1.45;color:var(--text1)}
 .cycle-strip{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:12px 0 16px}
 .cycle-stat{padding:10px 8px;border-radius:11px;background:var(--bg3);border:1px solid var(--border);text-align:center}
@@ -3701,9 +3705,13 @@ function rConfig(){
     <button class="btn b-md b-g" style="width:100%;color:var(--red);border-color:var(--red-b);margin-bottom:8px" onclick="resetMontos()">💾 Resetear todos los montos editados</button>
     <button class="btn b-md b-g" style="width:100%;color:var(--red);border-color:var(--red-b)" onclick="resetAll()">⚠️ RESET TOTAL (todo a cero)</button>
     <div class="div"></div>
-    <div class="sec-t">📦 Transferir datos</div>
-    <button class="btn b-md b-p" style="width:100%;margin-bottom:8px" onclick="exportData()">📤 Exportar datos</button>
-    <button class="btn b-md b-g" style="width:100%" onclick="document.getElementById('import-file').click()">📥 Importar datos</button>
+    <div class="sec-t">📦 Respaldo</div>
+    <div id="backup-status">${backupStatusHtml()}</div>
+    <button class="btn b-md b-p" style="width:100%;margin-bottom:8px;min-height:48px" onclick="exportData()">📤 Exportar datos</button>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+      <button class="btn b-md b-g" style="min-height:48px" onclick="document.getElementById('import-file').click()">📥 Importar archivo</button>
+      <button class="btn b-md b-g" style="min-height:48px" onclick="openPasteBackup()">📋 Pegar respaldo</button>
+    </div>
     <input id="import-file" type="file" accept=".json" style="display:none" onchange="importData(event)">
   </div>`;
 }
@@ -8028,93 +8036,166 @@ function confirmAIPurchases(){
   openCardDetail(cardId,stmtM,stmtY);
 }
 
+// ── Respaldo ──
+// En la APK, <a download> no guarda nada: el WebView de Capacitor ignora esas descargas.
+// Con Filesystem + Share se escribe el archivo y se abre "Compartir" (WhatsApp, Drive, Gmail, Archivos).
+const BACKUP_MAX_AGE_DAYS=14;
+const BACKUP_DATA_KEYS=['rt2','arid','sets2','wts2','setPerf3','ghst2','gymWeekLog','gymProfile','gymCycles1','activeWeekId','cardio1','nutData',
+  'gst4','pf4','pe4','sld4','cats4','cards1','cpurch1','shop1','evts1','chat1','chatSessions','activeChatId','coachHist1','coachSessions',
+  'activeCoachId','coachProfile1','userMem1','last_mem_compile','gemini_key','ai_provider','ai_free','ai_always_speak','seed_v2',
+  'permissionPrimerDismissedV1','micPermissionGrantedV1','gymPlan1','lastBackupAt'];
+function buildBackup(){
+  if(!currentUser)throw new Error('No hay una sesión activa');
+  const prefix=currentUser.id+'_',entries={};
+  for(let i=0;i<localStorage.length;i++){
+    const k=localStorage.key(i);
+    if(!k||!k.startsWith(prefix))continue;
+    const cleanKey=k.slice(prefix.length);
+    try{entries[cleanKey]=JSON.parse(localStorage.getItem(k));}catch{entries[cleanKey]=localStorage.getItem(k);}
+  }
+  const now=new Date();
+  const data={format:'martinapp-backup',version:2,exportedAt:now.toISOString(),userName:currentUser.name,entries};
+  const fname=`app-backup-${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}.json`;
+  return {json:JSON.stringify(data,null,2),fname,count:Object.keys(entries).length};
+}
+function backupExportMode(){
+  if(!isNativeMartinApp())return 'browser';
+  const files=capacitorPlugin('Filesystem'),share=capacitorPlugin('Share');
+  return files?.writeFile&&share?.share?'native-share':'native-no-plugins';
+}
+function markBackupDone(){S.s('lastBackupAt',Date.now());refreshBackupStatus();}
+function backupStatusHtml(){
+  const at=Number(S.g('lastBackupAt',0))||0;
+  const days=at?Math.max(0,Math.floor((Date.now()-at)/86400000)):null;
+  const when=!at?'nunca':days===0?'hoy':days===1?'ayer':'hace '+days+' días';
+  const stale=!at||days>BACKUP_MAX_AGE_DAYS;
+  return `<div class="backup-status${stale?' stale':''}"><span>Último respaldo: <strong>${when}</strong></span>${stale?'<small>Tus datos viven solo en este teléfono: guardá un respaldo cada tanto.</small>':''}</div>`;
+}
+function refreshBackupStatus(){const el=document.getElementById('backup-status');if(el)el.innerHTML=backupStatusHtml();}
 async function exportData(){
+  let backup;
+  try{backup=buildBackup();}catch(e){tst('Error al exportar: '+e.message);return;}
+  const mode=backupExportMode();
+  if(mode==='native-share')return exportBackupNative(backup);
+  if(mode==='native-no-plugins')return showBackupFallback(backup);
+  return exportBackupBrowser(backup);
+}
+async function exportBackupNative({json,fname}){
   try{
-    if(!currentUser)throw new Error('No hay una sesión activa');
-    const prefix=currentUser.id+'_';
-    const entries={};
-    for(let i=0;i<localStorage.length;i++){
-      const k=localStorage.key(i);
-      if(!k||!k.startsWith(prefix))continue;
-      const cleanKey=k.slice(prefix.length);
-      try{entries[cleanKey]=JSON.parse(localStorage.getItem(k));}catch{entries[cleanKey]=localStorage.getItem(k);}
-    }
-    const data={format:'martinapp-backup',version:2,exportedAt:new Date().toISOString(),userName:currentUser.name,entries};
-    const json=JSON.stringify(data,null,2);
-    const date=new Date();
-    const fname=`app-backup-${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}.json`;
-    
+    const written=await capacitorPlugin('Filesystem').writeFile({path:fname,data:json,directory:'CACHE',encoding:'utf8'});
+    await capacitorPlugin('Share').share({title:'Respaldo MartinApp',text:fname,url:written.uri,dialogTitle:'Guardar o enviar el respaldo'});
+    markBackupDone();tst('✓ Respaldo guardado');
+  }catch(e){
+    const msg=String(e?.message||e||'');
+    if(/cancel/i.test(msg)){tst('No se guardó el respaldo');return;}
+    tst('No se pudo crear el respaldo: '+msg,4500);
+  }
+}
+function showBackupFallback(backup){
+  window._pendingBackup=backup;
+  const kb=Math.max(1,Math.round(new Blob([backup.json]).size/1024));
+  oOv1(`<div class="mt">Respaldo de tus datos</div>
+    <div class="alert al-warn"><div class="al-i">⚠️</div><div class="al-t">Esta versión de la app no puede guardar archivos en el teléfono. Copiá el respaldo y pegalo en un lugar seguro: un chat de WhatsApp con vos mismo, un mail o una nota. Para restaurarlo usá <strong>📋 Pegar respaldo</strong>.</div></div>
+    <button class="btn b-lg b-p" type="button" onclick="copyBackupToClipboard()">Copiar respaldo (${kb} KB)</button>
+    <button class="btn b-md b-g" type="button" style="width:100%;margin-top:10px;min-height:48px" onclick="updateAppFromBackup()">Actualizar la app</button>
+    <div style="font-size:10.5px;color:var(--text2);line-height:1.5;margin-top:12px">La próxima versión de la app guarda el archivo directo y te deja enviarlo a WhatsApp, Drive o Gmail.</div>`);
+}
+async function copyBackupToClipboard(){
+  const backup=window._pendingBackup;if(!backup)return false;
+  let ok=false;
+  try{await navigator.clipboard.writeText(backup.json);ok=true;}catch{}
+  if(!ok){try{const ta=document.createElement('textarea');ta.value=backup.json;ta.setAttribute('readonly','');ta.style.position='fixed';ta.style.opacity='0';document.body.appendChild(ta);ta.select();ok=document.execCommand('copy');ta.remove();}catch{}}
+  tst(ok?'✓ Respaldo copiado: pegalo en WhatsApp, un mail o una nota':'No se pudo copiar. Probá actualizar la app.',4500);
+  return ok;
+}
+async function updateAppFromBackup(){cOv1();const available=await checkForAppUpdate(true);if(available)openAppUpdate();}
+async function exportBackupBrowser({json,fname}){
+  try{
     if(window.showSaveFilePicker){
-      try {
-        const handle = await window.showSaveFilePicker({
-          suggestedName: fname,
-          types: [{
-            description: 'JSON Backup',
-            accept: { 'application/json': ['.json'] }
-          }]
-        });
-        const writable = await handle.createWritable();
-        await writable.write(json);
-        await writable.close();
-        tst('✓ Datos guardados con éxito');
-        return;
-      } catch(err) {
-        if(err.name === 'AbortError') return; // Canceló el diálogo
-      }
+      try{
+        const handle=await window.showSaveFilePicker({suggestedName:fname,types:[{description:'JSON Backup',accept:{'application/json':['.json']}}]});
+        const writable=await handle.createWritable();
+        await writable.write(json);await writable.close();
+        markBackupDone();tst('✓ Datos guardados con éxito');return;
+      }catch(err){if(err.name==='AbortError')return;}
     }
-    
-    // Fallback: Descarga directa tradicional
     const blob=new Blob([json],{type:'application/json'});
     const a=document.createElement('a');
-    a.href=URL.createObjectURL(blob);
-    a.download=fname;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(a.href);
-    tst('✓ Descarga iniciada');
+    a.href=URL.createObjectURL(blob);a.download=fname;
+    document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(a.href);
+    markBackupDone();tst('✓ Descarga iniciada');
   }catch(e){tst('Error al exportar: '+e.message);}
 }
-
+function backupEntries(data){
+  // Formato actual: {format:'martinapp-backup',version:2,entries}.
+  // Formato viejo: todas las claves de localStorage sueltas, con o sin prefijo de usuario.
+  if(data&&data.format==='martinapp-backup'&&data.version===2&&data.entries&&!Array.isArray(data.entries))return {entries:data.entries,from:data.userName||'este respaldo'};
+  if(data&&typeof data==='object'&&!Array.isArray(data)&&!('format' in data)){
+    const keys=[...BACKUP_DATA_KEYS].sort((a,b)=>b.length-a.length),groups={};
+    Object.entries(data).forEach(([k,v])=>{
+      if(BACKUP_DATA_KEYS.includes(k)){(groups['']||(groups['']={}))[k]=v;return;}
+      const base=keys.find(key=>k.endsWith('_'+key));if(!base)return;
+      const prefix=k.slice(0,k.length-base.length-1);(groups[prefix]||(groups[prefix]={}))[base]=v;
+    });
+    const names=Object.keys(groups);
+    if(names.length){
+      const pick=currentUser&&groups[currentUser.id]?currentUser.id:names.sort((a,b)=>Object.keys(groups[b]).length-Object.keys(groups[a]).length)[0];
+      return {entries:groups[pick],from:'un respaldo anterior'};
+    }
+  }
+  throw new Error('Este archivo no es un respaldo válido de MartinApp');
+}
+function applyBackup(entries){
+  // Reemplaza solo las claves de la cuenta actual; si no hay espacio, vuelve todo a como estaba.
+  if(!currentUser)throw new Error('No hay una sesión activa');
+  const incoming=Object.entries(entries).filter(([k])=>k&&k!=='__proto__'&&k!=='constructor'&&k!=='prototype');
+  if(!incoming.length)throw new Error('El respaldo no contiene datos');
+  const prefix=currentUser.id+'_',previous={},currentKeys=[];
+  for(let i=0;i<localStorage.length;i++){
+    const k=localStorage.key(i);
+    if(k&&k.startsWith(prefix)){currentKeys.push(k);previous[k]=localStorage.getItem(k);}
+  }
+  let count=0;
+  try{
+    currentKeys.forEach(k=>localStorage.removeItem(k));
+    incoming.forEach(([k,v])=>{localStorage.setItem(prefix+k,JSON.stringify(v));count++;});
+    // La fecha del último respaldo es de este teléfono: se conserva la más reciente.
+    const keptAt=Number(previous[prefix+'lastBackupAt'])||0,newAt=Number(localStorage.getItem(prefix+'lastBackupAt'))||0;
+    if(keptAt>newAt)localStorage.setItem(prefix+'lastBackupAt',String(keptAt));
+  }catch(writeErr){
+    const partialKeys=[];
+    for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k&&k.startsWith(prefix))partialKeys.push(k);}
+    partialKeys.forEach(k=>localStorage.removeItem(k));
+    Object.entries(previous).forEach(([k,v])=>localStorage.setItem(k,v));
+    throw new Error('No había espacio suficiente; se restauraron tus datos anteriores');
+  }
+  return count;
+}
+function importBackupText(text){
+  try{
+    const {entries,from}=backupEntries(JSON.parse(text));
+    const n=Object.keys(entries).length;
+    if(!confirm(`¿Importar ${n} registros de ${from}? Se reemplazarán solamente los datos de tu cuenta actual.`))return false;
+    const count=applyBackup(entries);
+    tst(`✓ ${count} datos importados. Recargando...`);
+    setTimeout(()=>location.reload(),1200);
+    return true;
+  }catch(err){tst('Error al importar: '+(err instanceof SyntaxError?'el texto no es un respaldo completo':err.message),4500);return false;}
+}
 function importData(ev){
+  // <input type="file">: en la APK lo atiende el selector de archivos de Capacitor (BridgeWebChromeClient).
   const file=ev.target.files?.[0];
   if(!file)return;
   const reader=new FileReader();
-  reader.onload=function(e){
-    try{
-      const data=JSON.parse(e.target.result);
-      if(!currentUser)throw new Error('No hay una sesión activa');
-      if(!data||data.format!=='martinapp-backup'||data.version!==2||!data.entries||Array.isArray(data.entries))throw new Error('Este archivo no es un respaldo válido de MartinApp');
-      const incoming=Object.entries(data.entries).filter(([k])=>k&&k!=='__proto__'&&k!=='constructor'&&k!=='prototype');
-      if(!incoming.length)throw new Error('El respaldo no contiene datos');
-      if(!confirm(`¿Importar ${incoming.length} registros de ${data.userName||'este respaldo'}? Se reemplazarán solamente los datos de tu cuenta actual.`))return;
-      const prefix=currentUser.id+'_';
-      const previous={};
-      const currentKeys=[];
-      for(let i=0;i<localStorage.length;i++){
-        const k=localStorage.key(i);
-        if(k&&k.startsWith(prefix)){currentKeys.push(k);previous[k]=localStorage.getItem(k);}
-      }
-      let count=0;
-      try{
-        currentKeys.forEach(k=>localStorage.removeItem(k));
-        incoming.forEach(([k,v])=>{localStorage.setItem(prefix+k,JSON.stringify(v));count++;});
-      }catch(writeErr){
-        const partialKeys=[];
-        for(let i=0;i<localStorage.length;i++){
-          const k=localStorage.key(i);
-          if(k&&k.startsWith(prefix))partialKeys.push(k);
-        }
-        partialKeys.forEach(k=>localStorage.removeItem(k));
-        Object.entries(previous).forEach(([k,v])=>localStorage.setItem(k,v));
-        throw new Error('No había espacio suficiente; se restauraron tus datos anteriores');
-      }
-      tst(`✓ ${count} datos importados. Recargando...`);
-      setTimeout(()=>location.reload(),1200);
-    }catch(err){tst('Error al importar: '+err.message);}
-  };
+  reader.onload=e=>importBackupText(e.target.result);
   reader.readAsText(file);
   ev.target.value='';
+}
+function openPasteBackup(){
+  oOv1(`<div class="mt">Pegar respaldo</div>
+    <div style="font-size:12px;color:var(--text2);line-height:1.55;margin-bottom:12px">Pegá acá el texto completo del respaldo que copiaste (empieza con <code>{</code> y termina con <code>}</code>).</div>
+    <textarea class="inp" id="backup-paste" rows="7" style="font-family:var(--fm);font-size:11px" placeholder='{"format":"martinapp-backup",…}'></textarea>
+    <button class="btn b-lg b-p" type="button" style="margin-top:12px" onclick="importBackupText(document.getElementById('backup-paste').value)">Importar</button>`);
 }
 
 function buscarConversaciones(query){
