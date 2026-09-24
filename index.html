@@ -4409,6 +4409,7 @@ async function sendChat(){
   const key=aiKey();
   if(!key){tst('⚠️ Configurá la API key de '+AI_PROVIDERS[aiProvider()].label);return;}
   const txt=inp.value.trim();inp.value='';
+  refreshAIAppState();
   chatHist.push({role:'user',text:txt});
   saveChat();
   renderChat();
@@ -4453,8 +4454,9 @@ async function sendChat(){
   routines.forEach(r=>{r.days.forEach(d=>{d.exercises.forEach((ex,ei)=>{exNameMap[r.id+'|'+d.id+'|'+ei]=ex.name;});});});
   const weightsArr=Object.entries(weights);
   const gymWeights=weightsArr.length?'\nPesos registrados: '+weightsArr.map(([k,v])=>(exNameMap[k]||'ej'+k.split('|').pop())+': '+v+'kg').join(', '):'';
-  const movementCatalog=await loadExerciseMediaCatalog().catch(()=>null);
-  const gymMovementList=movementCatalog?exerciseMovementCatalogForAI(movementCatalog,'gym'):'';
+  const needsMovementCatalog=shouldIncludeMovementCatalog(txt);
+  const movementCatalog=needsMovementCatalog?await loadExerciseMediaCatalog().catch(()=>null):null;
+  const gymMovementList=movementCatalog?exerciseMovementCatalogForAI(movementCatalog,'gym').split('\n').slice(0,100).join('\n'):'';
   const gymData=buildGymAIContext()+gymWeights+(gymHist.length?'\nHistorial reciente: '+gymHist.slice(0,15).map(h=>h.rn+'-'+h.dn+':'+h.pct+'%').join('; '):'')+(gymMovementList?'\nCATÁLOGO CON MOVIMIENTO (usar nombres exactos al crear o cambiar ejercicios):\n'+gymMovementList:'');
   const proxEventos=events.filter(e=>e.date>=now.toISOString().slice(0,10)).slice(0,5).map(e=>e.title+' el '+e.date+' a las '+e.time).join('; ');
   const _cd7=cardioLog.filter(c=>_last7Keys().includes(c.date));
@@ -4503,7 +4505,7 @@ async function sendChat(){
     const resultados=run.done;
     chatHist[chatHist.length-1]={role:'assistant',text:reply||'(sin respuesta)'};
     saveChat();
-    if(resultados.length){gastos=S.g('gst4',[]);pagosFijos=S.g('pf4',{});pagosEstado=S.g('pe4',{});}
+    refreshAfterAIActions(run);
     if(_voiceSent || S.g('ai_always_speak', false)){
       _voiceSent=false;
       const clean=reply.replace(/[✅•⚠️📅📊💪🔴🟢🌱]/g,'').replace(/\*\*(.+?)\*\*/g,'$1').replace(/\n/g,' ').trim();
@@ -4665,6 +4667,7 @@ function buildAppContext(){
 }
 
 function coachPrompt(userMsg, isVoice){
+  refreshAIAppState();
   const p=coachProfile();
   const perfilCoach=Object.keys(p).length?('LO QUE SÉ DE LA PERSONA:\n'+COACH_Q.filter(q=>p[q.k]).map(q=>'- '+q.k+': '+p[q.k]).join('\n')):'';
   const _mem=S.g('userMem1',[]);
@@ -4841,7 +4844,7 @@ async function coachStream(userMsg){
     const resultados=run.done;
     coachHist[coachHist.length-1]={role:'assistant',text:reply||'(sin respuesta)'};
     saveCoach();
-    if(resultados.length){gastos=S.g('gst4',[]);events=S.g('evts1',[]);}
+    refreshAfterAIActions(run);
     if(_voiceSent || S.g('ai_always_speak', false)){
       _voiceSent=false;
       const clean=reply.replace(/[✅•⚠️📅📊💪🔴🟢🌱]/g,'').replace(/\*\*(.+?)\*\*/g,'$1').replace(/\n/g,' ').trim();
@@ -5023,9 +5026,25 @@ function confirmarEliminar(){
   if(typeof renderAgenda==='function')renderAgenda();
   tst('🗑 '+n+' elemento'+(n!==1?'s':'')+' eliminado'+(n!==1?'s':''));
 }
-function buildGymAIContext(){
-  if(!routines.length)return '(sin rutinas)';
-  const data=routines.map((r,ri)=>({
+function refreshAIAppState(){
+  routines=S.g('rt2',routines||[]);activeRid=S.g('arid',activeRid||null);sets=S.g('sets2',sets||{});weights=S.g('wts2',weights||{});gymHist=S.g('ghst2',gymHist||[]);cardioLog=S.g('cardio1',cardioLog||[]);
+  gastos=S.g('gst4',gastos||[]);pagosFijos=S.g('pf4',pagosFijos||{});pagosEstado=S.g('pe4',pagosEstado||{});sueldos=S.g('sld4',sueldos||{});cats=S.g('cats4',cats||[]);
+  cards=S.g('cards1',cards||[]);cpurch=S.g('cpurch1',cpurch||[]);events=S.g('evts1',events||[]);
+}
+function refreshAfterAIActions(run){
+  if(!run||!run.matched)return;
+  refreshAIAppState();
+  if(curPage==='gym'&&typeof renderGym==='function')renderGym();
+  else if(curPage==='gastos'&&typeof renderGastos==='function')renderGastos();
+  else if(curPage==='agenda'&&typeof renderAgenda==='function')renderAgenda();
+}
+function shouldIncludeMovementCatalog(userText){
+  const text=normalizeGymLookup(userText);
+  return /(rutina|ejercicio|entrenamiento|press|sentadilla|peso muerto|curl|remo)/.test(text)&&/(crea|creame|arma|armame|genera|generame|hace|haceme|cambia|cambiame|modifica|modificame|reemplaza|reemplazame)/.test(text);
+}
+function buildGymAIContext(sourceRoutines=routines){
+  if(!sourceRoutines.length)return '(sin rutinas)';
+  const data=sourceRoutines.map((r,ri)=>({
     id:r.id,
     nombre:r.name,
     activa:r.id===activeRid,
@@ -5144,6 +5163,10 @@ function aiActionContract(){
     '- En pedidos compuestos, resolvé cada parte que tenga datos suficientes y explicá brevemente cualquier parte pendiente.';
 }
 const AI_ALLOWED_ACTIONS=new Set(['gasto','editar_gasto','ingreso','pago','fijo','ajustar_monto','ahorro','crear_meta','actualizar_meta','set_saldo_ahorro','crear_rutina','modificar_ejercicio','cambiar_ejercicio','marcar_biserie','quitar_biserie','registrar_serie','completar_ejercicio','compra','evento','responder','comprar','super','sueno','sueño','dormir','cardio','comida','crear_dieta','recordar','olvidar','eliminar','borrar']);
+function isAIActionExecutionError(result){
+  const text=String(result||'').trim();
+  return /^(falta|faltan|no\s|el .*(debe|no es)|la .*(necesita|no es)|hay varios|los dos|para marcar|ejercicio .* no encontrado|serie invalida|tarjeta no encontrada|necesito|sin comidas|nada para|operacion .* no soportada|ya existe)/i.test(normalizeGymLookup(text));
+}
 function executeAIActionBlocks(reply,maxActions=8){
   const source=String(reply||'');
   const markerRegex=/(?:\[(?:ACCION|ACCIÓN|ACTION)\]|<(?:ACCION|ACCIÓN|ACTION)>)[ \t\r\n]*([\s\S]*?)[ \t\r\n]*(?:\[\/(?:ACCION|ACCIÓN|ACTION)\]|<\/(?:ACCION|ACCIÓN|ACTION)>)/gi;
@@ -5171,7 +5194,7 @@ function executeAIActionBlocks(reply,maxActions=8){
       const signature=JSON.stringify(acc);
       if(seen.has(signature))return;
       seen.add(signature);
-      try{done.push(ejecutarAccion(acc));}catch(e){errors.push(e.message||String(e));}
+      try{const result=ejecutarAccion(acc);if(isAIActionExecutionError(result))errors.push(result);else done.push(result);}catch(e){errors.push(e.message||String(e));}
     });
   };
   candidates.forEach(runCandidate);
@@ -5183,13 +5206,13 @@ function executeAIActionBlocks(reply,maxActions=8){
 function expectsAIAction(userText){
   const text=normalizeGymLookup(userText);
   if(!text||/^(como|que pasos|me explicas|puedo|podria)\b/.test(text))return false;
-  const verb=/(anota|anotame|agrega|agregame|registra|registrame|guarda|guardame|crea|creame|cambia|cambiame|modifica|modificame|corrige|corregime|edita|editame|elimina|eliminame|borra|borrame|marca|marcame|suma|sumale|resta|restale|gaste|pague|comi|dormi)/;
+  const verb=/(anota|anotame|agrega|agregame|registra|registrame|guarda|guardame|crea|creame|hace|haceme|arma|armame|genera|generame|carga|cargame|pone|poneme|actualiza|actualizame|anade|anadime|cambia|cambiame|reemplaza|reemplazame|modifica|modificame|corrige|corregime|edita|editame|elimina|eliminame|borra|borrame|marca|marcame|suma|sumale|resta|restale|gaste|pague|comi|dormi)/;
   const target=/(gasto|ingreso|sueldo|pago|tarjeta|ahorro|meta|rutina|ejercicio|serie|evento|agenda|comida|dieta|cardio|sueno|super|memoria|dato)/;
   return verb.test(text)&&target.test(text);
 }
 function inferDirectExpenseAction(userText,now=new Date()){
   const raw=String(userText||'').trim();
-  if(!/(gast[eé]|gaste|pagu[eé]|pague|anot[aá](?:me)?(?:\s+un)?\s+gasto|agreg[aá](?:me)?(?:\s+un)?\s+gasto|registr[aá](?:me)?(?:\s+un)?\s+gasto)/i.test(raw))return null;
+  if(!/(gast[eé]|gaste|pagu[eé]|pague|anot[aá](?:me)?(?:\s+un)?\s+gasto|agreg[aá](?:me)?(?:\s+un)?\s+gasto|registr[aá](?:me)?(?:\s+un)?\s+gasto|carg[aá](?:me)?(?:\s+un)?\s+gasto)/i.test(raw))return null;
   const amountMatch=raw.match(/\$\s*([\d][\d.,]*)/i)||raw.match(/(?:gast[eé]|gaste|pagu[eé]|pague|gasto(?:\s+de)?)\s+(?:uyu\s*)?([\d][\d.,]*)/i);
   if(!amountMatch)return null;
   const amount=parseMoney(amountMatch[1]);if(!Number.isFinite(amount)||amount<=0)return null;
@@ -5211,8 +5234,9 @@ function buildAIActionRecoveryContext(){
   });
 }
 async function executeAIActionResponse(reply,userText,maxActions=8){
+  refreshAIAppState();
   const initial=executeAIActionBlocks(reply,maxActions);
-  if(initial.matched||!expectsAIAction(userText))return initial;
+  if(initial.done.length||!expectsAIAction(userText))return initial;
   // Respaldo determinista para el pedido más frecuente: registrar un gasto simple.
   const directExpense=inferDirectExpenseAction(userText);
   if(directExpense){
@@ -5225,7 +5249,7 @@ async function executeAIActionResponse(reply,userText,maxActions=8){
       'DATOS DISPONIBLES:\n'+buildAIActionRecoveryContext()+'\nPEDIDO:\n'+String(userText||'');
     const recoveredRaw=await _aiComplete(recoveryPrompt);
     const recovered=executeAIActionBlocks(recoveredRaw,maxActions);
-    if(recovered.matched)return {clean:initial.clean,done:recovered.done,errors:initial.errors.concat(recovered.errors),matched:recovered.matched,recovered:true};
+    if(recovered.done.length)return {clean:initial.clean,done:recovered.done,errors:recovered.errors,matched:recovered.matched,recovered:true};
     return {clean:initial.clean,done:initial.done,errors:initial.errors.concat(recovered.errors,'La IA respondió, pero no generó una acción ejecutable'),matched:0};
   }catch(e){
     return {clean:initial.clean,done:initial.done,errors:initial.errors.concat('No pude recuperar la acción solicitada: '+(e.message||String(e))),matched:0};
@@ -5713,6 +5737,7 @@ async function _aiComplete(prompt, forcedProv=null){
       return d?.candidates?.[0]?.content?.parts?.[0]?.text||'';
     }
     if(prov==='deepseek_local'){
+      if(isNativeMartinApp())throw {status:0,message:'El proxy local no está disponible dentro de Android'};
       const _url = 'http://localhost:3000/v1/chat/completions';
       const timeout = 2500;
       const r=await _fetchT(_url,
@@ -7001,6 +7026,7 @@ function _stopVoice(){
 }
 
 async function interpretVoice(txt){
+  refreshAIAppState();
   const key=aiKey();
   if(!key){tst('Configurá '+AI_PROVIDERS[aiProvider()].label+' en Config → IA',3500);return;}
   stopSpeaking();
@@ -7022,8 +7048,9 @@ async function interpretVoice(txt){
   routines.forEach(r=>{r.days.forEach(d=>{d.exercises.forEach((ex,ei)=>{exNameMap[r.id+'|'+d.id+'|'+ei]=ex.name;});});});
   const weightsArr=Object.entries(weights);
   const gymWeights=weightsArr.length?'\nPesos registrados: '+weightsArr.map(([k,v])=>(exNameMap[k]||'ej'+k.split('|').pop())+': '+v+'kg').join(', '):'';
-  const movementCatalog=await loadExerciseMediaCatalog().catch(()=>null);
-  const gymMovementList=movementCatalog?exerciseMovementCatalogForAI(movementCatalog,'gym'):'';
+  const needsMovementCatalog=shouldIncludeMovementCatalog(txt);
+  const movementCatalog=needsMovementCatalog?await loadExerciseMediaCatalog().catch(()=>null):null;
+  const gymMovementList=movementCatalog?exerciseMovementCatalogForAI(movementCatalog,'gym').split('\n').slice(0,100).join('\n'):'';
   const gymData=buildGymAIContext()+gymWeights+(gymHist.length?'\nHistorial reciente: '+gymHist.slice(0,15).map(h=>h.rn+'-'+h.dn+':'+h.pct+'%').join('; '):'')+(gymMovementList?'\nCATÁLOGO CON MOVIMIENTO (usar nombres exactos al crear o cambiar ejercicios):\n'+gymMovementList:'');
   const proxEventos=events.filter(e=>e.date>=now.toISOString().slice(0,10)).slice(0,5).map(e=>e.title+' '+e.date+' '+e.time).join('; ');
   const dataCtx='DATOS DE LA APP:\n'+
@@ -7085,8 +7112,7 @@ async function interpretVoice(txt){
     chatHist.push({role:'assistant',text:voz});
     saveChat();
     if(resultados.length){
-      gastos=S.g('gst4',[]);pagosFijos=S.g('pf4',{});pagosEstado=S.g('pe4',{});events=S.g('evts1',[]);
-      if(curPage==='gym')renderGym();else if(curPage==='gastos')renderGastos();else if(curPage==='agenda')renderAgenda();
+      refreshAfterAIActions(run);
       // hablar el resultado de la acción (no se incluyó en el stream)
       if(resultados.length){const r=resultados.join('. ').replace(/[✅•⚠️📅📊💪🔴🟢]/g,'').trim();if(r)speak(r,null,true);}
     }
