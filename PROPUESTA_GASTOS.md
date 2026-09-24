@@ -1,200 +1,170 @@
 # Gastos · auditoría y propuestas
 
-**Para:** Martín · **Estado:** propuesta, sin código de Gastos hasta que elijas · **Rama:** `claude/zen-bohr-090uw3`
+**Para:** Martín · **Estado:** propuesta, sin código de pantallas de Gastos hasta que elijas · **Rama:** `claude/zen-bohr-090uw3`
 
-La app se recorrió a 375 px con datos de prueba **ficticios** pero realistas:
-- 3 tarjetas: Visa, Mastercard y OCA.
-- 10 compras. Hay de 1 pago y en cuotas (3, 6, 10 y 12), una que cruza el año (noviembre 2025 → octubre 2026) y algunas con cuotas ya pagadas.
-- 11 categorías: 7 pagos fijos, 3 para gastos variables y una meta de ahorro con monto y fecha.
-- 60 gastos variables repartidos en julio, agosto y septiembre de 2026.
-- Sueldos cargados y pagos marcados en julio y agosto.
-
-Cada error de abajo se reprodujo en el navegador con esos datos. Los pasos sirven para repetirlo.
+Tiene dos fuentes:
+1. **Recorrido a 375 px con datos de prueba ficticios:**
+   - 3 tarjetas y 10 compras en cuotas, una que cruza el año.
+   - 11 categorías, con una meta de ahorro.
+   - 60 gastos variables entre julio y septiembre de 2026.
+   - Sueldos y pagos marcados.
+   - Cada error de abajo se reprodujo en el navegador.
+2. **Tu respaldo real, analizado en tu PC sin sacarlo de ahí:** solo se pasaron conteos y patrones, nunca montos ni nombres. Cambia las prioridades: ver la sección 2.
 
 ---
 
 ## 1. Resumen en 30 segundos
 
-- **La IA no puede anotar compras con tarjeta** (B2): la acción `compra` se rompe siempre. Entonces la IA, la voz o vos terminan anotándolas como gasto variable en la categoría de la tarjeta, y la compra se cuenta **dos veces** (B7).
-- **La deuda de las tarjetas no baja sola** (B15): solo baja si tocás "Pagar 1" en cada compra, todos los meses.
-- **Pagos dice "✅ Todo pagado"** aunque las tarjetas estén sin pagar (B1).
-- **"Sumame 1.200 en la Visa" congela el total de la tarjeta de ese mes** (B3): las compras que agregues o borres después ya no cambian ese total.
-- **Mes y cuándo se paga están mezclados:** la app pone cada compra en el mes en que la cargás. La fecha de la compra y el cierre de la tarjeta no cuentan (B4). Como pagás casi todo con crédito en 1 pago, eso define cómo tendría que funcionar la pantalla.
-- La pantalla **Mes mide ~4,3 pantallas** (3.203 px) y tiene **62 controles de menos de 44 px**.
-
-Propuesta recomendada: **B · Tarjetas por cierre**, con el orden visual de A. Ver la sección 5.
-
----
-
-## 2. Recorrido por pestaña (375 px)
-
-| Pestaña | Qué muestra | Problemas |
-|---|---|---|
-| **Mes** | Sueldo, "Gasto total" y "Disponible"; 4 cifras (Fijos, Variables, Tarjetas, Ahorro); proyección a fin de mes; objetivos de ahorro; comparación con el mes anterior y con el mismo mes del año pasado; distribución del sueldo; lista de compromisos con monto editable y ✓; lista de gastos variables; 3 botones | 3.203 px de alto. Las tarjetas aparecen dos veces (arriba y en Compromisos). En "Distribución del sueldo", "Ahorro" en realidad es lo que queda sin gastar (B9). Los montos editables se ven sin separador de miles (`12700`), y el resto con `$12.7k` o `$12.700`. |
-| **Pagos** | Estado de pagos + pendientes + pagados | El total deja afuera tarjetas y ahorro, pero la lista los incluye (B1, B17). |
-| **Anual** | Balance del año, comparación con el año anterior, meses, categorías | Las tarjetas muestran la **deuda de hoy** para los dos años, así que la comparación da siempre "→ 0" (B5). |
-| **Comparar** | Dos meses lado a lado | Los meses para elegir arrancan en 2025, y no se pueden comparar datos viejos importados. |
-| **Tarjetas** | Deuda total y cuota del mes por tarjeta | La deuda está inflada (B15). "Cuota del mes" ignora el monto editado a mano, mientras Mes lo usa (B12). |
-| **Detalle de tarjeta** | Compras con barra de cuotas, "Pagar 1", ✕ | Dice "Total restante a futuro: **$2**", que es la cantidad de cuotas y no la plata (B16). |
-| **+ Gasto** | Categoría, monto, descripción, mes, año y fecha | Deja elegir categorías de tarjeta y de ahorro (B7). Fecha y mes son campos separados y pueden no coincidir (B18). La pestaña no se ve a 375 px: hay que deslizar las pestañas. |
-| **🛒 Súper** | Lista de compras | Sin problemas de datos (no es un gasto). |
+- **Usás Gastos como planilla de compromisos mensuales:** cada mes, cuánto hay que pagar de cada cosa y si ya está pagado, contra el sueldo, con meses futuros planificados. No la usás como registro diario: no hay gastos variables ni compras en cuotas cargadas. La propuesta se ordena para **ese** uso.
+- **Se perdió de vista tu historial de 2025:** ~190 montos están en categorías que ya no existen (se borraron y se recrearon con ids nuevos en enero de 2026). Anual y Comparar no ven 2025. Se puede recuperar sin perder nada con la herramienta **Vincular historial** (sección 6).
+- **Dos errores que rompen una planilla:**
+  - B22: cambiar el monto base de una categoría reescribe meses pasados ya pagados.
+  - B23: borrar una categoría deja su historial huérfano. Así se perdió lo de 2025.
+- **Pagos dice "Todo pagado" aunque falte una tarjeta o el ahorro** (B1).
+- **Recomendación:** A · Planilla de compromisos (sección 5), en 3 entregas. Las tarjetas por cierre (B) quedan para más adelante, si empezás a usar cuotas.
 
 ---
 
-## 3. Errores encontrados (con cómo reproducirlos)
+## 2. Tu uso real (respaldo anonimizado)
 
-Severidad: 🔴 cambia totales o pierde información · 🟠 confunde o muestra mal · 🟡 detalle.
-
-| # | Sev. | Qué pasa | Cómo reproducirlo | Resultado medido |
-|---|---|---|---|---|
-| B1 | 🔴 | **Pagos dice "Todo pagado" con las tarjetas sin pagar.** El encabezado usa `totalCompromisosMes`, que deja afuera las tarjetas y el ahorro, pero la lista de pendientes los incluye. | Marcar pagados todos los fijos del mes y dejar las 3 tarjetas sin marcar. | Encabezado "✅ Todo pagado este mes" con 4 pendientes abajo. |
-| B2 | 🔴 | **La IA no puede anotar una compra con tarjeta.** `compra` busca `c.n.toLowerCase()`, pero las tarjetas guardan el nombre en `name`. Si el id no coincide exacto, lanza un error. | Chat: "anotá 1.200 en la Visa, farmacia" → `{"op":"compra","n":"Visa Oro","v":1200}`. También con `cat:"card_…"`. | `Cannot read properties of undefined (reading 'toLowerCase')`. Si coincidiera, el mensaje diría "tarjeta undefined" y la fecha que dijiste se ignora. |
-| B3 | 🔴 | **"Sumame X en la tarjeta" congela ese mes.** `ajustar_monto` guarda en `pf4` un total fijo (lo calculado + X). Después, `montoCat` usa ese valor fijo y no las compras. | Ajustar +1.200 la Visa en septiembre y después cargar una compra de 5.000 en septiembre. | Mes muestra 13.900; lo real es 17.700. |
-| B4 | 🔴 | **La fecha de la compra no se usa.** `doSavePurch` y la acción `compra` calculan la primera cuota desde hoy. | Cargar una compra con fecha 15/07 y 0 cuotas pagadas. | Primera cuota: septiembre 2026. |
-| B5 | 🟠 | **Anual compara tarjetas con la deuda de hoy.** `totalCatAnio` devuelve la deuda pendiente para cualquier año. | Anual 2026 vs 2025, fila Visa. | 48.700 en los dos años (lo cobrado en 2026 fue 45.700). |
-| B6 | 🟠 | **El ahorro solo suma los meses editados.** `ahorroAcumCat` suma las claves de `pf4`, pero el aporte de cada mes sale de la base si no lo editaste. | Meta con base 1.500/mes, sin editar septiembre. | Mes muestra "1.500/mes", pero el acumulado no lo suma. |
-| B7 | 🔴 | **Una compra con tarjeta puede contarse dos veces.** "+ Gasto" (y la IA y la voz) deja anotar un gasto variable en la categoría de una tarjeta, que se suma a sus cuotas. | Anotar "Supermercado 4.200" en la categoría Visa (esa compra ya estaba en la tarjeta). La IA resuelve "la Visa" como categoría. | El gasto del mes pasa de 89.381 a 93.581. |
-| B9 | 🟡 | "Distribución del sueldo" llama "Ahorro" al resto, que es ahorro + disponible. | Mes con sueldo cargado. | Etiqueta engañosa. |
-| B12 | 🟠 | **Dos cifras distintas para la misma tarjeta.** Mes usa el monto editado; Tarjetas usa las cuotas. | Editar a mano el monto de la Visa en septiembre a 15.000. | Mes 15.000; Tarjetas 12.700. |
-| B14 | 🔴 | **Borrar una tarjeta cambia el pasado.** Al borrarla, desaparece su categoría y con ella lo que pagaste en meses anteriores. | Borrar la Mastercard y mirar agosto. | Agosto baja de 80.609 a 76.309. |
-| B15 | 🔴 | **La deuda no baja con los meses.** `getCardDebt` usa `paidInstallments`, que solo sube con "Pagar 1" por compra. Marcar pagada la tarjeta del mes no toca las compras. | Compra en 6 cuotas desde junio, con 2 marcadas; ya vencieron 4. | Deuda contada 12.000; real 6.000. |
-| B16 | 🟠 | "Total restante a futuro: **$2**" muestra la cantidad de cuotas como plata. | Detalle de cualquier tarjeta con cuotas. | `$2`, `$1`, `$1`… |
-| B17 | 🟡 | La meta de ahorro aparece en Pagos como "pago pendiente". | Pagos con una meta de ahorro que tenga aporte mensual. | "AHORRO AUTO NUEVO · MARCAR PAGO". |
-| B18 | 🟡 | Fecha y mes del gasto no coinciden. | "+ Gasto" con Mes = septiembre y Fecha = 05/03. | Se guarda en septiembre con fecha "05/03". |
-| B19 | 🟠 | **Compras viejas corridas un mes.** La migración de compras sin `startM` usa `addedM − (pagadas − 1)`; las nuevas usan `mes − pagadas`. | Compra de 6 cuotas con 2 pagadas: cargada antes vs después de la migración. | En septiembre: cuota 2/6 vs 3/6. |
-| B20 | 🟡 | La proyección de fin de mes se dispara al principio del mes: es lineal. | Día 2 con 5.000 en variables. | Proyecta 75.000. |
-| B21 | 🟡 | Latente: los botones de editar y borrar gastos variables pasan `_id` sin comillas. Hoy todos los ids son números; uno de texto (datos viejos o importados) rompería esos botones. | — | Sin efecto hoy. |
-
-**Lo que está bien:**
-- `parseMoney` entiende `1.250`, `1.250,50`, `1,250.50`, `12,5`, `$ 3.400` y `1.234.567`. Solo ignora la moneda: "USD 40" se toma como 40 pesos.
-- Las cuotas que cruzan el año se calculan bien (noviembre 2025 = 1/12 → octubre 2026 = 12/12).
-- `gasto`, `editar_gasto`, `ingreso`, `pago`, `ahorro` y las metas funcionan y tienen pruebas.
-
-### Qué anota hoy la IA (acciones)
-
-| Acción | Estado |
+| Dato | Qué dice |
 |---|---|
-| `gasto` | ✓ funciona, pero puede elegir la categoría de una tarjeta (B7) |
-| `compra` (tarjeta) | ✗ se rompe (B2) |
-| `ajustar_monto` | ⚠ congela las tarjetas (B3); en pagos fijos está bien |
-| `fijo` | ✓ pone el monto del mes; en tarjetas tiene el mismo efecto que B3 |
-| `pago`, `ingreso`, `ahorro`, `crear_meta`, `actualizar_meta`, `editar_gasto` | ✓ |
+| Respaldo | 1,2 MB, 42 claves, formato v2 correcto; exportado con la APK 5 (funciona) |
+| `pf4` (montos por mes) | 260 montos, desde enero de 2025 hasta marzo de 2027 (meses futuros planificados) |
+| Montos huérfanos | ~190 de esos 260 están en **15 ids de categoría que ya no existen**. Entre enero y junio de 2026 hay meses con monto en el id viejo **y** en el nuevo para la misma categoría. |
+| `pe4` (pagado) | 46 marcas de "pagado" sin monto en `pf4`: se pagó con el monto base. Es válido, pero ver B22. |
+| `gst4` (gastos variables) | 0 |
+| `cpurch1` (compras en cuotas) | 0. Hay 2 tarjetas sin compras: el monto de la tarjeta se carga a mano cada mes. |
+| `cats4` | 20 categorías; 10 sin ningún pago (3 de ellas de ahorro) |
+| `sld4` (sueldo) | Cargado en 3 meses |
+| Claves de IA | 5 claves viajaban en el respaldo. **Ya corregido en T0c:** ahora salen solo si tildás "Incluir claves de IA". |
+
+**Conclusión:** lo que más importa es ver el mes, qué falta pagar, el total del mes contra el sueldo, planificar los meses que vienen y el histórico anual. Los gastos variables y las cuotas son secundarios.
 
 ---
 
-## 4. Cuánto cuesta hoy lo más común
+## 3. Errores encontrados
 
-| Tarea | Hoy | Con A | Con B |
-|---|---|---|---|
-| **Anotar una compra con tarjeta en 1 pago** | 7 toques y 2 campos: Gastos → Tarjetas → tarjeta → "+ Manual" → comercio → monto → Guardar → cerrar. Queda en el mes actual aunque la pagues el que viene. Por voz o chat se anota como gasto y se duplica (B2/B7). | 4: Gastos → **Anotar** → "Tarjeta" → monto y Guardar | 4, y cae en el resumen que corresponde por el cierre |
-| **Ver cuánto va del mes** | 1 toque, pero "Gasto total" mezcla fijos + cuotas + variables, y la proyección exagera al principio del mes | 1: **Consumido / Por pagar / Disponible** | 1, con consumo por fecha real |
-| **Ver qué falta pagar** | 2 toques (Gastos → Pagos). El total deja afuera las tarjetas (B1). | 1: sección **Por pagar** arriba en Mes | 1, con el resumen de cada tarjeta y su vencimiento |
-| **Anotar un gasto en efectivo** | 3 toques + monto, deslizando las pestañas para encontrar "+ Gasto" | 3 | 3 |
+Severidad: 🔴 cambia totales o pierde información · 🟠 confunde o muestra mal · 🟡 detalle. **Para vos** indica si pega en tu uso real.
+
+| # | Sev. | Para vos | Qué pasa | Cómo reproducirlo | Resultado medido |
+|---|---|---|---|---|---|
+| **B22** | 🔴 | **Sí** | **Cambiar el monto base reescribe meses pasados.** Un mes marcado pagado sin monto propio en `pf4` toma la base de hoy. | Agua con base 900, julio marcado pagado sin editar. Cambiar la base a 1.400. | Julio pasa de 900 a 1.400 aunque pagaste 900. Tenés 46 meses así. |
+| **B23** | 🔴 | **Sí** | **Borrar una categoría deja su historial huérfano.** `delCat` quita la categoría pero sus montos quedan en `pf4`/`pe4` con un id que nadie muestra. | Borrar "Luz" (con julio y agosto cargados) y mirar agosto. | Agosto baja de 81.109 a 77.659; `luz_6_2026` y `luz_7_2026` siguen en `pf4` sin categoría. Así se perdió 2025. |
+| B1 | 🔴 | **Sí** | **Pagos dice "Todo pagado" con tarjetas sin pagar.** El encabezado deja afuera tarjetas y ahorro; la lista los incluye. | Marcar pagados los fijos y dejar las tarjetas sin marcar. | "✅ Todo pagado" con 4 pendientes abajo. |
+| B14 | 🔴 | Sí | Borrar una tarjeta cambia los meses pasados (su categoría desaparece). | Borrar una tarjeta y mirar el mes anterior. | Agosto baja de 80.609 a 76.309. |
+| B17 | 🟡 | Sí | Las metas de ahorro aparecen en Pagos como "pago pendiente". | Pagos con una meta con aporte mensual. | "AHORRO … · MARCAR PAGO". |
+| B6 | 🟠 | Sí | El ahorro acumulado solo suma los meses editados; los que usan la base no cuentan. | Meta con base 1.500/mes, sin editar el mes. | Mes muestra "1.500/mes", pero el acumulado no lo suma. |
+| B9 | 🟡 | Sí | "Distribución del sueldo" llama "Ahorro" a lo que queda sin gastar (ahorro + disponible). | Mes con sueldo cargado. | Etiqueta engañosa. |
+| B12 | 🟠 | Sí | La misma tarjeta muestra dos cifras: Mes usa el monto cargado y Tarjetas las cuotas (que para vos son 0). | Monto de tarjeta cargado a mano. | Mes 15.000, Tarjetas "cuota del mes" 0 o distinta. |
+| B20 | 🟡 | Poco | La proyección de fin de mes se dispara al principio del mes (es lineal). | Día 2 con 5.000 en variables. | Proyecta 75.000. |
+| B2 | 🔴 | Hoy no | La acción de IA `compra` se rompe siempre: busca `c.n` y las tarjetas usan `name`. | "Anotá 1.200 en la Visa" en el chat. | `TypeError … toLowerCase`. |
+| B3 | 🟠 | Hoy no | "Sumame X en la tarjeta" congela el total: para vos es lo esperado (cargás el resumen a mano); con cuotas congelaría las compras. | Ajuste + compra posterior en el mismo mes. | 13.900 en vez de 17.700. |
+| B4 | 🔴 | Hoy no | La fecha de la compra no se usa: la primera cuota sale de "hoy". | Compra con fecha 15/07 y 0 pagadas. | Primera cuota: septiembre. |
+| B5 | 🟠 | Hoy no | Anual compara las tarjetas con la deuda de hoy. | Anual, fila de tarjeta. | La misma cifra en los dos años. |
+| B7 | 🔴 | Hoy no | Un gasto variable en la categoría de una tarjeta se suma a sus cuotas (se duplica). | "+ Gasto" en la categoría Visa. | 89.381 → 93.581. |
+| B15 | 🔴 | Hoy no | La deuda de las tarjetas no baja con los meses. | 6 cuotas desde junio, con 2 marcadas. | Deuda 12.000 contra 6.000 real. |
+| B16 | 🟠 | Hoy no | "Total restante a futuro: **$2**" muestra la cantidad de cuotas como plata. | Detalle de tarjeta con cuotas. | `$2`, `$1`… |
+| B18 | 🟡 | Hoy no | La fecha y el mes del gasto no coinciden. | Mes = septiembre, Fecha = 05/03. | Se guarda así. |
+| B19 | 🟠 | Hoy no | Las compras migradas quedan corridas un mes. | 6 cuotas con 2 pagadas, antes y después de la migración. | Cuota 2/6 contra 3/6. |
+| B21 | 🟡 | No | Latente: `_id` sin comillas en los botones de gastos variables. | — | Sin efecto hoy. |
+
+**Lo que está bien:** `parseMoney` (entiende `1.250`, `1.250,50`, `12,5`, `$ 3.400`), las cuotas que cruzan el año y las acciones de IA `fijo`, `pago`, `ingreso`, `ahorro`, metas y `editar_gasto`.
 
 ---
 
-## 5. Tres formas de organizarlo
+## 4. Cuánto cuesta hoy lo que más hacés
 
-_Las maquetas son de 375 px y las cifras son de ejemplo._
+| Tarea | Hoy | Con A |
+|---|---|---|
+| **Ver qué falta pagar este mes** | 2 toques (Gastos → Pagos), y el total deja afuera tarjetas y ahorro (B1) | **0**: es lo primero que ves en Gastos |
+| **Marcar algo como pagado** | 2–3 toques; el círculo ○ es chico, de 33 px | 1 toque en un botón de 44 px; guarda el monto pagado (arregla B22) |
+| **Cargar el monto de la tarjeta de este mes** | Mes → deslizar hasta la fila → tocar el número → escribir (el campo mide 30 px) | Tocar la fila → teclado numérico grande → listo |
+| **Planificar un monto para los próximos meses** | Mes por mes: avanzar el mes → buscar la fila → escribir, 12 veces para un año | "Repetir hasta…" en la fila, o la grilla de 12 meses |
+| **Ver el año** | Anual (sin 2025, por los huérfanos) | Tabla anual por categoría, con 2025 recuperado |
 
-Todas son compatibles con `gst4`, `pf4`, `pe4`, `sld4`, `cats4`, `cards1` y `cpurch1`: ninguna borra ni cambia el formato de lo que ya tenés. Si hace falta algo nuevo, se agrega como campo opcional o clave nueva, con migración que no borra lo viejo.
+---
 
-### A · Ordenar y arreglar (sin tocar el modelo)
+## 5. Formas de organizarlo
+
+_Las maquetas son de 375 px y las cifras son de ejemplo._ Todas son compatibles con `gst4`, `pf4`, `pe4`, `sld4`, `cats4`, `cards1` y `cpurch1`: nada se borra ni cambia de formato.
+
+### A · Planilla de compromisos (recomendada)
 
 ```
 ┌─────────────────────────────────────┐
 │ ‹  Septiembre 2026  ›               │
 │ ┌─────────┬──────────┬────────────┐ │
-│ │Gastado  │Por pagar │Disponible  │ │
-│ │ $89.381 │ $41.290  │  $10.619   │ │
+│ │Este mes │Falta     │Te queda    │ │
+│ │ $96.400 │ $38.700  │  $5.100    │ │
 │ └─────────┴──────────┴────────────┘ │
-│ POR PAGAR (7)              ver todo │
-│ ● Alquiler      22.000   [ Pagar ]  │
-│ 💳 Visa Oro     12.700   [ Pagar ]  │
-│ ● UTE            3.200   [ Pagar ]  │
-│ ÚLTIMOS GASTOS             ver todo │
-│ Hoy  Disco            1.320         │
-│ Ayer Ancap            2.100         │
-│ ▸ Objetivos  ▸ Comparaciones        │
-│ [       ＋ Anotar un gasto        ] │
+│ ████████████████░░░░  60% pagado    │
+│ FALTA PAGAR (5)                     │
+│ ● Alquiler     22.000   [ Pagar ]   │
+│ 💳 Tarjeta A   12.700   [ Pagar ]   │
+│ ● Luz           3.200   [ Pagar ]   │
+│ PAGADO (8)                   ver ▾  │
+│ AHORRO              1.500 este mes  │
+│ ▸ Planificar próximos meses         │
 └─────────────────────────────────────┘
-  Anotar → [Efectivo/débito | Tarjeta]
+ Tocar una fila → monto, "repetir
+ hasta…", nota, pagado con fecha
 ```
 
-- Arregla B1–B21. Pagos queda dentro de Mes como "Por pagar", con tarjetas incluidas y sin el ahorro.
-- Objetivos y comparaciones van en secciones plegables. Mes baja a ~1,5 pantallas y todo queda de 44 px.
-- **Anotar** es una sola hoja con el medio de pago. "Tarjeta" escribe en `cpurch1` (1 pago por defecto) y nunca en una categoría de tarjeta (B7).
-- La IA: `compra` arreglada, y "sumame X en la tarjeta" pasa a crear una compra en vez de congelar el mes (B3).
-- **Claves:** ninguna nueva. Escribe en `gst4`, `cpurch1`, `pf4` y `pe4` como hoy.
-- **A favor:** poco riesgo, rápido, se prueba por partes.
-- **En contra:** la tarjeta sigue siendo "mes calendario". No responde "¿cuándo lo pago?".
+- **Mes = la planilla.** Arriba: total del mes, lo que falta y lo que te queda del sueldo. Después, "Falta pagar" (tarjetas incluidas, sin el ahorro) y "Pagado" plegado. Pagos se integra acá (arregla B1 y B17).
+- **Pagar guarda el monto** en `pf4` si no tenía uno propio. Así cambiar la base nunca reescribe el pasado (B22). La base cambia solo desde el mes actual en adelante, con aviso.
+- **Tocar una fila** abre una hoja con el monto, "repetir este monto hasta…" (llena meses futuros sin pisar los que ya tienen monto), una nota y "pagado el día…". Todo de 44 px.
+- **Planificar próximos meses:** una grilla de 12 meses por categoría para ver y cargar lo que viene (hoy tenés montos hasta marzo de 2027).
+- **Categorías:** en lugar de borrar, **archivar**. Se ocultan de la planilla, pero el historial sigue contando (arregla B23 y B14).
+- **Anual:** tabla por categoría y mes, con total, promedio y comparación con el año anterior.
+- **Ahorro:** una sección propia, sin pasar por Pagos, con el acumulado bien calculado (B6).
+- **Claves:** ninguna nueva para la planilla. Archivar usa un campo opcional `archived` en `cats4`. Las notas y la fecha de pago irían en una clave nueva opcional (`pf4n`), si las querés.
+- **A favor:** es exactamente lo que usás; poco riesgo; arregla B1, B6, B9, B12, B14, B17, B22 y B23.
+- **En contra:** no agrega nada para cuotas ni gastos diarios (hoy no los usás).
 
-### B · Tarjetas por cierre (recomendada)
+### B · Tarjetas por cierre (más adelante, si empezás a usar cuotas)
 
-```
-┌─────────────────────────────────────┐
-│ ‹  Septiembre 2026  ›               │
-│ CONSUMISTE           PAGÁS ESTE MES │
-│ $61.245              $78.100        │
-│ efectivo + tarjetas  fijos + resúm. │
-│─────────────────────────────────────│
-│ RESÚMENES DE TARJETA                │
-│ 💳 Visa Oro  cierra 22 · vence 5/10 │
-│    $17.700  (8 compras)  [ Pagar ]  │
-│ 💳 OCA       cierra 25 · vence 8/10 │
-│    $8.490              ✓ pagado     │
-│ FIJOS                     3 de 7 ✓  │
-│ ● Alquiler 22.000 [Pagar] ● UTE ✓   │
-│ [       ＋ Anotar un gasto        ] │
-└─────────────────────────────────────┘
-```
-
-- Cada tarjeta tiene, opcionalmente, **día de cierre** y **día de vencimiento** (se cargan una vez).
-- Con la fecha de la compra, la app sabe en qué resumen cae: si es después del cierre, va al del mes siguiente. Las cuotas arrancan ahí (arregla B4).
-- Mes separa **lo que consumiste** (por fecha real) de **lo que pagás este mes** (fijos + resúmenes que vencen). Contesta "cuánto va del mes" y "qué falta pagar" sin mezclar.
-- **Pagar el resumen** marca como pagadas las cuotas de ese resumen, así la deuda baja sola (B15). Desmarcarlo lo revierte.
-- "Sumame 1.200 en la Visa en agosto" es una compra de 1 pago en ese resumen, no un total congelado (B3).
-- Incluye todo lo de A (arreglos, "Por pagar", "Anotar", 44 px).
-- **Claves:**
-  - `cards1`: `cierre` y `vence` opcionales.
-  - `cpurch1`: las compras nuevas guardan la fecha como `AAAA-MM-DD` y siguen guardando `startM`/`startY`, así el resto de la app no cambia.
-  - `pe4`: el pago del resumen se marca como hoy. `pf4` sigue para editar a mano, con "volver al cálculo".
-- **Migración:** no hace falta. Una tarjeta sin cierre funciona como hoy. B19 se corrige solo para compras viejas, con aviso.
-- **A favor:** refleja cómo pagás (crédito en 1 pago); la deuda y los totales quedan bien solos; la IA tiene una sola forma de anotar compras.
-- **En contra:** más lógica que A, y hay que cargar 2 datos por tarjeta.
+Cada tarjeta con día de cierre y de vencimiento. La compra cae en el resumen que corresponde; pagar el resumen baja la deuda sola; "sumame X" crea una compra en vez de congelar el mes. Arregla B2–B5, B7, B15, B16, B18 y B19.
+- **Claves:** `cierre` y `vence` opcionales en `cards1`; fecha ISO en las compras nuevas de `cpurch1`.
+- **Hoy tiene poco valor:** no cargás compras en cuotas.
 
 ### C · Libro único de movimientos
 
-```
-┌─────────────────────────────────────┐
-│ Todos · Efectivo · Visa · OCA · MC  │
-│ HOY                        -$3.420  │
-│  Disco         Súper   💳Visa 1.320 │
-│  Ancap         Nafta   💵     2.100 │
-│ AYER                       -$1.790  │
-│  Farmacia      Salud   💳OCA  1.790 │
-│ …                                   │
-│ [       ＋ Anotar un gasto        ] │
-└─────────────────────────────────────┘
-```
+Una clave nueva `mov1` con cada movimiento (fecha, monto, medio de pago, cuotas y categoría), de la que se calculan todas las pantallas. Es el modelo más limpio, pero pide la migración más grande y mantener dos formatos durante un tiempo. **No se recomienda** para tu uso actual.
 
-- Una clave nueva (`mov1`) con cada movimiento: fecha, monto, medio (efectivo, débito o tarjeta), cuotas, categoría y descripción. Las pantallas actuales se calculan desde ahí.
-- **Claves:** `mov1` nueva. Para no romper respaldos ni código viejo, habría que seguir escribiendo `gst4` y `cpurch1` en paralelo (o migrar con marcha atrás).
-- **A favor:** el modelo más limpio, con filtros por medio de pago y la mejor base para análisis e IA.
-- **En contra:** la migración más grande y riesgosa, con más trabajo y mantener dos formatos durante un tiempo.
+**Recomendación: A, en 3 entregas.**
+1. Arreglos de datos:
+   - "Vincular historial" (sección 6).
+   - Pagar guarda el monto (B22).
+   - Archivar en vez de borrar (B23 y B14).
+   - Totales de Pagos (B1 y B17).
+   - Acumulado de ahorro (B6).
+2. Mes como planilla: "Falta pagar", "Pagado", hoja por fila con "repetir hasta…" y 44 px.
+3. Planificar 12 meses y la tabla anual.
 
-**Recomendación:** B, en 3 entregas que se prueban por separado:
-1. Arreglos sin cambiar el modelo: B1, B2, B5, B7, B9, B12, B14, B16, B17, B18 y B21.
-2. Mes nuevo con "Por pagar", "Anotar" y 44 px.
-3. Cierre y vencimiento de tarjetas, pago del resumen que baja la deuda, y ajustes como compras (B3, B4, B15, B19).
+Los errores de cuotas (B2, B4, B15, B16 y B19) se pueden arreglar igual en la entrega 1, porque son chicos. Pero no son prioridad.
 
 ---
 
-## 6. Qué se puede arreglar ya, elijas lo que elijas
+## 6. Vincular historial (arreglo de datos, sin esperar la elección)
 
-B1, B2, B5, B9, B12, B14 (mantener la categoría de una tarjeta borrada como "archivada" para que el pasado no cambie), B16, B17, B18, B20 (proyección con el ritmo de los 3 meses anteriores en vez de lineal) y B21. Son cambios chicos, con prueba cada uno, y no tocan el formato de ninguna clave.
+- **Detectar:** busca en `pf4`/`pe4` los montos cuyo id de categoría no existe en `cats4`. Los agrupa por id, con cantidad de meses, rango (por ejemplo "ene 2025 – jun 2026") y total. No hay nombres ni ids escritos en el código: todo sale de tus datos.
+- **Elegir, por grupo:**
+  - "Unir a <categoría existente>".
+  - "Crear categoría" con un nombre que escribís vos.
+  - "Dejar como está".
+- **Reglas al unir:**
+  - Si el mes ya tiene monto en la categoría destino, **se conserva el actual**: lo viejo solo llena huecos.
+  - La marca de pagado (`pe4`) viaja con su monto.
+  - Se muestra cuántos meses se completan y cuántos se ignoran.
+- **Seguridad:**
+  - Vista previa antes de confirmar.
+  - Si hoy no hiciste respaldo, primero se ofrece exportarlo.
+  - No se borra nada hasta confirmar. Las claves viejas quedan hasta que confirmes "limpiar".
+  - Se puede deshacer en la misma sesión.
 
-## 7. Pendiente
+---
 
-- La sesión de la PC va a analizar tu respaldo real **sin sacarlo de la PC** y pasar solo hallazgos anonimizados: tipos de error, cantidades y patrones, sin montos ni nombres. Esos hallazgos van a ajustar la prioridad de los arreglos.
-- Para B hacen falta el día de cierre y de vencimiento de cada tarjeta que uses.
+## 7. Qué se puede arreglar ya, elijas lo que elijas
+
+"Vincular historial", B22, B23/B14 (archivar), B1, B17, B6, B9 y B12, más los chicos de cuotas si querés: B2, B16 y B19. No cambian el formato de ninguna clave y cada uno lleva su prueba.
