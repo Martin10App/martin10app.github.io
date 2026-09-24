@@ -45,6 +45,7 @@ function makeContext({native=false,plugins=false,picker=true,stored=STORED}={}){
   const localStorage=fakeStorage(stored);
   const context={
     localStorage,currentUser:{id:'usr_martin',name:'martin',isAdmin:true},calls,Blob,JSON,Date,Math,Number,String,Object,Array,
+    esc:s=>String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'),
     tst:msg=>calls.toasts.push(msg),oOv1:h=>calls.modals.push(h),cOv1:()=>{},confirm:()=>true,setTimeout:()=>0,location:{reload(){}},
     navigator:{clipboard:{writeText:async text=>{calls.clipboard.push(text);}}},
     document:{getElementById:()=>null,createElement:()=>({click(){calls.anchors++;}}),body:{appendChild(){},removeChild(){}}},
@@ -82,6 +83,24 @@ test('[T0b] APK con Filesystem y Share: si se cancela Compartir no se anota el r
   await ctx.exportData();
   assert.equal(ctx.S.g('lastBackupAt',0),0);
   assert.match(ctx.calls.toasts.at(-1),/No se guardó/);
+  assert.equal(ctx.calls.modals.length,0,'cancelar no abre el modal de copiar');
+});
+
+test('[R1b] APK con plugins: si Compartir falla (no cancelar) abre el modal de copiar y no marca el respaldo',async()=>{
+  const ctx=makeContext({native:true,plugins:true});
+  ctx.Capacitor.Plugins.Share.share=async()=>{throw new Error('boom');};
+  await ctx.exportData();
+  assert.equal(ctx.calls.modals.length,1);
+  assert.match(ctx.calls.modals[0],/No se pudo abrir Compartir \(boom\)/);
+  assert.match(ctx.calls.modals[0],/Copiar respaldo \(\d+ KB\)/);
+  assert.doesNotMatch(ctx.calls.modals[0],/Actualizar la app/);
+  assert.equal(ctx.S.g('lastBackupAt',0),0);
+  assert.equal(await ctx.copyBackupToClipboard(),true);
+  const failWrite=makeContext({native:true,plugins:true});
+  failWrite.Capacitor.Plugins.Filesystem.writeFile=async()=>{throw new Error('sin espacio');};
+  await failWrite.exportData();
+  assert.match(failWrite.calls.modals[0],/No se pudo abrir Compartir \(sin espacio\)/);
+  assert.equal(failWrite.calls.share.length,0);
 });
 
 test('[T0b] APK actual (sin plugins): no finge la descarga, ofrece copiar y actualizar',async()=>{

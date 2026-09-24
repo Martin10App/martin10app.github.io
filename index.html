@@ -8911,7 +8911,8 @@ async function exportData(){
   if(mode==='native-no-plugins')return showBackupFallback(backup);
   return exportBackupBrowser(backup);
 }
-async function exportBackupNative({json,fname}){
+async function exportBackupNative(backup){
+  const {json,fname}=backup;
   try{
     const written=await capacitorPlugin('Filesystem').writeFile({path:fname,data:json,directory:'CACHE',encoding:'utf8'});
     await capacitorPlugin('Share').share({title:'Respaldo MartinApp',text:fname,url:written.uri,dialogTitle:'Guardar o enviar el respaldo'});
@@ -8919,17 +8920,20 @@ async function exportBackupNative({json,fname}){
   }catch(e){
     const msg=String(e?.message||e||'');
     if(/cancel/i.test(msg)){tst('No se guardó el respaldo');return;}
-    tst('No se pudo crear el respaldo: '+msg,4500);
+    // Falló algo que no es cancelar: no dejarlo sin respaldo, ofrecer copiarlo.
+    showBackupFallback(backup,msg||'error desconocido');
   }
 }
-function showBackupFallback(backup){
+function showBackupFallback(backup,reason){
   window._pendingBackup=backup;
   const kb=Math.max(1,Math.round(new Blob([backup.json]).size/1024));
+  const why=reason?`No se pudo abrir Compartir (${esc(reason)}). Copiá el respaldo y pegalo en un lugar seguro: un chat de WhatsApp con vos mismo, un mail o una nota.`
+    :'Esta versión de la app no puede guardar archivos en el teléfono. Copiá el respaldo y pegalo en un lugar seguro: un chat de WhatsApp con vos mismo, un mail o una nota.';
   oOv1(`<div class="mt">Respaldo de tus datos</div>
-    <div class="alert al-warn"><div class="al-i">⚠️</div><div class="al-t">Esta versión de la app no puede guardar archivos en el teléfono. Copiá el respaldo y pegalo en un lugar seguro: un chat de WhatsApp con vos mismo, un mail o una nota. Para restaurarlo usá <strong>📋 Pegar respaldo</strong>.</div></div>
+    <div class="alert al-warn"><div class="al-i">⚠️</div><div class="al-t">${why} Para restaurarlo usá <strong>📋 Pegar respaldo</strong>.</div></div>
     <button class="btn b-lg b-p" type="button" onclick="copyBackupToClipboard()">Copiar respaldo (${kb} KB)</button>
-    <button class="btn b-md b-g" type="button" style="width:100%;margin-top:10px;min-height:48px" onclick="updateAppFromBackup()">Actualizar la app</button>
-    <div style="font-size:10.5px;color:var(--text2);line-height:1.5;margin-top:12px">La próxima versión de la app guarda el archivo directo y te deja enviarlo a WhatsApp, Drive o Gmail.</div>`);
+    ${reason?'':`<button class="btn b-md b-g" type="button" style="width:100%;margin-top:10px;min-height:48px" onclick="updateAppFromBackup()">Actualizar la app</button>
+    <div style="font-size:10.5px;color:var(--text2);line-height:1.5;margin-top:12px">La próxima versión de la app guarda el archivo directo y te deja enviarlo a WhatsApp, Drive o Gmail.</div>`}`);
 }
 async function copyBackupToClipboard(){
   const backup=window._pendingBackup;if(!backup)return false;
