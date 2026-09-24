@@ -2261,12 +2261,25 @@ function cleanupSupersetGroups(exercises){
   return exercises;
 }
 function normalizeSupersetAssignments(exercises){
-  const groupIds=new Map();
-  (exercises||[]).forEach(ex=>{
-    const raw=String(ex.superset||ex.biserie||'').trim();
-    if(!raw){delete ex.superset;return;}
-    if(!groupIds.has(raw))groupIds.set(raw,'ss_'+uid());
-    ex.superset=groupIds.get(raw);delete ex.biserie;
+  // La IA etiqueta biseries de muchas formas: "A", "A1"/"A2", "b-2", "Biserie B" o true.
+  // Todas se reducen a una clave de grupo; true arma pares con el ejercicio consecutivo.
+  const groupIds=new Map();let openPair=null;
+  (exercises||[]).forEach((ex,i)=>{
+    const value=ex.superset||ex.biserie;delete ex.biserie;
+    const norm=(value===true?'true':String(value||'')).normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().trim()
+      .replace(/^(biserie|superserie|superset)\s*[-_:#]?\s*/,'').trim();
+    if(!norm||/^(no|none|null|false|ninguna?|-|0)$/.test(norm)){delete ex.superset;openPair=null;return;}
+    let key;
+    if(/^(true|si|yes)$/.test(norm)){
+      if(openPair&&openPair.index===i-1&&openPair.count<2){key=openPair.key;openPair.count++;openPair.index=i;}
+      else{key='par_'+i;openPair={key,count:1,index:i};}
+    }else{
+      openPair=null;
+      const labeled=norm.match(/^([a-z])\s*[-_.]?\s*\d$/)||norm.match(/^(\d+)\s*[-_.]?\s*[a-z]$/);
+      key='grupo_'+(labeled?labeled[1]:norm);
+    }
+    if(!groupIds.has(key))groupIds.set(key,'ss_'+uid());
+    ex.superset=groupIds.get(key);
   });
   return cleanupSupersetGroups(exercises||[]);
 }

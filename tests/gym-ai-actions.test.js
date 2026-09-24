@@ -192,3 +192,43 @@ test('el catálogo completo queda disponible para IA y selector manual',()=>{
   assert.match(html,/CATÁLOGO PREFERIDO/);
   assert.match(html,/buscar la técnica en YouTube/);
 });
+
+test('[T1] una biserie que la IA etiqueta A1/A2 queda como una sola biserie A',()=>{
+  const exercises=[
+    {name:'Press banca',superset:'A1'},
+    {name:'Remo con barra',superset:'A2'},
+    {name:'Curl',superset:'b1'},
+    {name:'Tríceps en polea',superset:'B-2'},
+    {name:'Sentadilla'}
+  ];
+  context.normalizeSupersetAssignments(exercises);
+  const day={exercises};
+  const meta=exercises.map((_,i)=>context.supersetMeta(day,i));
+  assert.deepEqual(meta.map(m=>m&&m.label+m.position),['A1','A2','B1','B2',null]);
+});
+
+test('[T1] biseries marcadas con true o "Biserie A" se arman de a pares consecutivos',()=>{
+  const exercises=[
+    {name:'Press militar',biserie:true},
+    {name:'Elevaciones laterales',biserie:true},
+    {name:'Dominadas',superset:'Biserie B'},
+    {name:'Face pull',superset:'biserie b'},
+    {name:'Plancha',superset:'no'}
+  ];
+  context.normalizeSupersetAssignments(exercises);
+  const day={exercises};
+  const meta=exercises.map((_,i)=>context.supersetMeta(day,i));
+  assert.deepEqual(meta.map(m=>m&&m.label+m.position),['A1','A2','B1','B2',null]);
+});
+
+test('[T1] crear_rutina conserva la biserie A1/A2 que manda la IA',()=>{
+  const normalized=context.normalizeAIRoutinePayload({name:'Torso',days:[{label:'Torso',exercises:[
+    {nombre:'Press banca inclinado con mancuernas',series:4,reps:'8-10',biserie:'A1'},
+    {nombre:'Remo con mancuerna',series:4,reps:'10',biserie:'A2'}
+  ]}]},context._exerciseMediaData);
+  const day=normalized.days[0];
+  assert.equal(day.exercises[0].name,'Press banca inclinado con mancuernas');
+  assert.equal(day.exercises[1].name,'Remo con mancuerna');
+  assert.equal(context.supersetMeta(day,0)?.label+context.supersetMeta(day,0)?.position,'A1');
+  assert.equal(context.supersetMeta(day,1)?.label+context.supersetMeta(day,1)?.position,'A2');
+});
