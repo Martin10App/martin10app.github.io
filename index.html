@@ -223,7 +223,7 @@ textarea.inp{resize:vertical;min-height:64px;line-height:1.45;font-family:inheri
 .plan-open strong{display:block;font-size:13px;color:var(--text0)}.plan-open small{display:block;font-size:10.5px;color:var(--text2);margin-top:2px}
 .plan-open-i{width:36px;height:36px;border-radius:10px;display:inline-flex;align-items:center;justify-content:center;background:var(--bg3);font-size:17px}
 .pg-filters{display:flex;flex-direction:column;gap:8px;margin-bottom:16px}
-.pg-row{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;margin:0 -20px;padding:0 20px}
+.pg-row{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;-webkit-mask-image:linear-gradient(90deg,#000 88%,transparent);mask-image:linear-gradient(90deg,#000 88%,transparent);padding-right:24px}
 .pg-row::-webkit-scrollbar{display:none}
 .pg-chip{flex-shrink:0;min-height:36px;padding:8px 13px;border-radius:999px;background:var(--bg2);border:1px solid var(--border2);color:var(--text1);font-size:12px;font-weight:600;white-space:nowrap}
 .pg-chip.on{background:var(--accent-d);border-color:var(--accent);color:var(--text0)}
@@ -238,7 +238,7 @@ textarea.inp{resize:vertical;min-height:64px;line-height:1.45;font-family:inheri
 .prog-flag{margin-left:auto;font-size:9px;font-weight:800;letter-spacing:.8px;text-transform:uppercase;padding:3px 7px;border-radius:6px;background:var(--gold-d);border:1px solid var(--gold-b);color:var(--gold)}
 .prog-flag.on{background:var(--green-d);border-color:var(--green-b);color:var(--green)}
 .prog-flag+.prog-flag{margin-left:0}
-.prog-name{font-family:var(--fd);font-size:16px;font-weight:800;line-height:1.25;color:var(--text0)}
+.prog-name{font-size:16px;font-weight:800;letter-spacing:-.3px;line-height:1.25;color:var(--text0)}
 .prog-meta{display:flex;flex-wrap:wrap;gap:4px 10px;font-size:11px;font-weight:600;color:var(--text1)}
 .prog-meta span+span::before{content:"·";margin-right:10px;color:var(--text3)}
 .prog-sum{font-size:12px;line-height:1.5;color:var(--text2);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
@@ -282,6 +282,40 @@ textarea.inp{resize:vertical;min-height:64px;line-height:1.45;font-family:inheri
 .tpl-card{width:100%;display:flex;flex-direction:column;gap:3px;text-align:left;padding:12px 14px;min-height:48px;margin-bottom:8px;border-radius:var(--r-sm);background:var(--bg2);border:1px solid var(--border2);border-left:3px solid var(--pc,var(--border2))}
 .tpl-card.on{border-color:var(--accent);background:var(--accent-d)}
 .tpl-card strong{font-size:13px;color:var(--text0)}.tpl-card small{font-size:11px;line-height:1.45;color:var(--text2)}
+/* Gym · sistema visual: Syne solo para marca y títulos de pantalla; contenido en Inter; números en JetBrains Mono */
+.ct{font-family:'Inter',sans-serif;font-weight:800;letter-spacing:-.35px;line-height:1.22;color:var(--text0)}
+.ct-lg{font-size:19px}.ct-md{font-size:16px}.ct-sm{font-size:14px}
+.clamp2{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.meta{font-size:11.5px;color:var(--text2);margin-top:4px;line-height:1.4}
+.btn-44{min-height:44px}
+.sec-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:24px 0 12px}
+.sec-head .sec-t{margin:0}
+.icon-btn{width:44px;height:44px;border-radius:12px;display:inline-flex;align-items:center;justify-content:center;background:var(--bg3);border:1px solid var(--border2);color:var(--text1);flex-shrink:0}
+.icon-btn svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.icon-btn.danger{color:var(--red)}.icon-btn:active{transform:scale(.94)}
+.active-rt{border-color:color-mix(in srgb,var(--accent) 35%,transparent);background:linear-gradient(160deg,rgba(99,102,241,.10),var(--bg2) 55%);margin-bottom:6px}
+.active-rt-head{display:flex;align-items:flex-start;gap:12px;margin-bottom:14px}
+.day-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.day-tile{display:flex;flex-direction:column;gap:7px;text-align:left;padding:11px 12px 12px;min-height:76px;border-radius:13px;background:color-mix(in srgb,var(--dc) 8%,var(--bg2));border:1px solid color-mix(in srgb,var(--dc) 24%,transparent)}
+.day-tile.done{border-color:color-mix(in srgb,var(--dc) 60%,transparent)}
+.day-tile:active{transform:scale(.98)}
+.day-tile-top{display:flex;align-items:center;justify-content:space-between;gap:6px;font-size:9px;font-weight:800;letter-spacing:1.3px;color:var(--dc)}
+.day-tile-top b{font-family:var(--fm);font-size:11px;letter-spacing:0}
+.day-tile-name{font-size:13px;font-weight:700;line-height:1.3;color:var(--text0);flex:1}
+.bar{display:block;height:4px;border-radius:3px;background:rgba(255,255,255,.07);overflow:hidden}
+.bar>i{display:block;height:100%;border-radius:3px;background:var(--dc,var(--accent));transition:width .4s ease}
+.routine-card{margin-bottom:10px}
+.routine-card.is-active{border-color:color-mix(in srgb,var(--accent) 35%,transparent)}
+.rc-top{display:flex;gap:6px;margin-bottom:6px}.rc-top:empty{display:none}
+.rc-badge{font-size:9px;font-weight:800;letter-spacing:1px;padding:3px 7px;border-radius:6px;background:var(--accent-d);border:1px solid var(--accent-b);color:var(--accent2)}
+.rc-badge.prog{background:var(--purple-d);border-color:var(--purple-b);color:var(--purple)}
+.rc-days{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.day-chip{display:inline-flex;align-items:center;min-height:26px;padding:4px 9px;border-radius:8px;background:var(--bg3);border:1px solid var(--border);font-size:11px;font-weight:600;color:var(--text1);max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rc-actions{display:flex;align-items:center;gap:6px;margin-top:14px;padding-top:12px;border-top:1px solid var(--border)}
+.train-day{display:block;width:100%;text-align:left;margin-bottom:10px;border-left:3px solid var(--dc)}
+.train-day.done{background:linear-gradient(90deg,color-mix(in srgb,var(--dc) 9%,transparent),var(--bg2))}
+.train-day-row{display:flex;align-items:center;gap:12px}
+.train-day-pct{font-family:var(--fm);font-size:24px;font-weight:700;color:var(--dc);flex-shrink:0}
 .progression-note{margin-top:10px;padding:10px 12px;border-radius:10px;border:1px solid var(--blue-b);background:rgba(59,127,255,.06);font-size:11px;line-height:1.45;color:var(--text1)}
 .cycle-strip{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:12px 0 16px}
 .cycle-stat{padding:10px 8px;border-radius:11px;background:var(--bg3);border:1px solid var(--border);text-align:center}
@@ -1236,26 +1270,26 @@ function rGymList(){
     h+=routineAlert(a);
     const pct=getRoutinePct(a.id);
     h+=`<div class="sec-t">Rutina activa</div>
-    <div class="card" style="border-color:rgba(255,59,78,.2);background:rgba(255,59,78,.04);margin-bottom:20px">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px">
-        <div><div style="font-family:var(--fd);font-size:17px;font-weight:800">${esc(a.name)}</div>
-        <div style="font-size:11px;color:var(--text2);margin-top:3px">${plural(a.days.length,'día','días')} · ${ageStr(a)}</div></div>
+    <div class="card active-rt">
+      <div class="active-rt-head">
+        <div style="min-width:0;flex:1"><div class="ct ct-lg clamp2">${esc(a.name)}</div>
+        <div class="meta">${plural(a.days.length,'día','días')} · ${ageStr(a)}</div></div>
         <div class="ring-w"><canvas id="ar" width="48" height="48"></canvas><span class="ring-l" id="ar-lbl" style="font-size:9px">${pct}%</span></div>
       </div>
-      <div style="display:grid;grid-template-columns:repeat(${Math.min(4,a.days.length)},1fr);gap:7px">
+      <div class="day-grid">
         ${a.days.map((d,i)=>{const dp=getDayPct(a.id,d.id);const col=DC[i%DC.length];
-        return`<div onclick="openDay('${a.id}','${d.id}')" style="background:${col}0a;border:1px solid ${dp===100?col+'44':'rgba(255,255,255,.07)'};border-radius:12px;padding:10px 6px;text-align:center;cursor:pointer">
-          <div style="font-size:9px;color:${col};font-weight:700;letter-spacing:1px">D${i+1}</div>
-          <div style="font-size:13px;font-weight:800;margin-top:3px;color:${dp===100?col:'#fff'}">${esc(d.label.slice(0,5))}</div>
-          <div style="font-size:10px;font-family:var(--fm);color:${col};margin-top:3px">${dp}%</div></div>`;}).join('')}
+        return`<button type="button" class="day-tile${dp===100?' done':''}" style="--dc:${col}" onclick="openDay('${a.id}','${d.id}')">
+          <span class="day-tile-top"><span>DÍA ${i+1}</span><b>${dp===100?'✓':dp+'%'}</b></span>
+          <span class="day-tile-name clamp2">${esc(d.label)}</span>
+          <span class="bar"><i style="width:${dp}%"></i></span></button>`;}).join('')}
       </div></div>`;
     setTimeout(()=>ring('ar',pct,'#6E5BFF',pct+'%',48),40);
   }
-  h+=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-    <div class="sec-t" style="margin:0">Mis rutinas</div>
+  h+=`<div class="sec-head">
+    <div class="sec-t">Mis rutinas</div>
     <div style="display:flex;gap:6px">
-      ${aiKey()?`<button class="btn b-sm b-blu" onclick="openAIRoutine()">✨ Crear con IA</button>`:''}
-      <button class="btn b-sm b-p" onclick="newRoutine()">+ Nueva</button>
+      ${aiKey()?`<button class="btn b-sm b-blu btn-44" onclick="openAIRoutine()">✨ Con IA</button>`:''}
+      <button class="btn b-sm b-p btn-44" onclick="newRoutine()">+ Nueva</button>
     </div>
   </div>`;
   if(!routines.length){
@@ -1266,23 +1300,17 @@ function rGymList(){
   } else {
     routines.forEach(r=>{
       const isA=r.id===activeRid;
-      h+=`<div class="card" style="${isA?'border-color:rgba(255,59,78,.2)':''};margin-bottom:9px">
-        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
-          <div style="flex:1;min-width:0">
-            <div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap">
-              ${isA?`<span class="chip" style="background:var(--red-d);color:var(--red);border:1px solid var(--red-b)">ACTIVA</span>`:''}
-              <span style="font-family:var(--fd);font-size:15px;font-weight:800">${esc(r.name)}</span>
-            </div>
-            <div style="font-size:11px;color:var(--text2);margin-top:3px">${plural(r.days.length,'día','días')} · ${ageStr(r)}</div>
-          </div>
-          <div style="display:flex;gap:6px;flex-shrink:0;margin-left:8px">
-            ${!isA?`<button class="btn b-xs b-g" onclick="setActiveR('${r.id}')">Activar</button>`:''}
-            <button class="btn b-xs b-g" onclick="editRoutine('${r.id}')" aria-label="Editar ${esc(r.name)}">✏️</button>
-            <button class="btn b-xs b-g" onclick="duplicateRoutine('${r.id}')" aria-label="Duplicar ${esc(r.name)}">⧉</button>
-            <button class="btn b-xs b-g" style="color:var(--red)" onclick="delRoutine('${r.id}')">🗑</button>
-          </div>
+      h+=`<div class="card routine-card${isA?' is-active':''}">
+        <div class="rc-top">${isA?`<span class="rc-badge">ACTIVA</span>`:''}${r.programId?`<span class="rc-badge prog">PROGRAMA</span>`:''}</div>
+        <div class="ct ct-md clamp2">${esc(r.name)}</div>
+        <div class="meta">${plural(r.days.length,'día','días')} · ${ageStr(r)}</div>
+        <div class="rc-days">${r.days.map(d=>`<span class="day-chip">${esc(d.label)}</span>`).join('')}</div>
+        <div class="rc-actions">
+          ${!isA?`<button class="btn b-sm b-p btn-44" style="flex:1" onclick="setActiveR('${r.id}')">Activar</button>`:'<span style="flex:1"></span>'}
+          <button class="icon-btn" onclick="editRoutine('${r.id}')" aria-label="Editar ${esc(r.name)}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h4L19 9a2.8 2.8 0 00-4-4L4 16v4z"/><path d="M13.5 6.5l4 4"/></svg></button>
+          <button class="icon-btn" onclick="duplicateRoutine('${r.id}')" aria-label="Duplicar ${esc(r.name)}">${ED_ICONS.copy}</button>
+          <button class="icon-btn danger" onclick="delRoutine('${r.id}')" aria-label="Eliminar ${esc(r.name)}">${ED_ICONS.trash}</button>
         </div>
-        <div style="display:flex;gap:5px;flex-wrap:wrap">${r.days.map(d=>`<span class="chip" style="background:var(--bg3);color:var(--text1)">${esc(d.label)}</span>`).join('')}</div>
       </div>`;
     });
   }
@@ -1295,7 +1323,7 @@ function routineAlert(r){
   if(months>=3.5)return`<div class="alert al-info"><div class="al-i">💡</div><div class="al-t">Llevas ~${Math.round(months)} meses con esta rutina. Pronto será buen momento para cambiarla.</div></div>`;
   return '';
 }
-function ageStr(r){const d=Math.floor((Date.now()-r.createdAt)/86400000);if(d<30)return d+'d';const m=Math.floor(d/30);return m===1?'1 mes':`${m} meses`;}
+function ageStr(r){const d=Math.floor((Date.now()-r.createdAt)/86400000);if(d<1)return 'creada hoy';if(d<30)return 'hace '+plural(d,'día','días');const m=Math.floor(d/30);return 'hace '+(m===1?'1 mes':`${m} meses`);}
 function getRoutinePct(rid){const r=routines.find(x=>x.id===rid);if(!r)return 0;const tot=r.days.reduce((s,d)=>s+d.exercises.reduce((a,e)=>a+e.series,0),0);if(!tot)return 0;const done=Object.entries(sets).filter(([k,v])=>v&&k.startsWith(rid+'|')).length;return Math.round((done/tot)*100);}
 function getDayPct(rid,did){const r=routines.find(x=>x.id===rid);const d=r?.days.find(x=>x.id===did);if(!r||!d)return 0;const tot=d.exercises.reduce((s,e)=>s+e.series,0);if(!tot)return 0;const done=d.exercises.reduce((s,ex,ei)=>s+Array.from({length:ex.series},(_,si)=>sets[`${rid}|${did}|${ei}|${si}`]?1:0).reduce((a,b)=>a+b,0),0);return Math.round((done/tot)*100);}
 function updWring(){const pct=activeRid?getRoutinePct(activeRid):0;ring('wring',pct,'#6E5BFF',pct+'%');const lbl=document.getElementById('wring-lbl');if(lbl)lbl.textContent=pct+'%';}
@@ -1305,8 +1333,8 @@ function openDay(rid,did){
   const di=r.days.indexOf(d);const col=DC[di%DC.length];const pct=getDayPct(rid,did);
   let h=`<div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:20px">
     <div><div style="font-size:10px;color:${col};font-weight:700;letter-spacing:2px;margin-bottom:4px">DÍA ${di+1}</div>
-    <div style="font-family:var(--fd);font-size:20px;font-weight:800">${esc(d.label)}</div>
-    <div style="font-size:11px;color:var(--text2);margin-top:3px">${d.exercises.length} ej · ${plural(d.exercises.reduce((s,e)=>s+e.series,0),'serie','series')}</div></div>
+    <div class="ct ct-lg">${esc(d.label)}</div>
+    <div style="font-size:11px;color:var(--text2);margin-top:3px">${plural(d.exercises.length,'ejercicio','ejercicios')} · ${plural(d.exercises.reduce((s,e)=>s+e.series,0),'serie','series')}</div></div>
     <div class="ring-w"><canvas id="dr" width="52" height="52"></canvas><span class="ring-l" id="dr-lbl" style="font-size:9px">${pct}%</span></div>
   </div>`;
   const wk=programWeekInfo(r);
@@ -1462,14 +1490,12 @@ function rGymTrain(){
   const r=routines.find(x=>x.id===activeRid);const wk=programWeekInfo(r);
   let h=`<div class="sec">${wk?`<div class="wk-now"><span class="wk-n">S${wk.week}</span><div><strong>${esc(wk.focus)}</strong><small>Semana ${wk.week} de ${wk.length} · RIR ${esc(wk.rir)} · Volumen ${esc(wk.volume)}</small></div></div>`:''}<div class="sec-t">Seleccioná el día de hoy</div>`;
   r.days.forEach((d,i)=>{const pct=getDayPct(r.id,d.id);const col=DC[i%DC.length];
-    h+=`<div class="card" style="margin-bottom:10px;cursor:pointer;${pct===100?`border-color:${col}44;background:${col}06`:''}" onclick="openDay('${r.id}','${d.id}')">
-      <div style="display:flex;justify-content:space-between;align-items:center">
-        <div><div style="font-size:9px;color:${col};font-weight:700;letter-spacing:1.5px;margin-bottom:5px">DÍA ${i+1}</div>
-        <div style="font-family:var(--fd);font-size:18px;font-weight:800;color:${pct===100?col:'var(--text0)'}">${esc(d.label)}</div>
-        <div style="font-size:11px;color:var(--text2);margin-top:3px">${d.exercises.length} ej · ${plural(d.exercises.reduce((s,e)=>s+e.series,0),'serie','series')}</div></div>
-        <div style="text-align:right"><div style="font-family:var(--fm);font-size:26px;font-weight:700;color:${col}">${pct}%</div>
-        ${pct===100?`<div style="font-size:10px;color:${col};font-weight:600">✓ Listo</div>`:''}</div>
-      </div></div>`;});
+    h+=`<button type="button" class="card train-day${pct===100?' done':''}" style="--dc:${col}" onclick="openDay('${r.id}','${d.id}')">
+      <span class="train-day-row"><span style="min-width:0;flex:1"><span class="day-tile-top" style="margin-bottom:5px"><span>DÍA ${i+1}</span></span>
+        <span class="ct ct-md clamp2" style="display:block">${esc(d.label)}</span>
+        <span class="meta" style="display:block">${plural(d.exercises.length,'ejercicio','ejercicios')} · ${plural(d.exercises.reduce((s,e)=>s+e.series,0),'serie','series')}</span></span>
+        <span class="train-day-pct">${pct===100?'✓':pct+'%'}</span></span>
+      <span class="bar" style="margin-top:12px"><i style="width:${pct}%"></i></span></button>`;});
   if(r.conditioning?.length)h+=`<div class="sec-t" style="margin-top:18px">Cardio y condicionamiento</div><div class="prog-box">${r.conditioning.map(c=>`<div class="prog-cond"><strong>${esc(c.day)}</strong><span>${esc(c.text)}</span></div>`).join('')}</div>`;
   return h+'</div>';
 }
@@ -1497,7 +1523,7 @@ function rGymWeeks(){
     h+=`<div class="hero" style="border-color:var(--blue-b);background:linear-gradient(135deg,rgba(59,127,255,.06),rgba(59,127,255,.02))">
       <div class="hero-bg" style="background:var(--blue)"></div>
       <div class="hero-l">Bloque ${cycle.block} · ${cycle.phase}</div>
-      <div class="hero-v" style="font-size:20px">${esc(activeW.routineName)}</div>
+      <div class="ct ct-lg clamp2" style="position:relative">${esc(activeW.routineName)}</div>
       <div class="hero-s">${activeW.weekStart} → ${activeW.weekEnd} · ${wpct}% completado</div>
     </div>`;
     h+=`<div class="cycle-strip">
@@ -1508,14 +1534,14 @@ function rGymWeeks(){
     // Days summary for current week
     const r=routines.find(x=>x.id===activeRid);
     if(r){
-      h+=`<div class="stats s${Math.min(4,r.days.length)}" style="margin-bottom:14px">`;
+      h+=`<div class="day-grid" style="margin-bottom:14px">`;
       r.days.forEach((d,i)=>{
         const dpct=getWeekDayPct(activeW.id,d.id);
         const col=DC[i%DC.length];
-        h+=`<div class="st" style="cursor:pointer" onclick="curGT=1;gTab(1)">
-          <div class="sv" style="font-size:14px;color:${dpct===100?col:'var(--text1)'}">${dpct}%</div>
-          <div class="sl">${esc(d.label)}</div>
-        </div>`;
+        h+=`<button type="button" class="day-tile${dpct===100?' done':''}" style="--dc:${col}" onclick="openDay('${r.id}','${d.id}')">
+          <span class="day-tile-top"><span>DÍA ${i+1}</span><b>${dpct===100?'✓':dpct+'%'}</b></span>
+          <span class="day-tile-name clamp2">${esc(d.label)}</span>
+          <span class="bar"><i style="width:${dpct}%"></i></span></button>`;
       });
       h+=`</div>`;
     }
@@ -1541,7 +1567,7 @@ function rGymWeeks(){
       h+=`<div class="card" style="margin-bottom:9px;cursor:pointer" onclick="openWeekDetail('${w.id}')">
         <div style="display:flex;justify-content:space-between;align-items:flex-start">
           <div>
-            <div style="font-family:var(--fd);font-size:14px;font-weight:800">${esc(w.routineName)}</div>
+            <div class="ct ct-sm clamp2">${esc(w.routineName)}</div>
             <div style="font-size:11px;color:var(--text2);margin-top:3px">${w.weekStart} → ${w.weekEnd}</div>
           </div>
           <div style="text-align:right">
@@ -1610,7 +1636,7 @@ function openWeekDetail(weekId){
   let h=`<div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:20px">
     <div>
       <div style="font-size:10px;color:var(--blue);font-weight:700;letter-spacing:2px;margin-bottom:4px">SEMANA</div>
-      <div style="font-family:var(--fd);font-size:18px;font-weight:800">${esc(w.routineName)}</div>
+      <div class="ct ct-lg">${esc(w.routineName)}</div>
       <div style="font-size:11px;color:var(--text2);margin-top:3px">${w.weekStart} → ${w.weekEnd}</div>
     </div>
     <div style="font-family:var(--fm);font-size:28px;font-weight:700;color:${wpct===100?'var(--green)':'var(--gold)'}">${wpct}%</div>
@@ -3107,7 +3133,7 @@ function openProgram(id){
   const n=p.nutrition;
   oOv1(`<div class="prog-hero" style="--pc:${programColor(p)}">
       <span class="prog-disc">${esc(_programsData.disciplines?.[p.discipline]||p.discipline)} · ${esc(PROGRAM_LEVELS[p.level]||p.level)}</span>
-      <div class="mt" style="margin:6px 0 8px">${esc(p.name)}</div>
+      <div class="ct" style="font-size:21px;margin:6px 0 8px">${esc(p.name)}</div>
       <div class="prog-meta">${programMetaHtml(p)}</div>
       ${p.equipment?.length?`<div class="prog-equip">Equipo: ${esc(p.equipment.join(', '))}</div>`:''}
     </div>
