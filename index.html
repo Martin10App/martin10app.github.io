@@ -152,6 +152,56 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
 .ex-hist-top{font-family:var(--fm);font-size:13px;font-weight:700;color:var(--text0);text-align:right;white-space:nowrap}
 .ex-hist-top span{display:block;font-size:9px;margin-top:2px}.ex-hist-top .up{color:var(--green)}.ex-hist-top .down{color:var(--gold)}
 .ex-hist-empty{font-size:12px;line-height:1.55;color:var(--text2);padding:12px;border:1px dashed var(--border2);border-radius:var(--r-sm);margin-bottom:18px}
+.ex-cues{display:flex;flex-wrap:wrap;gap:6px 10px;margin-top:7px;font-size:11px;line-height:1.45;color:var(--text2)}
+.ex-rest{font-family:var(--fm);font-weight:600;color:var(--text1)}
+.ex-note{flex-basis:100%;color:var(--text1)}
+.ed-top{margin-bottom:16px}.ed-sum{font-size:11px;color:var(--text2);letter-spacing:.3px}
+.ed-info{font-size:11.5px;line-height:1.5;color:var(--text1);background:var(--accent-d);border:1px solid var(--accent-b);border-radius:var(--r-sm);padding:10px 12px;margin:-2px 0 14px}
+.ed-days{display:flex;flex-direction:column;gap:12px;margin-bottom:12px}
+.ed-day{background:linear-gradient(180deg,#191c29,var(--bg2));border:1px solid var(--border2);border-left:3px solid var(--day);border-radius:var(--r);padding:10px 12px 12px;position:relative}
+.ed-day-head{display:flex;align-items:center;gap:6px;margin-bottom:8px}
+.ed-day-n{flex:1;font-size:11px;font-weight:800;letter-spacing:1.6px;color:var(--day)}
+.ed-day-name{margin-bottom:10px}
+.ed-ex-count{margin:4px 0 8px}
+.ed-exl{display:flex;flex-direction:column;gap:6px;margin-bottom:10px}
+.ed-tools{display:flex;gap:4px;flex-shrink:0}
+.ed-icon,.ed-handle{width:44px;height:44px;display:inline-flex;align-items:center;justify-content:center;border-radius:11px;color:var(--text2);flex-shrink:0}
+.ed-icon{background:var(--bg3);border:1px solid var(--border2)}
+.ed-icon:active:not(:disabled){transform:scale(.94);color:var(--text0)}
+.ed-icon:disabled{opacity:.28}
+.ed-icon.danger{color:var(--red)}
+.ed-icon svg,.xs-more svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.ed-handle{touch-action:none;cursor:grab;width:30px;margin-left:-4px}
+.ed-handle svg{width:18px;height:18px}.ed-handle .ic-dots circle{fill:currentColor}
+.ed-handle-ghost{pointer-events:none}
+.ed-ex{display:flex;align-items:center;gap:6px;background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:4px 6px 4px 4px;position:relative}
+.ed-ex.is-ss{border-color:var(--purple-b);box-shadow:inset 3px 0 0 var(--purple)}
+.ed-ex-main{flex:1;min-width:0;text-align:left;padding:8px 2px;min-height:44px;display:flex;flex-direction:column;gap:3px}
+.ed-ex-name{display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:13px;font-weight:700;color:var(--text0);line-height:1.3}
+.ed-ex-meta{font-size:10.5px;color:var(--text2);line-height:1.4}
+.ed-mus{color:var(--mc);font-weight:700}.ed-vid{color:var(--green)}
+.ed-ex-note{font-size:10.5px;color:var(--text1);line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.ed-empty{font-size:12px;color:var(--text2);padding:12px;border:1px dashed var(--border2);border-radius:12px;text-align:center}
+.ed-add-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}.ed-add-row .btn{min-height:44px}
+.ed-add-day{width:100%;min-height:48px;margin-bottom:14px}
+.ed-save{position:sticky;bottom:calc(-1 * max(20px,env(safe-area-inset-bottom)));margin:0 -20px;padding:12px 20px max(20px,env(safe-area-inset-bottom));background:linear-gradient(180deg,rgba(13,14,19,0),var(--bg1) 35%)}
+.ed-sorting [data-drag-item]:not(.ed-dragging){transition:transform .16s ease}
+.ed-dragging{z-index:5;box-shadow:0 18px 40px -12px rgba(0,0,0,.85),0 0 0 1px var(--accent-b);opacity:.97}
+.xs-name{position:relative}
+.xs-sug{display:flex;flex-direction:column;gap:4px;margin-top:6px}
+.xs-sug:empty{display:none}
+.xs-opt{display:flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:left;padding:10px 12px;min-height:44px;border-radius:10px;background:var(--bg2);border:1px solid var(--border2)}
+.xs-opt span{font-size:13px;font-weight:600;color:var(--text0)}.xs-opt small{font-size:10.5px;color:var(--text2)}
+.xs-media{font-size:11px;color:var(--green);margin-top:6px}.xs-media:empty{display:none}
+.xs-grid{display:grid;grid-template-columns:1fr 1fr;gap:0 10px}
+.xs-step{display:grid;grid-template-columns:44px 1fr 44px;height:44px;border-radius:var(--r-sm);background:var(--bg3);border:1px solid var(--border2);overflow:hidden}
+.xs-step button{font-size:18px;font-weight:700;color:var(--text1)}.xs-step button:active{background:var(--bg4)}
+.xs-step input{min-width:0;background:transparent;border:none;color:var(--text0);text-align:center;font-family:var(--fm);font-size:15px;font-weight:700;outline:none}
+.xs-check{display:flex;align-items:flex-start;gap:10px;padding:12px;border-radius:var(--r-sm);background:var(--purple-d);border:1px solid var(--purple-b);margin-bottom:14px;font-size:12.5px;line-height:1.45;color:var(--text1);cursor:pointer}
+.xs-check input{width:20px;height:20px;margin-top:1px;accent-color:var(--purple);flex-shrink:0}
+.xs-check small{display:block;font-size:10.5px;color:var(--text2);margin-top:2px}
+.xs-more{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}.xs-more .btn{min-height:44px}
+textarea.inp{resize:vertical;min-height:64px;line-height:1.45;font-family:inherit}
 .progression-note{margin-top:10px;padding:10px 12px;border-radius:10px;border:1px solid var(--blue-b);background:rgba(59,127,255,.06);font-size:11px;line-height:1.45;color:var(--text1)}
 .cycle-strip{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:12px 0 16px}
 .cycle-stat{padding:10px 8px;border-radius:11px;background:var(--bg3);border:1px solid var(--border);text-align:center}
@@ -775,8 +825,8 @@ function saveSetPerformance(rid,did,ei,si,field,value){
 function getPreviousExerciseLog(rid,did,exerciseName){
   const weeks=gymWeekLog.filter(w=>w.routineId===rid&&w.id!==activeWeekId).sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
   for(const week of weeks){
-    const day=week.days?.[did];
-    const ex=day?.exercises?.find(item=>normStr(item.name)===normStr(exerciseName));
+    const same=item=>normStr(item.name)===normStr(exerciseName);
+    const ex=week.days?.[did]?.exercises?.find(same)||Object.values(week.days||{}).flatMap(d=>d.exercises||[]).find(item=>same(item)&&(item.setLogs||[]).some(s=>s&&s.done));
     // Una semana salteada (sin series hechas) no borra la referencia: se sigue buscando hacia atrás.
     if(ex&&(ex.setLogs||[]).some(s=>s&&s.done))return ex;
   }
@@ -787,14 +837,15 @@ function progressionForLogs(ex,logs){
   if(valid.length<Number(ex.series||1))return {kind:'data',text:'Anotá repeticiones y RIR de todas las series para calcular la próxima carga.'};
   const range=parseRepRange(ex.reps);
   if(!range.max)return {kind:'hold',text:'Rango no numérico: mantené la carga y revisá la técnica.'};
-  const allTop=valid.every(s=>Number(s.reps)>=range.max&&Number(s.rir)>=1&&Number(s.rir)<=3);
-  const below=valid.some(s=>Number(s.reps)<range.min||Number(s.rir)<=0);
+  const target=ex.rir?parseRepRange(ex.rir):null,rirMin=target?target.min:1,rirMax=target?target.max:3;
+  const allTop=valid.every(s=>Number(s.reps)>=range.max&&Number(s.rir)>=rirMin&&Number(s.rir)<=rirMax);
+  const below=valid.some(s=>Number(s.reps)<range.min||(target?Number(s.rir)<rirMin:Number(s.rir)<=0));
   const base=Math.max(...valid.map(s=>Number(s.weight)||0));
   if(allTop&&base>0){
     const pct=(gymProfile?.goal==='fuerza'?0.025:0.03);
     const increment=Math.max(.5,Number(gymProfile?.loadIncrement)||2.5);
     const next=Math.ceil((base*(1+pct))/increment)*increment;
-    return {kind:'up',next,text:`Objetivo cumplido con 1–3 RIR. Si la técnica fue estable y sin dolor, próxima exposición: probá ${next} kg y volvé al mínimo del rango.`};
+    return {kind:'up',next,text:`Objetivo cumplido con ${rirMin}–${rirMax} RIR. Si la técnica fue estable y sin dolor, próxima exposición: probá ${next} kg y volvé al mínimo del rango.`};
   }
   if(below)return {kind:'review',text:'No subas todavía: faltaron reps o llegaste a 0 RIR. Repetí carga y revisá descanso, técnica y fatiga.'};
   return {kind:'hold',text:'Mantené la carga e intentá sumar repeticiones sin salir de 1–3 RIR.'};
@@ -837,7 +888,7 @@ function exerciseLoadHistory(rid,did,exerciseName,limit=6){
   // Semanas anteriores de la rutina (la más reciente primero) con al menos una serie hecha de ese ejercicio.
   const target=normStr(exerciseName);
   return gymWeekLog.filter(w=>w.routineId===rid&&w.id!==activeWeekId).sort((a,b)=>(b.createdAt||0)-(a.createdAt||0))
-    .map(w=>{const ex=w.days?.[did]?.exercises?.find(item=>normStr(item.name)===target);const logs=(ex?.setLogs||[]).filter(s=>s&&s.done);return logs.length?{weekStart:w.weekStart,logs}:null;})
+    .map(w=>{const ex=w.days?.[did]?.exercises?.find(item=>normStr(item.name)===target)||Object.values(w.days||{}).flatMap(d=>d.exercises||[]).find(item=>normStr(item.name)===target&&(item.setLogs||[]).some(s=>s&&s.done));const logs=(ex?.setLogs||[]).filter(s=>s&&s.done);return logs.length?{weekStart:w.weekStart,logs}:null;})
     .filter(Boolean).slice(0,limit);
 }
 function buildGymProgressContext(maxChars=2600){
@@ -1136,7 +1187,8 @@ function rGymList(){
           </div>
           <div style="display:flex;gap:6px;flex-shrink:0;margin-left:8px">
             ${!isA?`<button class="btn b-xs b-g" onclick="setActiveR('${r.id}')">Activar</button>`:''}
-            <button class="btn b-xs b-g" onclick="editRoutine('${r.id}')">✏️</button>
+            <button class="btn b-xs b-g" onclick="editRoutine('${r.id}')" aria-label="Editar ${esc(r.name)}">✏️</button>
+            <button class="btn b-xs b-g" onclick="duplicateRoutine('${r.id}')" aria-label="Duplicar ${esc(r.name)}">⧉</button>
             <button class="btn b-xs b-g" style="color:var(--red)" onclick="delRoutine('${r.id}')">🗑</button>
           </div>
         </div>
@@ -1184,8 +1236,9 @@ function openDay(rid,did){
           </button>
           <div style="display:flex;align-items:center;gap:8px;margin-top:6px">
             <span style="font-size:9px;font-weight:700;color:${mcl};background:${mcl}18;border:1px solid ${mcl}33;padding:2px 7px;border-radius:5px;letter-spacing:.5px;text-transform:uppercase">${esc(ex.muscle)}</span>
-            <span style="font-size:11px;color:var(--text2)">Objetivo ${ex.series}×${esc(ex.reps)} · RIR 1–3</span>
+            <span style="font-size:11px;color:var(--text2)">Objetivo ${ex.series}×${esc(ex.reps)}${ex.unit==='s'?' s':ex.unit==='m'?' m':''} · RIR ${esc(ex.rir||'1–3')}</span>
           </div>
+          ${ex.rest||ex.note?`<div class="ex-cues">${ex.rest?`<span class="ex-rest">⏱ ${esc(ex.rest)}</span>`:''}${ex.note?`<span class="ex-note">${esc(ex.note)}</span>`:''}</div>`:''}
         </div>
         ${previous?`<button class="btn b-xs b-g" style="margin-left:8px;min-height:44px" onclick="copyPreviousLoads('${rid}','${did}',${ei})">Usar anterior</button>`:''}
       </div>
@@ -1440,8 +1493,8 @@ function compareWeekRow(prev,curr){
   Object.keys(prev.days).forEach(did=>{
     const pd=prev.days[did];const cd=curr.days[did];
     if(!pd||!cd)return;
-    pd.exercises.forEach((pe,i)=>{
-      const ce=cd.exercises[i];
+    pd.exercises.forEach(pe=>{
+      const ce=cd.exercises.find(x=>normStr(x.name)===normStr(pe.name));
       if(!ce)return;
       const pW=parseFloat(pe.weight)||0;const cW=parseFloat(ce.weight)||0;
       if(pW>0&&cW>0&&cW!==pW){
@@ -1480,7 +1533,7 @@ function openWeekDetail(weekId){
       const setSummary=(ex.setLogs||[]).filter(s=>s.done).map((s,i)=>`S${i+1} ${s.weight||'—'}kg × ${s.reps||'—'} · RIR ${s.rir===''||s.rir==null?'—':s.rir}`).join(' / ');
       h+=`<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)">
         <div style="flex:1;min-width:0">
-          <div style="font-size:13px;font-weight:600;${allDone?'color:var(--text2)':''}">${allDone?'✓ ':''}${esc(ex.name)}</div>
+          <div style="font-size:13px;font-weight:600;${allDone?'color:var(--text2)':''}">${allDone?'✓ ':''}${esc(ex.name)}${ex.removed?' <span class="chip" style="background:var(--bg3);color:var(--text2)">quitado de la rutina</span>':''}</div>
           <div style="font-size:10px;color:var(--text2);margin-top:2px">${ex.completedSets}/${ex.totalSets} series · objetivo ${esc(ex.reps)}</div>
           ${setSummary?`<div style="font-size:10px;color:var(--text1);margin-top:4px;line-height:1.45">${esc(setSummary)}</div>`:''}
         </div>
@@ -2461,6 +2514,7 @@ function prepareMovementExercises(rawExercises,catalog,requireMovement=false){
     }
     const base={name,muscle,series:Math.max(1,Math.min(8,parseInt(item.series??item.sets??item.num_series??item.cantidad_series??item.sets_count??nestedExercise.series)||3)),reps:String(item.reps??item.repeticiones??item.rango_reps??item.rango??item.rep_range??item.repetition_range??nestedExercise.reps??'10').trim().slice(0,20)||'10'};
     if(item.superset||item.biserie||item.superserie)base.superset=String(item.superset||item.biserie||item.superserie).slice(0,20);
+    [['rir',item.rir??item.RIR,12],['rest',item.rest??item.descanso,20],['note',item.note??item.nota,200]].forEach(([key,value,max])=>{if(value!=null&&String(value).trim())base[key]=String(value).trim().slice(0,max);});
     const canonical=catalog?canonicalExerciseMovement(base,catalog):null;
     if(canonical)return canonical;
     if(requireMovement)invalid.push(base.name);
@@ -2495,8 +2549,319 @@ function toggleDraftSuperset(dayId,exerciseIndex){
   }
   cleanupSupersetGroups(day.exercises);refreshExL(dayId);
 }
-function newRoutine(editId=null){const ex=editId?routines.find(r=>r.id===editId):null;window._draft=ex?JSON.parse(JSON.stringify(ex)):{id:uid(),name:'',days:[],createdAt:Date.now()};rEditor(!!editId);}
-
+// ═════════════════════════════════════════
+// EDITOR DE RUTINAS
+// Cada ejercicio de la copia editable recuerda su lugar original (_src) para que, al guardar,
+// sus series anotadas (sets2, wts2, setPerf3 y la semana activa) se muevan con él.
+// ═════════════════════════════════════════
+const GYM_MUSCLES=['Pecho','Espalda','Hombros','Bíceps','Tríceps','Cuádriceps','Femoral','Gemelos','Abdomen'];
+const ED_ICONS={
+  drag:'<svg viewBox="0 0 24 24" aria-hidden="true" class="ic-dots"><circle cx="9" cy="6" r="1.7"/><circle cx="15" cy="6" r="1.7"/><circle cx="9" cy="12" r="1.7"/><circle cx="15" cy="12" r="1.7"/><circle cx="9" cy="18" r="1.7"/><circle cx="15" cy="18" r="1.7"/></svg>',
+  up:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 15l6-6 6 6"/></svg>',
+  down:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>',
+  copy:'<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2.5"/><path d="M16 8V6.5A2.5 2.5 0 0013.5 4h-7A2.5 2.5 0 004 6.5v7A2.5 2.5 0 006.5 16H8"/></svg>',
+  trash:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 002 2h6a2 2 0 002-2l1-12M9 7V4h6v3"/></svg>'
+};
+function mediaCatalog(){return typeof _exerciseMediaData!=='undefined'?_exerciseMediaData:null;}
+function newRoutine(editId=null){
+  const src=editId?routines.find(r=>r.id===editId):null;
+  window._draft=src?routineDraft(src):{id:uid(),name:'',days:[],createdAt:Date.now()};
+  rEditor(!!src);
+}
+function editRoutine(id){newRoutine(id);}
+function routineDraft(routine){
+  const d=JSON.parse(JSON.stringify(routine));
+  d.days.forEach(day=>day.exercises.forEach((ex,ei)=>{ex._src={did:day.id,ei};}));
+  return d;
+}
+function cleanRoutineDays(days){return days.map(day=>({...day,exercises:day.exercises.map(({_src,...ex})=>ex)}));}
+function draftDay(dayId){return window._draft?.days?.find(x=>x.id===dayId)||null;}
+function routineHasRecords(rid){return Object.entries(setPerformance).some(([k,v])=>k.startsWith(rid+'|')&&v&&(v.done||v.weight!==''||v.reps!==''))||Object.entries(sets).some(([k,v])=>v&&k.startsWith(rid+'|'));}
+function editorSummary(){const d=window._draft;const n=d.days.reduce((s,x)=>s+x.exercises.length,0);return plural(d.days.length,'día','días')+' · '+plural(n,'ejercicio','ejercicios');}
+function exerciseUnits(exercises){
+  // Una biserie es un bloque: se mueve entera y nunca queda partida al reordenar.
+  let u=-1;return (exercises||[]).map((ex,i)=>{if(!(i>0&&ex.superset&&exercises[i-1].superset===ex.superset))u++;return u;});
+}
+function reorderUnits(list,units,from,to){
+  const groups=[];list.forEach((x,i)=>{(groups[units[i]]||(groups[units[i]]=[])).push(x);});
+  if(to<0||to>=groups.length||from===to)return null;
+  const [g]=groups.splice(from,1);groups.splice(to,0,g);return groups.flat();
+}
+function rEditor(isE){const d=window._draft;
+  oOv1(`<div class="ed-top"><div class="mt" style="margin-bottom:3px">${isE?'Editar rutina':'Nueva rutina'}</div><div class="ed-sum" id="ed-sum">${editorSummary()}</div></div>
+  <div class="fld"><label for="rn">Nombre de la rutina</label><input class="inp" id="rn" placeholder="Torso-Pierna, PPL…" value="${esc(d.name)}" oninput="window._draft.name=this.value"></div>
+  ${isE&&routineHasRecords(d.id)?`<div class="ed-info">Tus series anotadas viajan con cada ejercicio: podés reordenar, mover de día o quitar sin que se mezclen los kilos.</div>`:''}
+  <div class="sec-t" id="ed-days-count">Días (${d.days.length})</div>
+  <div id="ed-days" class="ed-days">${d.days.map((day,i)=>rDayCard(day,i)).join('')}</div>
+  <button class="btn b-md b-g ed-add-day" type="button" onclick="addDay()">+ Agregar día</button>
+  <div class="ed-save"><button class="btn b-lg b-p" type="button" onclick="saveRoutine('${d.id}',${isE})">${isE?'Guardar cambios':'Crear rutina'}</button></div>`);}
+function rDayCard(day,i){const col=DC[i%DC.length];const total=window._draft.days.length;
+  return`<div class="ed-day" id="dc-${day.id}" data-drag-item style="--day:${col}">
+    <div class="ed-day-head">
+      <button class="ed-handle" type="button" aria-label="Arrastrar el día ${i+1}" onpointerdown="startEditorDrag(event,'day')">${ED_ICONS.drag}</button>
+      <div class="ed-day-n" id="dn-${day.id}">DÍA ${i+1}</div>
+      <div class="ed-tools">
+        <button class="ed-icon" type="button" aria-label="Subir día ${i+1}" onclick="moveDay('${day.id}',-1)"${i===0?' disabled':''}>${ED_ICONS.up}</button>
+        <button class="ed-icon" type="button" aria-label="Bajar día ${i+1}" onclick="moveDay('${day.id}',1)"${i===total-1?' disabled':''}>${ED_ICONS.down}</button>
+        <button class="ed-icon" type="button" aria-label="Duplicar día ${i+1}" onclick="duplicateDay('${day.id}')">${ED_ICONS.copy}</button>
+        <button class="ed-icon danger" type="button" aria-label="Quitar día ${i+1}" onclick="rmDay('${day.id}')">${ED_ICONS.trash}</button>
+      </div>
+    </div>
+    <input class="inp ed-day-name" id="dl-${day.id}" aria-label="Nombre del día ${i+1}" placeholder="Nombre del día: Torso, Piernas…" value="${esc(day.label)}" oninput="setDayLabel('${day.id}',this.value)">
+    <div class="sec-t ed-ex-count" id="exc-${day.id}">Ejercicios (${day.exercises.length})</div>
+    <div id="exl-${day.id}" class="ed-exl">${rExList(day)}</div>
+    <div class="ed-add-row">
+      <button class="btn b-sm b-g" type="button" onclick="openExerciseSheet('${day.id}')">+ Ejercicio</button>
+      <button class="btn b-sm b-grn" type="button" onclick="browseAPI('${day.id}')">Catálogo con video</button>
+    </div>
+  </div>`;}
+function rExList(day){return day.exercises.map((ex,ei)=>rExChip(ex,ei,day.id)).join('')||'<div class="ed-empty">Todavía sin ejercicios. Sumá uno a mano o desde el catálogo.</div>';}
+function rExChip(ex,ei,dayId){const mc=MC[ex.muscle]||'#aaa';const day=draftDay(dayId);const ss=supersetMeta(day,ei);
+  const units=exerciseUnits(day?.exercises),unit=units[ei],last=units[units.length-1];
+  const unitTxt=ex.unit==='s'?' s':ex.unit==='m'?' m':'';
+  const meta=[ex.series+'×'+esc(ex.reps)+unitTxt,ex.rir?'RIR '+esc(ex.rir):'',ex.rest?esc(ex.rest):''].filter(Boolean).join(' · ');
+  const secondOfPair=ss&&ss.position===2;
+  return`<div class="ed-ex${ss?' is-ss':''}" id="ec-${dayId}-${ei}" data-drag-item data-unit="${unit}" style="--mc:${mc}">
+    ${secondOfPair?'<span class="ed-handle ed-handle-ghost" aria-hidden="true"></span>':`<button class="ed-handle" type="button" aria-label="Arrastrar ${ss?'la biserie '+ss.label:esc(ex.name)}" onpointerdown="startEditorDrag(event,'ex','${dayId}')">${ED_ICONS.drag}</button>`}
+    <button class="ed-ex-main" type="button" onclick="openExerciseSheet('${dayId}',${ei})" aria-label="Editar ${esc(ex.name)}">
+      <span class="ed-ex-name">${ss?`<span class="superset-chip">${ss.label}${ss.position}</span>`:''}<span>${esc(ex.name)}</span></span>
+      <span class="ed-ex-meta"><span class="ed-mus">${esc(ex.muscle)}</span> · ${meta}${ex.mediaId?' · <span class="ed-vid">▶ video</span>':''}</span>
+      ${ex.note?`<span class="ed-ex-note">${esc(ex.note)}</span>`:''}
+    </button>
+    <div class="ed-tools">${secondOfPair?'':`
+      <button class="ed-icon" type="button" aria-label="Subir ${esc(ex.name)}" onclick="moveExercise('${dayId}',${ei},-1)"${unit===0?' disabled':''}>${ED_ICONS.up}</button>
+      <button class="ed-icon" type="button" aria-label="Bajar ${esc(ex.name)}" onclick="moveExercise('${dayId}',${ei},1)"${unit===last?' disabled':''}>${ED_ICONS.down}</button>`}
+    </div>
+  </div>`;}
+function renderEditorDays(){const c=document.getElementById('ed-days');if(!c)return;c.innerHTML=window._draft.days.map((day,i)=>rDayCard(day,i)).join('');refreshEditorCounts();}
+function refreshExL(dayId){const day=draftDay(dayId);if(!day)return;const c=document.getElementById('exl-'+dayId);if(c)c.innerHTML=rExList(day);refreshEditorCounts();}
+function refreshEditorCounts(){
+  const d=window._draft;if(!d)return;
+  const total=document.getElementById('ed-days-count');if(total)total.textContent='Días ('+d.days.length+')';
+  const sum=document.getElementById('ed-sum');if(sum)sum.textContent=editorSummary();
+  d.days.forEach((day,i)=>{
+    const n=document.getElementById('dn-'+day.id);if(n)n.textContent='DÍA '+(i+1);
+    const e=document.getElementById('exc-'+day.id);if(e)e.textContent='Ejercicios ('+day.exercises.length+')';
+  });
+}
+function setDayLabel(dayId,value){const day=draftDay(dayId);if(day)day.label=value;}
+function addDay(){const d=window._draft;d.days.push({id:uid(),label:'',exercises:[]});renderEditorDays();setTimeout(()=>document.getElementById('dl-'+d.days[d.days.length-1].id)?.focus(),50);}
+function rmDay(dayId){
+  const d=window._draft,day=draftDay(dayId);if(!day)return;
+  if(day.exercises.length&&!confirm(`¿Quitar "${day.label||'este día'}" con ${plural(day.exercises.length,'ejercicio','ejercicios')}? Las series ya anotadas quedan guardadas en Semanas.`))return;
+  d.days=d.days.filter(x=>x.id!==dayId);renderEditorDays();
+}
+function moveDay(dayId,dir){const d=window._draft;const i=d.days.findIndex(x=>x.id===dayId);moveDayTo(i,i+dir);}
+function moveDayTo(from,to){const d=window._draft;if(to<0||to>=d.days.length||from===to||from<0)return;const [day]=d.days.splice(from,1);d.days.splice(to,0,day);renderEditorDays();}
+function copyExercises(exercises){
+  // Copia sin _src (es un ejercicio nuevo, sin registros) y con biseries propias.
+  const map={};
+  return exercises.map(ex=>{const {_src,...copy}=JSON.parse(JSON.stringify(ex));if(copy.superset)copy.superset=map[copy.superset]||(map[copy.superset]='ss_'+uid());return copy;});
+}
+function duplicateDay(dayId){
+  const d=window._draft,i=d.days.findIndex(x=>x.id===dayId);if(i<0)return;const day=d.days[i];
+  d.days.splice(i+1,0,{id:uid(),label:(day.label||'Día '+(i+1))+' (copia)',exercises:copyExercises(day.exercises)});
+  renderEditorDays();tst('✓ Día duplicado');
+}
+function moveExercise(dayId,ei,dir){const day=draftDay(dayId);if(!day)return;const units=exerciseUnits(day.exercises);moveExerciseUnit(dayId,units[ei],units[ei]+dir);}
+function moveExerciseUnit(dayId,from,to){const day=draftDay(dayId);if(!day)return;const next=reorderUnits(day.exercises,exerciseUnits(day.exercises),from,to);if(!next)return;day.exercises=next;refreshExL(dayId);}
+function moveExerciseToDay(dayId,ei,targetId){
+  const from=draftDay(dayId),to=draftDay(targetId);if(!from||!to)return false;
+  const [ex]=from.exercises.splice(ei,1);
+  if(ex.superset){const id=ex.superset;from.exercises.forEach(x=>{if(x.superset===id)delete x.superset;});delete ex.superset;}
+  to.exercises.push(ex);return true;
+}
+function duplicateExercise(dayId,ei){
+  const day=draftDay(dayId);if(!day)return;const units=exerciseUnits(day.exercises);
+  const after=units.lastIndexOf(units[ei]);const [copy]=copyExercises([day.exercises[ei]]);delete copy.superset;
+  day.exercises.splice(after+1,0,copy);cOv2();refreshExL(dayId);tst('✓ Ejercicio duplicado');
+}
+function exerciseHasRecords(rid,src){
+  if(!src)return false;const prefix=rid+'|'+src.did+'|'+src.ei+'|';
+  return Object.entries(setPerformance).some(([k,v])=>k.startsWith(prefix)&&v&&(v.done||v.weight!==''))||Object.entries(sets).some(([k,v])=>v&&k.startsWith(prefix));
+}
+function removeExercise(dayId,ei){
+  const day=draftDay(dayId);const ex=day?.exercises?.[ei];if(!ex)return;
+  const note=exerciseHasRecords(window._draft.id,ex._src)?' Sus series de esta semana quedan guardadas en Semanas.':'';
+  if(!confirm(`¿Quitar "${ex.name}" de la rutina?${note}`))return;
+  day.exercises.splice(ei,1);cleanupSupersetGroups(day.exercises);cOv2();refreshExL(dayId);tst('Ejercicio quitado');
+}
+function addManual(dayId){openExerciseSheet(dayId);}
+function openExerciseSheet(dayId,ei=null){
+  const d=window._draft,day=draftDay(dayId);if(!day)return;
+  const isNew=ei==null,ex=isNew?{name:'',muscle:'Pecho',series:3,reps:'8-12'}:day.exercises[ei];if(!ex)return;
+  window._xsPick=null;
+  const ss=isNew?null:supersetMeta(day,ei),next=isNew?null:day.exercises[ei+1];
+  const partner=ss?day.exercises[ss.members.find(i=>i!==ei)]:null;
+  oOv2(`<div class="mt">${isNew?'Nuevo ejercicio':'Editar ejercicio'}</div>
+    <div class="fld xs-name"><label for="xs-name">Nombre</label>
+      <input class="inp" id="xs-name" autocomplete="off" placeholder="Buscá en el catálogo o escribí uno propio" value="${esc(ex.name)}" oninput="exerciseSheetSearch(this.value)">
+      <div id="xs-sug" class="xs-sug" role="listbox" aria-label="Ejercicios del catálogo"></div>
+      <div class="xs-media" id="xs-media">${ex.mediaId?'▶ Con video del movimiento':''}</div>
+    </div>
+    <div class="inp-r">
+      <div class="fld"><label for="xs-muscle">Músculo</label><select class="inp" id="xs-muscle">${GYM_MUSCLES.map(m=>`<option${m===ex.muscle?' selected':''}>${m}</option>`).join('')}</select></div>
+      <div class="fld"><label for="xs-unit">Se mide en</label><select class="inp" id="xs-unit"><option value=""${!ex.unit?' selected':''}>Repeticiones</option><option value="s"${ex.unit==='s'?' selected':''}>Segundos</option><option value="m"${ex.unit==='m'?' selected':''}>Metros</option></select></div>
+    </div>
+    <div class="xs-grid">
+      <div class="fld"><label for="xs-series">Series</label><div class="xs-step"><button type="button" onclick="stepSheetSeries(-1)" aria-label="Una serie menos">−</button><input id="xs-series" type="number" inputmode="numeric" min="1" max="10" value="${ex.series}"><button type="button" onclick="stepSheetSeries(1)" aria-label="Una serie más">+</button></div></div>
+      <div class="fld"><label for="xs-reps">Reps</label><input class="inp" id="xs-reps" value="${esc(ex.reps)}" placeholder="8-10"></div>
+      <div class="fld"><label for="xs-rir">RIR objetivo</label><input class="inp" id="xs-rir" value="${esc(ex.rir||'')}" placeholder="1-2"></div>
+      <div class="fld"><label for="xs-rest">Descanso</label><input class="inp" id="xs-rest" value="${esc(ex.rest||'')}" placeholder="2-3 min"></div>
+    </div>
+    <div class="fld"><label for="xs-note">Nota</label><textarea class="inp" id="xs-note" rows="2" maxlength="200" placeholder="Técnica, tempo, agarre…">${esc(ex.note||'')}</textarea></div>
+    ${!isNew&&d.days.length>1?`<div class="fld"><label for="xs-day">Día</label><select class="inp" id="xs-day">${d.days.map((x,i)=>`<option value="${x.id}"${x.id===dayId?' selected':''}>Día ${i+1}${x.label?' · '+esc(x.label):''}</option>`).join('')}</select></div>`:''}
+    ${!isNew&&(ss||next)?`<label class="xs-check"><input type="checkbox" id="xs-ss"${ss?' checked':''}><span><strong>Biserie</strong> ${ss?'con '+esc(partner?.name||''):'con el siguiente: '+esc(next.name)}<small>Se hacen seguidos y se descansa después de los dos.</small></span></label>`:''}
+    <button class="btn b-lg b-p" type="button" onclick="saveExerciseSheet('${dayId}',${isNew?'null':ei})">${isNew?'Agregar a la rutina':'Guardar ejercicio'}</button>
+    ${isNew?'':`<div class="xs-more"><button class="btn b-md b-g" type="button" onclick="duplicateExercise('${dayId}',${ei})">${ED_ICONS.copy} Duplicar</button><button class="btn b-md b-red" type="button" onclick="removeExercise('${dayId}',${ei})">${ED_ICONS.trash} Quitar</button></div>`}`);
+  if(typeof loadExerciseMediaCatalog==='function')loadExerciseMediaCatalog().catch(()=>null);
+  if(isNew)setTimeout(()=>document.getElementById('xs-name')?.focus(),80);
+}
+function stepSheetSeries(delta){const inp=document.getElementById('xs-series');if(!inp)return;inp.value=Math.max(1,Math.min(10,(parseInt(inp.value)||3)+delta));}
+function exerciseSheetSearch(query){
+  window._xsPick=null;
+  const box=document.getElementById('xs-sug'),media=document.getElementById('xs-media');if(media)media.textContent='';
+  const catalog=mediaCatalog(),q=String(query||'').trim();if(!box)return;
+  if(!catalog?.exercises||q.length<2){box.innerHTML='';return;}
+  const found=catalog.exercises.map(item=>({item,score:Math.max(...[item.name,...(item.aliases||[])].map(n=>exerciseMediaScore(q,n)))}))
+    .filter(x=>x.score>=35).sort((a,b)=>b.score-a.score).slice(0,6);
+  box.innerHTML=found.map(({item})=>`<button type="button" class="xs-opt" role="option" onclick="pickSheetExercise('${esc(item.id)}')"><span>${esc(exerciseMovementName(item))}</span><small>${esc(exerciseMovementMuscle(item))} · ▶ video</small></button>`).join('');
+}
+function pickSheetExercise(id){
+  const item=mediaCatalog()?.exercises?.find(x=>x.id===id);if(!item)return;
+  const name=exerciseMovementName(item);window._xsPick={id,name};
+  document.getElementById('xs-name').value=name;
+  const muscle=document.getElementById('xs-muscle');if(muscle)muscle.value=exerciseMovementMuscle(item);
+  document.getElementById('xs-sug').innerHTML='';
+  const media=document.getElementById('xs-media');if(media)media.textContent='▶ Con video del movimiento';
+}
+function exactCatalogMovement(name){
+  const catalog=mediaCatalog();if(!catalog?.exercises)return null;const q=normExerciseMediaName(name);
+  return catalog.exercises.find(item=>[item.name,...(item.aliases||[])].some(n=>normExerciseMediaName(n)===q))||null;
+}
+function saveExerciseSheet(dayId,ei){
+  const day=draftDay(dayId);if(!day)return;
+  const val=id=>(document.getElementById(id)?.value||'').trim();
+  const name=val('xs-name').slice(0,80);
+  if(!name){tst('Escribí el nombre del ejercicio');document.getElementById('xs-name')?.focus();return;}
+  const isNew=ei==null,ex=isNew?{}:day.exercises[ei];if(!ex)return;
+  const renamed=isNew||normStr(ex.name)!==normStr(name);
+  ex.name=name;ex.muscle=val('xs-muscle')||ex.muscle||'Pecho';
+  ex.series=Math.max(1,Math.min(10,parseInt(val('xs-series'))||ex.series||3));
+  ex.reps=val('xs-reps').slice(0,20)||ex.reps||'10';
+  [['rir','xs-rir',12],['rest','xs-rest',20],['note','xs-note',200]].forEach(([key,id,max])=>{const v=val(id).slice(0,max);if(v)ex[key]=v;else delete ex[key];});
+  const unit=val('xs-unit');if(unit)ex.unit=unit;else delete ex.unit;
+  if(window._xsPick&&normStr(window._xsPick.name)===normStr(name))ex.mediaId=window._xsPick.id;
+  else if(renamed){const movement=exactCatalogMovement(name);if(movement)ex.mediaId=movement.id;else delete ex.mediaId;}
+  if(isNew){day.exercises.push(ex);cOv2();refreshExL(dayId);tst('✓ '+name);return;}
+  const target=val('xs-day');
+  if(target&&target!==dayId&&moveExerciseToDay(dayId,ei,target)){cOv2();renderEditorDays();tst('✓ '+name+' pasó al '+(window._draft.days.findIndex(x=>x.id===target)+1)+'º día');return;}
+  const ssBox=document.getElementById('xs-ss');
+  if(ssBox&&ssBox.checked!==!!supersetMeta(day,ei))toggleDraftSuperset(dayId,ei);
+  cOv2();refreshExL(dayId);tst('✓ '+name);
+}
+function startEditorDrag(ev,kind,dayId){
+  // Arrastre con el dedo desde la manija (⋮⋮). Las biseries se arrastran como un bloque.
+  if(ev.button!==undefined&&ev.button!==0)return;
+  const handle=ev.currentTarget,row=handle.closest('[data-drag-item]'),list=row?.parentElement;if(!row||!list)return;
+  ev.preventDefault();
+  const rows=[...list.children].filter(x=>x.hasAttribute('data-drag-item'));
+  const unitOf=rows.map((r,i)=>r.dataset.unit??String(i)),ids=[...new Set(unitOf)];
+  const units=ids.map(id=>rows.filter((r,i)=>unitOf[i]===id));
+  const from=ids.indexOf(unitOf[rows.indexOf(row)]);if(from<0)return;
+  const boxes=units.map(u=>{const rs=u.map(r=>r.getBoundingClientRect());return {top:Math.min(...rs.map(r=>r.top)),bottom:Math.max(...rs.map(r=>r.bottom))};});
+  const gap=boxes.length>1?Math.max(0,boxes[1].top-boxes[0].bottom):8,step=boxes[from].bottom-boxes[from].top+gap;
+  const startY=ev.clientY;let to=from;
+  units[from].forEach(r=>r.classList.add('ed-dragging'));list.classList.add('ed-sorting');
+  try{handle.setPointerCapture(ev.pointerId);}catch{}
+  const onMove=e=>{
+    const dy=e.clientY-startY;
+    units[from].forEach(r=>{r.style.transform=`translateY(${dy}px)`;});
+    const center=(boxes[from].top+boxes[from].bottom)/2+dy;
+    to=boxes.filter((b,i)=>i!==from&&(b.top+b.bottom)/2<center).length;
+    units.forEach((u,i)=>{if(i===from)return;const shift=(from<to&&i>from&&i<=to)?-step:(from>to&&i>=to&&i<from)?step:0;u.forEach(r=>{r.style.transform=shift?`translateY(${shift}px)`:'';});});
+  };
+  const onUp=()=>{
+    handle.removeEventListener('pointermove',onMove);handle.removeEventListener('pointerup',onUp);handle.removeEventListener('pointercancel',onUp);
+    rows.forEach(r=>{r.style.transform='';r.classList.remove('ed-dragging');});list.classList.remove('ed-sorting');
+    if(to===from)return;
+    if(kind==='day')moveDayTo(from,to);else moveExerciseUnit(dayId,from,to);
+    navigator.vibrate?.(8);
+  };
+  handle.addEventListener('pointermove',onMove);handle.addEventListener('pointerup',onUp);handle.addEventListener('pointercancel',onUp);
+}
+function remapRoutineRecords(rid,newDays,store,week){
+  // Mueve los registros por índice (rid|día|ejercicio|serie) al nuevo lugar de cada ejercicio.
+  // Lo que se quitó y tenía series hechas queda en la semana activa marcado como removed.
+  const map=new Map();
+  newDays.forEach(day=>day.exercises.forEach((ex,ei)=>{if(ex._src)map.set(ex._src.did+'|'+ex._src.ei,day.id+'|'+ei);}));
+  const moveKeys=obj=>{
+    const out={};
+    Object.entries(obj||{}).forEach(([key,value])=>{
+      const parts=key.split('|');
+      if(parts[0]!==rid||parts.length<3){out[key]=value;return;}
+      const target=map.get(parts[1]+'|'+parts[2]);
+      if(target)out[rid+'|'+target+(parts.length>3?'|'+parts.slice(3).join('|'):'')]=value;
+    });
+    return out;
+  };
+  const result={sets:moveKeys(store.sets),weights:moveKeys(store.weights),setPerformance:moveKeys(store.setPerformance),weekDays:null};
+  if(week){
+    const old=week.days||{},days={};
+    const fresh=ex=>({name:ex.name,muscle:ex.muscle,series:ex.series,reps:ex.reps,mediaId:ex.mediaId||null,superset:ex.superset||null,weight:'',completedSets:0,totalSets:ex.series,setLogs:[]});
+    newDays.forEach(day=>{
+      days[day.id]={label:day.label,exercises:day.exercises.map(ex=>{
+        const prev=ex._src?old[ex._src.did]?.exercises?.[ex._src.ei]:null;
+        return prev&&!prev.removed?{...prev,name:ex.name,muscle:ex.muscle,series:ex.series,reps:ex.reps,totalSets:ex.series,mediaId:ex.mediaId||null,superset:ex.superset||null}:fresh(ex);
+      })};
+    });
+    const keep=(did,label,entry)=>{(days[did]||(days[did]={label,exercises:[]})).exercises.push(entry);};
+    Object.entries(old).forEach(([did,day])=>{
+      (day.exercises||[]).forEach((entry,ei)=>{
+        if(!entry)return;
+        if(entry.removed){keep(did,day.label,entry);return;}
+        if(map.has(did+'|'+ei))return;
+        if(!(entry.setLogs||[]).some(s=>s&&s.done))return;
+        keep(did,day.label,{...entry,removed:true,totalSets:entry.completedSets||0});
+      });
+    });
+    result.weekDays=days;
+  }
+  return result;
+}
+function applyRoutineEditRecords(rid,newDays){
+  updateWeekLogFromCurrent();
+  const week=gymWeekLog.find(w=>w.id===activeWeekId&&w.routineId===rid)||null;
+  const moved=remapRoutineRecords(rid,newDays,{sets,weights,setPerformance},week);
+  sets=moved.sets;weights=moved.weights;setPerformance=moved.setPerformance;
+  S.s('sets2',sets);S.s('wts2',weights);S.s('setPerf3',setPerformance);
+  if(week){week.days=moved.weekDays;S.s('gymWeekLog',gymWeekLog);}
+}
+function saveRoutine(did,isE){
+  const d=window._draft;const n=(document.getElementById('rn')?.value||d.name||'').trim()||'Mi rutina';d.name=n;
+  d.days.forEach((day,i)=>{const lv=document.getElementById('dl-'+day.id)?.value;if(lv!=null)day.label=lv.trim();if(!day.label)day.label='Día '+(i+1);cleanupSupersetGroups(day.exercises);});
+  if(!d.days.length){tst('Agregá al menos un día');return;}
+  const clean={...d,days:cleanRoutineDays(d.days)};
+  if(isE){
+    const i=routines.findIndex(r=>r.id===did);
+    if(i>=0){applyRoutineEditRecords(did,d.days);routines[i]=clean;}else routines.push(clean);
+  }else{routines.push(clean);if(routines.length===1)activeRid=clean.id;}
+  S.s('rt2',routines);S.s('arid',activeRid);
+  if(clean.cycleLength||clean.goal){gymCycles[clean.id]={...(gymCycles[clean.id]||{}),startedAt:gymCycles[clean.id]?.startedAt||Date.now(),length:clean.cycleLength||6,goal:clean.goal||gymProfile?.goal||'hipertrofia'};S.s('gymCycles1',gymCycles);}
+  updateWeekLogFromCurrent();
+  window._draft=null;cOv1();tst(`✓ "${n}" guardada`);renderGym();
+}
+function cloneRoutine(routine,extra){
+  const copy=JSON.parse(JSON.stringify(routine));
+  copy.id=uid();copy.createdAt=Date.now();
+  copy.days=copy.days.map(day=>({...day,id:uid(),exercises:copyExercises(day.exercises)}));
+  return Object.assign(copy,extra||{});
+}
+function duplicateRoutine(id){
+  const r=routines.find(x=>x.id===id);if(!r)return;
+  const copy=cloneRoutine(r,{name:r.name+' (copia)'});
+  routines.push(copy);S.s('rt2',routines);tst('✓ Copia creada: '+copy.name);renderGym();
+}
 // ── Crear rutina con IA (incluye opción de entrenar en casa) ──
 function openAIRoutine(){
   if(!aiKey()){tst('Configurá la IA en el chat');return;}
@@ -2583,55 +2948,6 @@ async function askAIRoutine(){
     tst('✓ Rutina generada · revisala y guardá'+(notices.length?' · '+notices.join(' · '):''),notices.length?5000:3000);
   }catch(e){tst('Error: '+e.message,4000);openAIRoutine();}
 }
-function editRoutine(id){newRoutine(id);}
-function rEditor(isE){const d=window._draft;
-  oOv1(`<div class="mt">${isE?'Editar rutina':'Nueva rutina'}</div>
-  <div class="fld"><label>Nombre de la rutina</label><input class="inp" id="rn" placeholder="PPL, Fútbol F5..." value="${esc(d.name)}"></div>
-  <div class="sec-t" style="margin-bottom:10px" id="ed-days-count">Días (${d.days.length})</div>
-  <div id="ed-days">${d.days.map((day,i)=>rDayCard(day,i)).join('')}</div>
-  <button class="btn b-md b-g" style="width:100%;margin-bottom:14px" onclick="addDay()">+ Agregar día</button>
-  <button class="btn b-lg b-p" onclick="saveRoutine('${d.id}',${isE})">${isE?'Guardar cambios':'Crear rutina'}</button>`);}
-function rDayCard(day,i){const col=DC[i%DC.length];
-  return`<div class="card" style="border-color:${col}33;margin-bottom:10px" id="dc-${day.id}">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-      <div style="font-size:11px;font-weight:700;color:${col};letter-spacing:1.5px" id="dn-${day.id}">DÍA ${i+1}</div>
-      <button onclick="rmDay('${day.id}')" style="color:var(--text2);font-size:16px;line-height:1">✕</button>
-    </div>
-    <div class="fld" style="margin-bottom:10px"><label>Nombre del día</label><input class="inp" id="dl-${day.id}" placeholder="PUSH, PIERNAS…" value="${esc(day.label)}"></div>
-    <div class="sec-t" style="margin-bottom:8px" id="exc-${day.id}">Ejercicios (${day.exercises.length})</div>
-    <div id="exl-${day.id}">${day.exercises.map((ex,ei)=>rExChip(ex,ei,day.id)).join('')}</div>
-    <div style="display:flex;gap:8px">
-      <button class="btn b-sm b-g" style="flex:1" onclick="addManual('${day.id}')">+ Manual</button>
-      <button class="btn b-sm b-grn" style="flex:1" onclick="browseAPI('${day.id}')">+ Buscar ejercicio</button>
-    </div></div>`;}
-function rExChip(ex,ei,dayId){const mc=MC[ex.muscle]||'#aaa';const day=window._draft?.days?.find(x=>x.id===dayId);const ss=supersetMeta(day,ei);const hasNext=ei<(day?.exercises?.length||0)-1;
-  return`<div id="ec-${dayId}-${ei}" style="background:var(--bg3);border:1px solid ${ss?'var(--purple-b,rgba(168,85,247,.3))':'var(--border)'};border-radius:9px;padding:9px 11px;margin-bottom:7px">
-    <div style="display:flex;align-items:center;gap:8px">
-      <div style="flex:1;min-width:0"><div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap">${ss?`<span class="superset-chip">${ss.label}${ss.position}</span>`:''}<span style="font-size:12px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(ex.name)}</span></div>
-      <div style="font-size:10px;color:${mc};margin-top:3px">${esc(ex.muscle)} · ${ex.series}×${esc(ex.reps)}${ex.mediaId?' · movimiento':''}</div></div>
-      <button onclick="rmEx('${dayId}',${ei})" aria-label="Quitar ${esc(ex.name)}" style="color:var(--text2);font-size:14px;flex-shrink:0;min-width:44px;min-height:44px">✕</button>
-    </div>
-    ${(ss||hasNext)?`<button class="btn b-xs ${ss?'b-g':'b-blu'}" style="width:100%;min-height:44px;margin-top:7px" onclick="toggleDraftSuperset('${dayId}',${ei})">${ss?'Separar biserie '+ss.label:'Unir con el siguiente en biserie'}</button>`:''}
-  </div>`;}
-function addDay(){const d=window._draft;d.days.push({id:uid(),label:'',exercises:[]});const c=document.getElementById('ed-days');const i=d.days.length-1;const t=document.createElement('div');t.innerHTML=rDayCard(d.days[i],i);c.appendChild(t.firstElementChild);refreshEditorCounts();}
-function rmDay(dayId){window._draft.days=window._draft.days.filter(x=>x.id!==dayId);document.getElementById('dc-'+dayId)?.remove();refreshEditorCounts();}
-function refreshEditorCounts(){
-  const d=window._draft;if(!d)return;
-  const total=document.getElementById('ed-days-count');if(total)total.textContent='Días ('+d.days.length+')';
-  d.days.forEach((day,i)=>{
-    const n=document.getElementById('dn-'+day.id);if(n)n.textContent='DÍA '+(i+1);
-    const e=document.getElementById('exc-'+day.id);if(e)e.textContent='Ejercicios ('+day.exercises.length+')';
-  });
-}
-function rmEx(dayId,ei){const day=window._draft.days.find(x=>x.id===dayId);if(!day)return;day.exercises.splice(ei,1);cleanupSupersetGroups(day.exercises);refreshExL(dayId);}
-function refreshExL(dayId){const day=window._draft.days.find(x=>x.id===dayId);if(!day)return;const c=document.getElementById('exl-'+dayId);if(c)c.innerHTML=day.exercises.map((ex,i)=>rExChip(ex,i,dayId)).join('');refreshEditorCounts();}
-function addManual(dayId){oOv2(`<div class="mt">Ejercicio manual</div>
-  <div class="fld"><label>Nombre</label><input class="inp" id="en" placeholder="Press banca, Sentadilla..."></div>
-  <div class="fld"><label>Músculo</label><select class="inp" id="em">${['Pecho','Espalda','Hombros','Bíceps','Tríceps','Cuádriceps','Femoral','Gemelos','Abdomen'].map(m=>`<option>${m}</option>`).join('')}</select></div>
-  <div class="inp-r"><div class="fld"><label>Series</label><input class="inp" id="es" type="number" value="3" min="1"></div>
-  <div class="fld"><label>Reps</label><input class="inp" id="er" placeholder="8–10"></div></div>
-  <button class="btn b-lg b-p" onclick="confMan('${dayId}')">Agregar</button>`);}
-function confMan(dayId){const n=document.getElementById('en')?.value.trim();const m=document.getElementById('em')?.value;const s=parseInt(document.getElementById('es')?.value)||3;const r=document.getElementById('er')?.value.trim()||'10';if(!n){tst('Escribí el nombre');return;}const day=window._draft.days.find(x=>x.id===dayId);if(!day)return;day.exercises.push({name:n,muscle:m,series:s,reps:r});refreshExL(dayId);cOv2();tst('✓ '+n);}
 async function browseAPI(dayId){
   try{
     const catalog=await loadExerciseMediaCatalog();
@@ -2661,7 +2977,6 @@ function pickAPI(dayId,cat,idx){const ex=(window._movementExercisePicker||API.ex
   <button class="btn b-lg b-p" onclick="confAPI('${dayId}','${esc(cat)}',${idx})">Agregar a la rutina</button>
   <button class="btn b-md b-g" style="width:100%;margin-top:8px" onclick="rAPIL('${dayId}')">← Volver</button>`;}
 function confAPI(dayId,cat,idx){const ex=(window._movementExercisePicker||API.ex)[cat]?.[idx];if(!ex)return;const s=parseInt(document.getElementById('ps')?.value)||3;const r=document.getElementById('pr')?.value.trim()||'10';const cm={Pecho:'Pecho',Espalda:'Espalda',Hombros:'Hombros',Brazos:'Bíceps',Piernas:'Cuádriceps',Abdomen:'Abdomen'};const day=window._draft.days.find(x=>x.id===dayId);if(!day)return;const n=ex.nombre||ex.name||'Ejercicio';day.exercises.push({name:n,muscle:ex.muscle||cm[cat]||cat,series:s,reps:r,mediaId:ex.mediaId||undefined,fromAPI:true});refreshExL(dayId);cOv2();tst('✓ '+n);}
-function saveRoutine(did,isE){const d=window._draft;const n=document.getElementById('rn')?.value.trim()||'Mi rutina';d.name=n;d.days.forEach(day=>{const lv=document.getElementById('dl-'+day.id)?.value.trim();if(lv)day.label=lv;cleanupSupersetGroups(day.exercises);});if(isE){const i=routines.findIndex(r=>r.id===did);if(i>=0)routines[i]=d;else routines.push(d);}else{routines.push(d);if(routines.length===1)activeRid=d.id;}S.s('rt2',routines);S.s('arid',activeRid);if(d.cycleLength||d.goal){gymCycles[d.id]={...(gymCycles[d.id]||{}),startedAt:gymCycles[d.id]?.startedAt||Date.now(),length:d.cycleLength||6,goal:d.goal||gymProfile?.goal||'hipertrofia'};S.s('gymCycles1',gymCycles);}cOv1();tst(`✓ "${n}" guardada`);renderGym();}
 function setActiveR(id){activeRid=id;S.s('arid',id);ensureGymCycle(id);tst('✓ Rutina activada');renderGym();}
 function delRoutine(id){if(!confirm('¿Eliminar esta rutina?'))return;routines=routines.filter(r=>r.id!==id);if(activeRid===id)activeRid=routines[0]?.id||null;delete gymCycles[id];S.s('rt2',routines);S.s('arid',activeRid);S.s('gymCycles1',gymCycles);tst('Rutina eliminada');renderGym();}
 
@@ -5218,7 +5533,7 @@ function buildGymAIContext(sourceRoutines=routines){
       id:d.id,
       referencia:'Día '+(di+1),
       nombre:d.label,
-      ejercicios:(d.exercises||[]).map((e,ei)=>{const ss=supersetMeta(d,ei);return {posicion:ei+1,nombre:e.name,musculo:e.muscle,series:e.series,reps:e.reps,movimiento:!!e.mediaId,biserie:ss?ss.label+ss.position:null};})
+      ejercicios:(d.exercises||[]).map((e,ei)=>{const ss=supersetMeta(d,ei);return {posicion:ei+1,nombre:e.name,musculo:e.muscle,series:e.series,reps:e.reps,...(e.rir?{rir:e.rir}:{}),...(e.rest?{descanso:e.rest}:{}),...(e.note?{nota:e.note}:{}),movimiento:!!e.mediaId,biserie:ss?ss.label+ss.position:null};})
     }))
   }));
   return 'ESTRUCTURA EXACTA DE RUTINAS (usá estos nombres y días):\n'+JSON.stringify(data);
