@@ -5328,7 +5328,7 @@ async function sendChat(){
   const memInstr='\n\nMEMORIA / APRENDIZAJE:\n- ESTO ES CRÍTICO: Si en el mensaje hay CUALQUIER info DURADERA de la persona (preferencias, hábitos, restricciones, objetivos, pesos levantados habitualmente, fechas fijas, etc.), TENÉS QUE GUARDARLA vos mismo usando [ACCION]{"op":"recordar","dato":"frase en 3ra persona","tag":"dieta|gym|finanzas|agenda|general","importante":true|false}[/ACCION]. Poné importante:true SOLO para datos permanentes de fondo (alergias, lesiones, objetivos de vida); el resto false.\n- Si te piden olvidar algo: [ACCION]{"op":"olvidar","dato":"texto a borrar"}[/ACCION].\n- NO te olvides de guardar las cosas importantes, o tu memoria fallará.\n- No repitas en memoria algo que ya figura arriba.';
   const ctxHist=chatHist.slice(-20).map(msg=>'['+msg.role+']: '+msg.text).join('\n');
   const voiceGuide = _voiceSent ? '\n\nIMPORTANTE: El usuario te está hablando por voz. Respondé de forma muy corta (máximo 2 o 3 oraciones breves), directa y conversacional en español uruguayo, sin usar viñetas, listas ni formato markdown largo.' : '';
-  const prompt='Sos MARTIN·APP AI: asistente personal con control total de los datos.\n\n'+_hoy+dataCtx+memCtx+memInstr+voiceGuide+'\n\nREGLAS:\n- Respondé en español uruguayo, natural, amigable y con confianza.\n- Revisá los datos con cuidado. Si te preguntan por pesos o registros, verificá exactamente lo que dice el registro antes de responder. No inventes números.\n- Si el usuario pide agregar/modificar datos, usá [ACCION] al final.\n- ACCIONES DISPONIBLES:\n  * [ACCION]{"op":"gasto","cat":"id","v":monto,"desc":"...","f":"d/m"}[/ACCION]\n  * [ACCION]{"op":"pago","cat":"id","m":mes,"y":año}[/ACCION]\n  * [ACCION]{"op":"fijo","cat":"id","m":mes,"y":año,"v":monto}[/ACCION]\n  * [ACCION]{"op":"compra","cardId":"id","v":monto,"desc":"...","cuotas":1}[/ACCION]\n  * [ACCION]{"op":"crear_rutina","name":"Nombre","days":[{"label":"Día1","exercises":[{"name":"Ej1","muscle":"Pecho","series":4,"reps":"10"}]}]}[/ACCION]\n  * [ACCION]{"op":"modificar_ejercicio","dia":"Lunes","nombre_original":"press banca","nombre_nuevo":"press banca con mancuernas","series":4,"reps":"10","musculo":"Pecho"}[/ACCION] (usá esto para cambiar ejercicios existentes de rutinas)\n  * [ACCION]{"op":"registrar_serie","ejercicio":"aperturas","serie":3,"peso":30,"reps":10}[/ACCION] (usá esto para registrar tu peso en una serie específica)\n  * [ACCION]{"op":"completar_ejercicio","ejercicio":"aperturas"}[/ACCION] (usá esto para marcar todas las series de un ejercicio como hechas)\n  * [ACCION]{"op":"evento","titulo":"...","fecha":"YYYY-MM-DD","hora":"HH:MM","recordatorio":15}[/ACCION]\n- NUTRICIÓN: si la persona dice qué comió, registralo con [ACCION]{"op":"comida","nombre":"...","cal":número,"prot":número}[/ACCION] (estimá calorías vos). Para CARDIO: [ACCION]{"op":"cardio","tipo":"correr","min":30,"km":5}[/ACCION]. Para SUEÑO: [ACCION]{"op":"sueno","horas":7.5,"calidad":"buena"}[/ACCION]. Para la LISTA DEL SÚPER: [ACCION]{"op":"comprar","item":"2kg de pollo","cat":"carniceria"}[/ACCION]. Para ELIMINAR algo: [ACCION]{"op":"eliminar","tipo":"gasto|rutina|evento|comida|cardio|super|categoria|memoria","desc":"texto para identificarlo"}[/ACCION].\n- AHORRO MENSUAL: [ACCION]{"op":"ahorro","cat":"id_meta","v":monto}[/ACCION] (para sumar al mes).\n- AHORRO TOTAL: Si la persona dice que tiene un saldo TOTAL acumulado de X (ej. "tengo 2000 ahorrados"): [ACCION]{"op":"set_saldo_ahorro","cat":"id_meta","v":monto}[/ACCION].\n- Crear meta: [ACCION]{"op":"crear_meta","nombre":"Auto","objetivo":500000,"aporte":1500}[/ACCION].\n- TARJETAS POR MES: op \"fijo\" con el id de la CATEGORÍA de esa tarjeta. Meses de 0 a 11. Ej \"anotá 1400 de la Visa en abril\" -> [ACCION]{\"op\":\"fijo\",\"cat\":\"<id categoría Visa>\",\"m\":3,\"y\":<año>,\"v\":1400}[/ACCION].\n- muscle debe ser uno de: Pecho, Espalda, Hombros, Bíceps, Tríceps, Cuádriceps, Femoral, Gemelos, Abdomen\n- IDs son los que ves arriba. NO inventes IDs.\n- Podés ANALIZAR entrenamientos: y recomendar ajustes.\n- Podés dar consejos de DIETA y NUTRICIÓN según el perfil y objetivo del usuario.\n- Si te piden hacer algo que no sea una acción, respondé normal pero útil.\n- Siempre respondé optimista y motivador como un entrenador personal.\n\nConversación:\n'+ctxHist+'\n\n['+txt+']:';
+  const prompt='Sos MARTIN·APP AI: asistente personal con control total de los datos.\n\n'+_hoy+dataCtx+memCtx+memInstr+voiceGuide+'\n\nREGLAS:\n- Respondé en español uruguayo, natural, amigable y con confianza.\n- Revisá los datos con cuidado. Si te preguntan por pesos o registros, verificá exactamente lo que dice el registro antes de responder. No inventes números.\n- Si el usuario pide agregar/modificar datos, usá [ACCION] al final.\n- ACCIONES DISPONIBLES:\n  * [ACCION]{"op":"gasto","cat":"id","v":monto,"desc":"...","f":"d/m"}[/ACCION]\n  * [ACCION]{"op":"pago","cat":"id","m":mes,"y":año}[/ACCION]\n  * [ACCION]{"op":"fijo","cat":"id","m":mes,"y":año,"v":monto}[/ACCION]\n  * [ACCION]{"op":"compra","cardId":"id","v":monto,"desc":"...","cuotas":1}[/ACCION]\n  * [ACCION]{"op":"crear_rutina","name":"Nombre","days":[{"label":"Día1","exercises":[{"name":"Ej1","muscle":"Pecho","series":4,"reps":"10"}]}]}[/ACCION]\n  * [ACCION]{"op":"modificar_ejercicio","dia":"Lunes","nombre_original":"press banca","nombre_nuevo":"press banca con mancuernas","series":4,"reps":"10","musculo":"Pecho"}[/ACCION] (usá esto para cambiar ejercicios existentes de rutinas)\n  * [ACCION]{"op":"registrar_serie","ejercicio":"aperturas","serie":3,"peso":30,"reps":10}[/ACCION] (usá esto para registrar tu peso en una serie específica)\n  * [ACCION]{"op":"completar_ejercicio","ejercicio":"aperturas"}[/ACCION] (usá esto para marcar todas las series de un ejercicio como hechas)\n  * [ACCION]{"op":"evento","titulo":"...","fecha":"YYYY-MM-DD","hora":"HH:MM","recordatorio":15}[/ACCION]\n- NUTRICIÓN: si la persona dice qué comió, registralo con [ACCION]{"op":"comida","nombre":"...","cal":número,"prot":número}[/ACCION] (estimá calorías vos). Para CARDIO: [ACCION]{"op":"cardio","tipo":"correr","min":30,"km":5}[/ACCION]. Para SUEÑO: [ACCION]{"op":"sueno","horas":7.5,"calidad":"buena"}[/ACCION]. Para la LISTA DEL SÚPER: [ACCION]{"op":"comprar","item":"2kg de pollo","cat":"carniceria"}[/ACCION]. Para ELIMINAR algo: [ACCION]{"op":"eliminar","tipo":"gasto|rutina|evento|comida|cardio|super|categoria|memoria","desc":"texto para identificarlo"}[/ACCION].\n- AHORRO MENSUAL: [ACCION]{"op":"ahorro","cat":"id_meta","v":monto}[/ACCION] (para sumar al mes).\n- AHORRO TOTAL: Si la persona dice que tiene un saldo TOTAL acumulado de X (ej. "tengo 2000 ahorrados"): [ACCION]{"op":"set_saldo_ahorro","cat":"id_meta","v":monto}[/ACCION].\n- Crear meta: [ACCION]{"op":"crear_meta","nombre":"Auto","objetivo":500000,"aporte":1500}[/ACCION].\n- TARJETAS POR MES: \"anotá/sumame X de la tarjeta Y\" SUMA al monto de ese mes: op \"ajustar_monto\" con el id de la CATEGORÍA de esa tarjeta y delta=X. Solo \"poné/cambiá a X\" usa \"fijo\" (reemplaza el total). Meses de 0 a 11. Ej \"anotá 1400 de la Visa en abril\" -> [ACCION]{\"op\":\"ajustar_monto\",\"cat\":\"<id categoría Visa>\",\"m\":3,\"y\":<año>,\"delta\":1400}[/ACCION].\n- muscle debe ser uno de: Pecho, Espalda, Hombros, Bíceps, Tríceps, Cuádriceps, Femoral, Gemelos, Abdomen\n- IDs son los que ves arriba. NO inventes IDs.\n- Podés ANALIZAR entrenamientos: y recomendar ajustes.\n- Podés dar consejos de DIETA y NUTRICIÓN según el perfil y objetivo del usuario.\n- Si te piden hacer algo que no sea una acción, respondé normal pero útil.\n- Siempre respondé optimista y motivador como un entrenador personal.\n\nConversación:\n'+ctxHist+'\n\n['+txt+']:';
 
   // ---- Burbuja del asistente que se va llenando en vivo ----
   chatHist.push({role:'assistant',text:'',streaming:true});
@@ -6072,7 +6072,7 @@ function expectsAIAction(userText){
 // Martín maneja sus tarjetas como categorías comunes con monto mensual (pf4). Las card_ de cards1
 // solo cuentan si esa tarjeta tiene compras en cuotas; si no, "sumar" iría a una categoría que no usa.
 const FINANCE_MONTH_NAMES=['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
-const CATEGORY_STOPWORDS=new Set(['card','tarjeta','tarjetas','de','del','la','el','los','las','credito','debito','cuenta','pago','pagos','mi','mis']);
+const CATEGORY_STOPWORDS=new Set(['card','tarjeta','tarjetas','de','del','la','el','los','las','credito','debito','cuenta','pago','pagos','mi','mis','en','para','por','con','y','a','al','o','un','una','que']);
 function parseFinanceMonth(text,now){
   now=now||new Date();
   const t=normalizeGymLookup(text),cm=now.getMonth(),cy=now.getFullYear();
@@ -6092,9 +6092,13 @@ function parseFinanceMonth(text,now){
 }
 function categoryTokens(c){return normalizeGymLookup(c?.n).split(' ').filter(w=>w&&!CATEGORY_STOPWORDS.has(w));}
 function commitmentCategories(categoryList,purchases){
-  // Categorías donde tiene sentido anotar el monto del mes: comunes y card_ con compras.
-  return (categoryList||[]).filter(c=>!c.archived&&(!c.cardRef||(purchases||[]).some(p=>p.cardId===c.cardRef)));
+  // Categorías donde tiene sentido anotar el monto del mes: todas las no archivadas, incluidas las
+  // de tarjeta. Una tarjeta sin compras en cuotas se maneja como planilla (monto del mes en pf4).
+  // Las metas de ahorro quedan afuera: tienen su propia acción y sus nombres ("reducir gasto en
+  // tarjetas") no tienen que competir con una tarjeta.
+  return (categoryList||[]).filter(c=>!c.archived&&!c.ahorro);
 }
+function cardHasPurchases(cardId,purchases){return !!cardId&&(purchases||[]).some(p=>p.cardId===cardId);}
 function shownCommitmentAmount(cat,pf,m,y){
   const key=cat.id+'_'+m+'_'+y;
   if(pf&&pf[key]!==undefined)return money(pf[key]);
@@ -6110,9 +6114,10 @@ function resolveCommitmentCategory(text,categoryList,purchases){
   const candidates=pool.filter(c=>{const tk=new Set(categoryTokens(c));return query.every(w=>tk.has(w));});
   if(candidates.length===1)return {category:candidates[0]};
   if(candidates.length>1)return {error:'Hay '+candidates.length+' que coinciden: '+candidates.map(c=>c.n).join(' y ')+'. ¿Cuál?',ambiguous:candidates.map(c=>c.id)};
-  // Nadie tiene todas las palabras: si una sola categoría tiene alguna, es esa; si no, preguntar.
-  const partial=pool.filter(c=>categoryTokens(c).some(w=>query.includes(w)));
-  if(partial.length===1)return {category:partial[0]};
+  // Nadie tiene todas las palabras: gana la que comparte más palabras con el pedido; si empatan, preguntar.
+  const scored=pool.map(c=>({c,n:categoryTokens(c).filter(w=>query.includes(w)).length})).filter(x=>x.n>0).sort((a,b)=>b.n-a.n);
+  if(scored.length&&(scored.length===1||scored[0].n>scored[1].n))return {category:scored[0].c};
+  const partial=scored.filter(x=>x.n===scored[0]?.n).map(x=>x.c);
   if(partial.length>1)return {error:'Hay '+partial.length+' que coinciden: '+partial.map(c=>c.n).join(' y ')+'. ¿Cuál?',ambiguous:partial.map(c=>c.id)};
   return {error:'No encontré a qué categoría va ese monto'};
 }
@@ -6133,7 +6138,8 @@ function inferCommitmentAmountAction(userText,now,categoryList,purchases){
   if(resolved.error)return /\btarjeta\b/.test(t)||resolved.ambiguous?{error:resolved.error}:null;
   const cat=resolved.category;
   if(setVerb&&!subVerb)return {op:'fijo',cat:cat.id,v:amount,m:month.m,y:month.y};
-  if(cat.cardRef&&!subVerb)return {op:'compra',cardId:cat.cardRef,v:amount,desc:'Ajuste del mes',m:month.m,y:month.y};
+  // Solo una tarjeta con compras en cuotas recibe una compra; sin compras es un monto mensual más.
+  if(cat.cardRef&&cardHasPurchases(cat.cardRef,purchases)&&!subVerb)return {op:'compra',cardId:cat.cardRef,v:amount,desc:'Ajuste del mes',m:month.m,y:month.y};
   return {op:'ajustar_monto',cat:cat.id,delta:subVerb?-amount:amount,m:month.m,y:month.y};
 }
 function inferDirectExpenseAction(userText,now=new Date()){
@@ -6485,7 +6491,7 @@ function ejecutarAccion(acc){
     // Si dice el mes (m/y o "mes"), la primera cuota cae ahí; si no, este mes menos las ya pagadas.
     const target=acc.m!==undefined||acc.y!==undefined||acc.mes?normalizeFinanceDate(acc,now):null;if(target?.error)return target.error;
     let _sm=(target?target.m:now.getMonth())-_paid,_sy=target?target.y:now.getFullYear();_sy+=Math.floor(_sm/12);_sm=((_sm%12)+12)%12;
-    const beforeMonth=target?money(getCardMonthAmt(card.id,target.m,target.y)):0;
+    const beforeMonth=target?money(getCardMonthAmt(card.id,target.m,target.y,cpurch)):0;
     cpurch.push({id:uid(),cardId:card.id,commerce:acc.desc||'Gasto',total:v,instAmt:(installments>0?money(v/installments):money(v)),installments,paidInstallments:_paid,category:'otro',date:now.toISOString().slice(0,10),startM:_sm,startY:_sy,addedM:now.getMonth(),addedY:now.getFullYear()});
     S.s('cpurch1',cpurch);
     // ensure card category exists
@@ -8025,7 +8031,7 @@ async function interpretVoice(txt){
     '  * [ACCION]{"op":"gasto","cat":"id","v":monto,"desc":"...","f":"d/m"}[/ACCION]\n'+
     '  * [ACCION]{"op":"pago","cat":"id","m":mes,"y":año}[/ACCION]\n'+
     '  * [ACCION]{"op":"fijo","cat":"id","m":mes,"y":año,"v":monto}[/ACCION]\n'+
-    '- TARJETAS POR MES: para anotar lo pagado de una tarjeta en un mes, usá "fijo" con el id de la categoría de esa tarjeta (las que tienen tarjeta: en Categorías). Meses 0-11 (enero=0, abril=3, diciembre=11). Ej "1400 de la Visa en abril" → fijo cat=<id Visa> m=3 y=<año> v=1400.\n'+
+    '- TARJETAS POR MES: "anotame/sumame X de la tarjeta Y (para tal mes)" SUMA al monto de ese mes → ajustar_monto cat=<id> delta=X m y. Solo si dice "poné/cambiá/dejá en X" usá fijo (reemplaza el total). Meses 0-11 (enero=0, abril=3, diciembre=11); "el mes que viene" es el mes actual + 1. Ej "sumame 1400 de la Visa en abril" → ajustar_monto cat=<id Visa> delta=1400 m=3 y=<año>.\n'+
     '  * [ACCION]{"op":"evento","titulo":"...","fecha":"YYYY-MM-DD","hora":"HH:MM","recordatorio":15}[/ACCION]\n'+
     '  * [ACCION]{"op":"crear_rutina","name":"...","days":[...]}[/ACCION]\n'+
     '  * [ACCION]{"op":"cambiar_ejercicio","rutina":"id o nombre exacto","dia":"Día 1","nombre_original":"press banca","nombre_nuevo":"press inclinado con mancuernas"}[/ACCION] (cambia solo ese ejercicio; conserva series, reps y músculo si no se indican)\n'+
@@ -8523,10 +8529,11 @@ function pStartY(p){return p.startY!=null?p.startY:(p.addedY!=null?p.addedY:new 
 function instMonthYear(p,kk){let mm=pStartM(p)+(kk-1),yy=pStartY(p);yy+=Math.floor(mm/12);mm=((mm%12)+12)%12;return {m:mm,y:yy};}
 function getCardDebt(cardId){return sumMoney(getCardPurchs(cardId),p=>pInstAmt(p)*pRemaining(p));}
 // Suma de cuotas que VENCEN en (m,y). Cuenta también la última cuota (X==N). Sin m,y => mes actual.
-function getCardMonthAmt(cardId,m,y){
+// purchases opcional: la lista recién leída de cpurch1 cuando la global todavía no se refrescó.
+function getCardMonthAmt(cardId,m,y,purchases){
   if(m==null||y==null){const n=new Date();m=n.getMonth();y=n.getFullYear();}
   let t=0;
-  getCardPurchs(cardId).forEach(p=>{
+  (purchases?purchases.filter(p=>p.cardId===cardId):getCardPurchs(cardId)).forEach(p=>{
     const N=p.installments||1;
     for(let kk=1;kk<=N;kk++){const im=instMonthYear(p,kk);if(im.m===m&&im.y===y){t=money(t+pInstAmt(p));break;}}
   });
