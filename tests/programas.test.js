@@ -23,9 +23,10 @@ test('cada programa tiene los campos que usa la app',()=>{
     assert.ok(!ids.has(p.id),`id repetido ${p.id}`);ids.add(p.id);
     for(const k of ['name','summary','progression','basedOn'])assert.ok(String(p[k]||'').length>10,`${p.id}: falta ${k}`);
     assert.ok(['principiante','intermedio','avanzado'].includes(p.level),`${p.id}: nivel`);
-    assert.ok(['hipertrofia','fuerza','potencia','resistencia'].includes(p.goal),`${p.id}: goal`);
+    assert.ok(['hipertrofia','fuerza','resistencia','salud','bajar_peso'].includes(p.goal),`${p.id}: goal`);
     assert.ok(p.weeks>=3&&p.weeks<=12,`${p.id}: weeks fuera de 3-12 (ensureGymCycle)`);
     assert.equal(p.days.length,p.daysPerWeek,`${p.id}: daysPerWeek no coincide con days`);
+    if(p.nutrition)for(const k of ['target','calories','protein','note'])assert.ok(String(p.nutrition[k]||'').length>10,`${p.id}: nutrition.${k}`);
     assert.ok(p.sources.length>=1&&p.sources.every(s=>/^https:\/\//.test(s.url)&&s.title),`${p.id}: fuentes`);
   }
 });
@@ -87,6 +88,7 @@ test('las plantillas anuales tienen 12 meses de programas existentes',()=>{
   const ids=new Set(data.programs.map(p=>p.id));
   for(const y of data.yearTemplates){
     assert.equal(y.months.length,12,y.id);
+    if(y.maxDaysPerWeek)for(const m of y.months)assert.ok(data.programs.find(p=>p.id===m).daysPerWeek<=y.maxDaysPerWeek,`${y.id}: ${m} pasa de ${y.maxDaysPerWeek} días`);
     for(const m of y.months)assert.ok(ids.has(m),`${y.id}: ${m} no existe`);
   }
 });
