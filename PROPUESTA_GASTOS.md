@@ -16,7 +16,7 @@ Tiene dos fuentes:
 ## 1. Resumen en 30 segundos
 
 - **Usás Gastos como planilla de compromisos mensuales:** cada mes, cuánto hay que pagar de cada cosa y si ya está pagado, contra el sueldo, con meses futuros planificados. No la usás como registro diario: no hay gastos variables ni compras en cuotas cargadas. La propuesta se ordena para **ese** uso.
-- **Se perdió de vista tu historial de 2025:** ~190 montos están en categorías que ya no existen (se borraron y se recrearon con ids nuevos en enero de 2026). Anual y Comparar no ven 2025. Se puede recuperar sin perder nada con la herramienta **Vincular historial** (sección 6).
+- **Hay ~190 montos en categorías que ya no existen** (se borraron y se recrearon con ids nuevos en enero de 2026). Los de 2025 eran tu **presupuesto**, no lo que pagaste: quedan ocultos y sin tocar hasta que elijas qué hacer (sección 6).
 - **Dos errores que rompen una planilla:**
   - B22: cambiar el monto base de una categoría reescribe meses pasados ya pagados.
   - B23: borrar una categoría deja su historial huérfano. Así se perdió lo de 2025.
@@ -81,7 +81,7 @@ Severidad: 🔴 cambia totales o pierde información · 🟠 confunde o muestra 
 | **Marcar algo como pagado** | 2–3 toques; el círculo ○ es chico, de 33 px | 1 toque en un botón de 44 px; guarda el monto pagado (arregla B22) |
 | **Cargar el monto de la tarjeta de este mes** | Mes → deslizar hasta la fila → tocar el número → escribir (el campo mide 30 px) | Tocar la fila → teclado numérico grande → listo |
 | **Planificar un monto para los próximos meses** | Mes por mes: avanzar el mes → buscar la fila → escribir, 12 veces para un año | "Repetir hasta…" en la fila, o la grilla de 12 meses |
-| **Ver el año** | Anual (sin 2025, por los huérfanos) | Tabla anual por categoría, con 2025 recuperado |
+| **Ver el año** | Anual (2025 no aparece: era presupuesto, bajo ids viejos) | Tabla anual por categoría; 2025 según lo que elijas en la sección 6 |
 
 ---
 
@@ -116,7 +116,7 @@ _Las maquetas son de 375 px y las cifras son de ejemplo._ Todas son compatibles 
 - **Tocar una fila** abre una hoja con el monto, "repetir este monto hasta…" (llena meses futuros sin pisar los que ya tienen monto), una nota y "pagado el día…". Todo de 44 px.
 - **Planificar próximos meses:** una grilla de 12 meses por categoría para ver y cargar lo que viene (hoy tenés montos hasta marzo de 2027).
 - **Categorías:** en lugar de borrar, **archivar**. Se ocultan de la planilla, pero el historial sigue contando (arregla B23 y B14).
-- **Anual:** tabla por categoría y mes, con total, promedio y comparación con el año anterior.
+- **Anual:** tabla por categoría y mes, con total, promedio y comparación con el año anterior (con "presupuesto vs real" si elegís la opción b de la sección 6).
 - **Ahorro:** una sección propia, sin pasar por Pagos, con el acumulado bien calculado (B6).
 - **Claves:** ninguna nueva para la planilla. Archivar usa un campo opcional `archived` en `cats4`. Las notas y la fecha de pago irían en una clave nueva opcional (`pf4n`), si las querés.
 - **A favor:** es exactamente lo que usás; poco riesgo; arregla B1, B6, B9, B12, B14, B17, B22 y B23.
@@ -134,7 +134,6 @@ Una clave nueva `mov1` con cada movimiento (fecha, monto, medio de pago, cuotas 
 
 **Recomendación: A, en 3 entregas.**
 1. Arreglos de datos:
-   - "Vincular historial" (sección 6).
    - Pagar guarda el monto (B22).
    - Archivar en vez de borrar (B23 y B14).
    - Totales de Pagos (B1 y B17).
@@ -146,25 +145,20 @@ Los errores de cuotas (B2, B4, B15, B16 y B19) se pueden arreglar igual en la en
 
 ---
 
-## 6. Vincular historial (arreglo de datos, sin esperar la elección)
+## 6. Los montos de 2025 son presupuesto, no historial
 
-- **Detectar:** busca en `pf4`/`pe4` los montos cuyo id de categoría no existe en `cats4`. Los agrupa por id, con cantidad de meses, rango (por ejemplo "ene 2025 – jun 2026") y total. No hay nombres ni ids escritos en el código: todo sale de tus datos.
-- **Elegir, por grupo:**
-  - "Unir a <categoría existente>".
-  - "Crear categoría" con un nombre que escribís vos.
-  - "Dejar como está".
-- **Reglas al unir:**
-  - Si el mes ya tiene monto en la categoría destino, **se conserva el actual**: lo viejo solo llena huecos.
-  - La marca de pagado (`pe4`) viaja con su monto.
-  - Se muestra cuántos meses se completan y cuántos se ignoran.
-- **Seguridad:**
-  - Vista previa antes de confirmar.
-  - Si hoy no hiciste respaldo, primero se ofrece exportarlo.
-  - No se borra nada hasta confirmar. Las claves viejas quedan hasta que confirmes "limpiar".
-  - Se puede deshacer en la misma sesión.
+Confirmaste que los ~136 montos de 2025 que quedaron bajo los ids viejos (marcados "pagado" en `pe4`) eran tu **presupuesto** del Excel: la columna de lo pagado está vacía. Si se unieran a las categorías actuales, Anual y Comparar mostrarían números que no pasaron como si fueran gastos reales. Por eso **no se tocan**: no se escribe nada en `pf4`/`pe4` desde esos ids y tampoco se borran.
 
----
+Opciones para que elijas:
+
+| | Qué pasa | Claves |
+|---|---|---|
+| **a · Dejarlos ocultos** | Quedan como están: no aparecen ni suman. | Ninguna. |
+| **b · Verlos como "Presupuesto 2025"** | Una vista aparte para comparar presupuesto contra real. No cuentan como gastos ni como pagados. | Una clave nueva opcional (por ejemplo `budget1`), que se llena **copiando** desde los ids viejos. Lo original no se toca. |
+| **c · Cargar lo real** | Si conseguís los montos pagados de 2025, se cargan como historial real en `pf4`. Lo del presupuesto sigue aparte. | `pf4` con las categorías actuales, solo en meses vacíos. |
+
+Lo de B23 (archivar categorías en vez de borrarlas) sigue igual de necesario, para que no vuelva a pasar.
 
 ## 7. Qué se puede arreglar ya, elijas lo que elijas
 
-"Vincular historial", B22, B23/B14 (archivar), B1, B17, B6, B9 y B12, más los chicos de cuotas si querés: B2, B16 y B19. No cambian el formato de ninguna clave y cada uno lleva su prueba.
+B22, B23/B14 (archivar), B1, B17, B6, B9 y B12, más los chicos de cuotas si querés: B2, B16 y B19. Los montos de 2025 esperan tu decisión (sección 6). No cambian el formato de ninguna clave y cada uno lleva su prueba.
