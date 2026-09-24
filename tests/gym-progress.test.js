@@ -23,7 +23,7 @@ function extractFunction(name,source=html){
 
 const FUNCTIONS=['todayStr','gymSetKey','parseRepRange','clampGymNumber','getSetPerformance','normStr','normalizeGymLookup','gymLookupMatches',
   'resolveGymExerciseTarget','getPreviousExerciseLog','progressionForLogs','exerciseProgression','ensureGymCycle','getCycleStatus',
-  'gymNumberInput','gymSetSummary','exerciseLoadHistory','buildGymProgressContext','gymDayKey','findGymLogTarget','suggestedSetValues',
+  'gymNumberInput','gymSetSummary','exerciseLoadHistory','programWeekInfo','buildGymProgressContext','gymDayKey','findGymLogTarget','suggestedSetValues',
   'cleanupSupersetGroups','normalizeSupersetAssignments','supersetMeta','plural','prepareMovementExercises','normalizeAIRoutinePayload','ejecutarAccion'];
 
 function routinesFixture(){
