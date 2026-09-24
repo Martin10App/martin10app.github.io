@@ -3463,9 +3463,10 @@ function xTab(i){curXT=i;for(let j=0;j<8;j++)document.getElementById('xt-'+j)?.c
 function renderGastos(){
   const el=document.getElementById('gastos-b');if(!el)return;
   ensureCardCats();
-  if(curXT===0)el.innerHTML=rMes();
+  const orphan=(curXT===0||curXT===2)?orphanBannerHtml():'';
+  if(curXT===0)el.innerHTML=orphan+rMes();
   if(curXT===1)el.innerHTML=rPagos();
-  if(curXT===2)el.innerHTML=rAnual();
+  if(curXT===2)el.innerHTML=orphan+rAnual();
   if(curXT===3)el.innerHTML=rComparar();
   if(curXT===4)el.innerHTML=rTarjetas();
   if(curXT===5)el.innerHTML=rNuevoGasto();
@@ -3484,6 +3485,134 @@ function ensureCardCats(){
   cats=cats.filter(c=>!c.cardRef||cards.some(crd=>crd.id===c.cardRef));
   if(cats.length!==beforeLen)changed=true;
   if(changed)S.s('cats4',cats);
+}
+
+// ── Vincular historial ───────────────────────────────────────────────
+// Montos de pf4/pe4 cuyo id de categoría ya no existe (categorías borradas o recreadas con otro id):
+// están guardados pero no se ven en ninguna pantalla. La herramienta los copia a una categoría
+// actual SOLO en los meses sin monto propio, guarda lo movido en orphanUndo1 y se puede deshacer.
+function findOrphanHistory(catList,pf,pe){
+  const ids=new Set((catList||[]).map(c=>c.id)),groups={};
+  const add=(key,src)=>{
+    const m=String(key).match(/^(.+)_(\d{1,2})_(\d{4})$/);if(!m||ids.has(m[1]))return;
+    const g=groups[m[1]]||(groups[m[1]]={id:m[1],slots:new Set(),pf:0,pe:0});
+    g.slots.add(Number(m[3])*12+Number(m[2]));g[src]++;
+  };
+  Object.keys(pf||{}).forEach(key=>add(key,'pf'));Object.keys(pe||{}).forEach(key=>add(key,'pe'));
+  return Object.values(groups).filter(g=>g.pf>0).map(g=>{
+    const s=[...g.slots].sort((a,b)=>a-b);return {id:g.id,months:s.length,pf:g.pf,pe:g.pe,first:s[0],last:s[s.length-1]};
+  }).sort((a,b)=>b.months-a.months||a.id.localeCompare(b.id));
+}
+function orphanSlotLabel(t){return MS[t%12]+' '+Math.floor(t/12);}
+function orphanLabel(id){
+  const s=String(id||'');
+  if(s.length>=12&&/\d/.test(s)&&!s.includes('_'))return 'Categoría borrada';
+  const txt=s.replace(/_/g,' ').trim();return txt.charAt(0).toUpperCase()+txt.slice(1);
+}
+function suggestOrphanTarget(id,catList){
+  // Sugiere la categoría actual cuyo nombre comparte más palabras con el id viejo ("prest" → "Préstamo…").
+  if(orphanLabel(id)==='Categoría borrada')return null;
+  const words=normalizeGymLookup(String(id).replace(/_/g,' ')).split(' ').filter(w=>w.length>=3);
+  if(!words.length)return null;
+  const hit=(w,t)=>t===w||(w.length>=4&&t.startsWith(w))||(t.length>=4&&w.startsWith(t));
+  const scored=(catList||[]).filter(c=>!c.archived).map(c=>{
+    const tk=normalizeGymLookup(c.n).split(' ').filter(Boolean);
+    return {c,n:words.filter(w=>tk.some(t=>hit(w,t))).length,len:tk.length};
+  }).filter(x=>x.n>0).sort((a,b)=>b.n-a.n||a.len-b.len);
+  if(!scored.length)return null;
+  if(scored[1]&&scored[1].n===scored[0].n&&scored[1].len===scored[0].len)return null;
+  return scored[0].c.id;
+}
+function planOrphanLink(mapping,pf,pe){
+  // mapping: {idViejo: idDestino}; sin destino = queda oculto. Nunca pisa un mes que ya tiene valor.
+  const plan={pf:{},pe:{},remove:[],filled:0,kept:0,byYear:{}};
+  const each=(src,isPf)=>Object.entries(src||{}).forEach(([key,val])=>{
+    const m=key.match(/^(.+)_(\d{1,2})_(\d{4})$/);if(!m)return;
+    const to=mapping[m[1]];if(!to)return;
+    const nk=to+'_'+m[2]+'_'+m[3],bucket=isPf?plan.pf:plan.pe;
+    plan.remove.push([isPf?'pf':'pe',key,val]);
+    if(src[nk]===undefined&&bucket[nk]===undefined){bucket[nk]=val;if(isPf){plan.filled++;plan.byYear[m[3]]=(plan.byYear[m[3]]||0)+1;}}
+    else if(isPf)plan.kept++;
+  });
+  each(pf,true);each(pe,false);
+  return plan;
+}
+function applyOrphanLink(mapping,newCats){
+  const pf=S.g('pf4',{}),pe=S.g('pe4',{});
+  const plan=planOrphanLink(mapping,pf,pe);
+  const undo={at:Date.now(),removed:plan.remove,addedPf:Object.keys(plan.pf),addedPe:Object.keys(plan.pe),createdCats:(newCats||[]).map(c=>c.id)};
+  plan.remove.forEach(([src,key])=>{if(src==='pf')delete pf[key];else delete pe[key];});
+  Object.assign(pf,plan.pf);Object.assign(pe,plan.pe);
+  if(newCats&&newCats.length){cats=S.g('cats4',[]).concat(newCats);S.s('cats4',cats);}
+  S.s('orphanUndo1',undo);S.s('pf4',pf);S.s('pe4',pe);pagosFijos=pf;pagosEstado=pe;
+  return plan;
+}
+function undoOrphanLink(){
+  const u=S.g('orphanUndo1',null);if(!u)return false;
+  const pf=S.g('pf4',{}),pe=S.g('pe4',{});
+  (u.addedPf||[]).forEach(key=>delete pf[key]);(u.addedPe||[]).forEach(key=>delete pe[key]);
+  (u.removed||[]).forEach(([src,key,val])=>{if(src==='pf')pf[key]=val;else pe[key]=val;});
+  if(u.createdCats?.length){cats=S.g('cats4',[]).filter(c=>!u.createdCats.includes(c.id));S.s('cats4',cats);}
+  S.s('pf4',pf);S.s('pe4',pe);pagosFijos=pf;pagosEstado=pe;S.s('orphanUndo1',null);
+  return true;
+}
+function orphanBannerHtml(){
+  const groups=findOrphanHistory(cats,pagosFijos,pagosEstado),undo=S.g('orphanUndo1',null);
+  if(!groups.length&&!undo)return '';
+  if(!groups.length)return `<div class="alert al-info" style="margin-bottom:12px"><div class="al-i">✓</div><div class="al-t">Historial vinculado. <button class="btn b-sm b-g" type="button" style="min-height:44px;margin-left:6px" onclick="confirmUndoOrphanLink()">Deshacer</button></div></div>`;
+  const months=groups.reduce((a,g)=>a+g.months,0);
+  return `<div class="alert al-warn" style="margin-bottom:12px"><div class="al-i">📦</div><div class="al-t"><strong>Historial que no se ve:</strong> ${plural(groups.length,'grupo','grupos')} con ${plural(months,'mes','meses')} guardados en categorías que ya no existen.<br><button class="btn b-md b-p" type="button" style="margin-top:8px;min-height:44px" onclick="openOrphanLink()">Revisar y vincular</button></div></div>`;
+}
+function readOrphanMapping(){
+  const mapping={};
+  document.querySelectorAll('[data-orphan-old]').forEach(sel=>{if(sel.value)mapping[sel.dataset.orphanOld]=sel.value;});
+  return mapping;
+}
+function previewOrphanLink(){
+  const box=document.getElementById('orph-prev');if(!box)return;
+  const mapping=readOrphanMapping(),plan=planOrphanLink(mapping,pagosFijos,pagosEstado);
+  const left=findOrphanHistory(cats,pagosFijos,pagosEstado).filter(g=>!mapping[g.id]).length;
+  const years=Object.entries(plan.byYear).sort().map(([y,n])=>y+': '+n).join(' · ');
+  box.innerHTML=`Se completan <strong>${plural(plan.filled,'mes','meses')}</strong>${years?' ('+years+')':''} · se conservan ${plural(plan.kept,'mes que ya tenía','meses que ya tenían')} monto`+(left?` · ${plural(left,'grupo queda oculto','grupos quedan ocultos')}`:'');
+}
+function openOrphanLink(){
+  const groups=findOrphanHistory(cats,pagosFijos,pagosEstado);if(!groups.length){tst('No hay historial sin categoría');return;}
+  const opts=cats.filter(c=>!c.archived);
+  const lastBackup=Number(S.g('lastBackupAt',0))||0,backupToday=lastBackup&&new Date(lastBackup).toDateString()===new Date().toDateString();
+  const rows=groups.map(g=>{
+    const sug=suggestOrphanTarget(g.id,opts),label=orphanLabel(g.id);
+    return `<div style="padding:10px 0;border-bottom:1px solid var(--border)">
+      <div style="font-weight:700">${esc(label)}</div>
+      <div style="font-size:11.5px;color:var(--text2);margin:2px 0 6px">${plural(g.months,'mes','meses')} · ${orphanSlotLabel(g.first)} → ${orphanSlotLabel(g.last)}</div>
+      <select class="inp" data-orphan-old="${esc(g.id)}" style="min-height:44px" onchange="previewOrphanLink()">
+        <option value="">Dejar oculto</option>
+        ${opts.map(c=>`<option value="${esc(c.id)}"${c.id===sug?' selected':''}>${esc(c.n)}</option>`).join('')}
+        <option value="__new__">➕ Crear categoría "${esc(label)}"</option>
+      </select></div>`;
+  }).join('');
+  oOv1(`<div class="mt">Vincular historial</div>
+    <div style="font-size:12px;color:var(--text2);line-height:1.6;margin-bottom:10px">Estos montos están guardados pero no se ven porque su categoría ya no existe. Elegí a qué categoría va cada grupo. Solo se completan los meses vacíos: lo que ya cargaste no se toca, y se puede deshacer.</div>
+    ${backupToday?'':`<div class="alert al-warn" style="margin-bottom:10px"><div class="al-i">📦</div><div class="al-t">Antes, hacé un respaldo. <button class="btn b-sm b-g" type="button" style="min-height:44px;margin-left:6px" onclick="exportData()">Exportar</button></div></div>`}
+    <div>${rows}</div>
+    <div id="orph-prev" style="font-size:12px;line-height:1.5;margin:12px 0"></div>
+    <button class="btn b-lg b-p" type="button" onclick="confirmOrphanLink()">Vincular</button>`);
+  previewOrphanLink();
+}
+function confirmOrphanLink(){
+  const mapping=readOrphanMapping(),newCats=[];
+  Object.entries(mapping).forEach(([old,to])=>{
+    if(to!=='__new__')return;
+    const cat={id:uid(),n:orphanLabel(old),c:'#8892A6',base:0};newCats.push(cat);mapping[old]=cat.id;
+  });
+  if(!Object.keys(mapping).length){tst('Elegí al menos un grupo');return;}
+  const preview=planOrphanLink(mapping,S.g('pf4',{}),S.g('pe4',{}));
+  if(!confirm('Se completan '+plural(preview.filled,'mes','meses')+' y se conservan '+preview.kept+' que ya tenían monto. ¿Vincular?'))return;
+  const plan=applyOrphanLink(mapping,newCats);
+  cOv1();renderGastos();tst('✓ Historial vinculado: '+plural(plan.filled,'mes completado','meses completados'),3500);
+}
+function confirmUndoOrphanLink(){
+  if(!confirm('¿Deshacer la vinculación? Los meses completados vuelven a quedar ocultos. Si editaste alguno de esos meses después, ese cambio se pierde.'))return;
+  if(undoOrphanLink()){renderGastos();tst('Vinculación deshecha');}
 }
 
 function k(catId,m,y){return `${catId}_${m}_${y}`}
