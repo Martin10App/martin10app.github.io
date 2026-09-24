@@ -22,7 +22,7 @@ function extractFunction(name,source=html){
 }
 const constant=name=>html.match(new RegExp(`const ${name}=[\\s\\S]*?;\\n`))[0];
 
-const FUNCTIONS=['capacitorPlugin','isNativeMartinApp','buildBackup','backupExportMode','markBackupDone','backupStatusHtml','refreshBackupStatus',
+const FUNCTIONS=['capacitorPlugin','isNativeMartinApp','isSecretBackupKey','buildBackup','backupExportMode','markBackupDone','backupStatusHtml','refreshBackupStatus',
   'exportData','exportBackupNative','showBackupFallback','copyBackupToClipboard','exportBackupBrowser','backupEntries','applyBackup','importBackupText'];
 
 function fakeStorage(initial={}){
@@ -36,6 +36,7 @@ const STORED={
   'usr_martin_pf4':JSON.stringify({luz_8_2026:1200}),
   'usr_martin_rt2':JSON.stringify([{id:'r1',name:'Torso',days:[]}]),
   'usr_martin_arid':JSON.stringify('r1'),
+  'usr_martin_gemini_key':JSON.stringify('AIza-telefono'),'usr_martin_deepseek_local_key':JSON.stringify('sk-telefono'),
   'usr_ana_gst4':JSON.stringify([{_id:'a1',v:5}]),
   'auth_users_v1':JSON.stringify([{id:'usr_martin',name:'martin'}])
 };
@@ -158,4 +159,31 @@ test('[T0b] Configuración muestra el último respaldo y avisa pasados 14 días'
   ctx.S.s('lastBackupAt',Date.now()-20*86400000);
   assert.match(ctx.backupStatusHtml(),/hace 20 días/);assert.match(ctx.backupStatusHtml(),/stale/);
   assert.match(html,/id="backup-status"/);assert.match(html,/onclick="openPasteBackup\(\)"/);
+});
+
+test('[T0c] el respaldo sale sin claves de IA salvo que se pida, y marca includesApiKeys',async()=>{
+  const ctx=makeContext({native:true,plugins:true});
+  await ctx.exportData();
+  const data=JSON.parse(ctx.calls.writeFile[0].data);
+  assert.equal(data.includesApiKeys,false);
+  assert.equal(data.entries.gemini_key,undefined);assert.equal(data.entries.deepseek_local_key,undefined);
+  assert.equal(data.entries.rt2[0].name,'Torso','el resto viaja igual');
+  const withKeys=makeContext({native:true,plugins:true});
+  withKeys.document.getElementById=id=>id==='backup-keys'?{checked:true}:null;
+  await withKeys.exportData();
+  const full=JSON.parse(withKeys.calls.writeFile[0].data);
+  assert.equal(full.includesApiKeys,true);assert.equal(full.entries.gemini_key,'AIza-telefono');
+});
+
+test('[T0c] importar un respaldo sin claves conserva las del teléfono; uno con claves las reemplaza',()=>{
+  const ctx=makeContext({native:false});
+  const keyless=JSON.stringify({format:'martinapp-backup',version:2,entries:{rt2:[{id:'r9',name:'Otra',days:[]}]}});
+  assert.equal(ctx.importBackupText(keyless),true);
+  assert.equal(ctx.localStorage.getItem('usr_martin_gemini_key'),JSON.stringify('AIza-telefono'));
+  assert.equal(ctx.localStorage.getItem('usr_martin_deepseek_local_key'),JSON.stringify('sk-telefono'));
+  assert.equal(JSON.parse(ctx.localStorage.getItem('usr_martin_rt2'))[0].name,'Otra');
+  const withKeys=JSON.stringify({format:'martinapp-backup',version:2,includesApiKeys:true,entries:{rt2:[],gemini_key:'AIza-respaldo'}});
+  assert.equal(ctx.importBackupText(withKeys),true);
+  assert.equal(ctx.localStorage.getItem('usr_martin_gemini_key'),JSON.stringify('AIza-respaldo'));
+  assert.equal(ctx.localStorage.getItem('usr_martin_deepseek_local_key'),JSON.stringify('sk-telefono'));
 });
