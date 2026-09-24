@@ -133,6 +133,17 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
 .set-log-input:focus{border-color:var(--accent);box-shadow:0 0 0 2px rgba(110,91,255,.18)}
 .set-done{width:48px;height:44px;border-radius:10px;border:1px solid var(--border2);background:var(--bg3);color:var(--text2);font-weight:800;transition:background .18s,border-color .18s,color .18s}
 .set-done.ck{border-color:var(--green-b);background:var(--green-d);color:var(--green)}
+.set-log-input.autofill{border-color:var(--green-b);background:var(--green-d);animation:setAutofill .9s ease}
+@keyframes setAutofill{from{box-shadow:0 0 0 3px rgba(0,196,140,.35)}to{box-shadow:0 0 0 0 rgba(0,196,140,0)}}
+.ex-hist{border:1px solid var(--border);border-radius:var(--r-sm);overflow:hidden;margin-bottom:18px}
+.ex-hist-row{display:grid;grid-template-columns:78px 1fr auto;gap:10px;align-items:center;padding:10px 12px;background:var(--bg2)}
+.ex-hist-row+.ex-hist-row{border-top:1px solid var(--border)}
+.ex-hist-row:first-child{background:linear-gradient(90deg,rgba(0,196,140,.07),var(--bg2))}
+.ex-hist-when{font-size:10px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:var(--text2)}
+.ex-hist-sets{font-family:var(--fm);font-size:11px;line-height:1.45;color:var(--text1);min-width:0;overflow-wrap:anywhere}
+.ex-hist-top{font-family:var(--fm);font-size:13px;font-weight:700;color:var(--text0);text-align:right;white-space:nowrap}
+.ex-hist-top span{display:block;font-size:9px;margin-top:2px}.ex-hist-top .up{color:var(--green)}.ex-hist-top .down{color:var(--gold)}
+.ex-hist-empty{font-size:12px;line-height:1.55;color:var(--text2);padding:12px;border:1px dashed var(--border2);border-radius:var(--r-sm);margin-bottom:18px}
 .progression-note{margin-top:10px;padding:10px 12px;border-radius:10px;border:1px solid var(--blue-b);background:rgba(59,127,255,.06);font-size:11px;line-height:1.45;color:var(--text1)}
 .cycle-strip{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:12px 0 16px}
 .cycle-stat{padding:10px 8px;border-radius:11px;background:var(--bg3);border:1px solid var(--border);text-align:center}
@@ -762,7 +773,8 @@ function getPreviousExerciseLog(rid,did,exerciseName){
   for(const week of weeks){
     const day=week.days?.[did];
     const ex=day?.exercises?.find(item=>normStr(item.name)===normStr(exerciseName));
-    if(ex)return ex;
+    // Una semana salteada (sin series hechas) no borra la referencia: se sigue buscando hacia atrás.
+    if(ex&&(ex.setLogs||[]).some(s=>s&&s.done))return ex;
   }
   return null;
 }
@@ -805,6 +817,113 @@ function getCycleStatus(rid,weekId=activeWeekId){
   const length=Math.max(3,Number(cycle.length)||6);
   const block=Math.floor(index/length)+1,week=(index%length)+1;
   return {block,week,length,phase:week===length?'Revisión':'Acumulación'};
+}
+function gymNumberInput(value){
+  // Lo que dicta la voz o escribe la IA: 62,5 · "60kg" · "8 reps".
+  if(value===''||value==null)return '';
+  if(typeof value==='number')return value;
+  const match=String(value).replace(',','.').match(/\d+(?:\.\d+)?/);
+  return match?Number(match[0]):'';
+}
+function gymSetSummary(logs){
+  const has=v=>v!==''&&v!=null;
+  return (logs||[]).filter(s=>s&&s.done&&(has(s.weight)||has(s.reps))).map(s=>(has(s.weight)?s.weight+'kg':'—')+'×'+(has(s.reps)?s.reps:'—')+(has(s.rir)?'@'+s.rir:'')).join(', ');
+}
+function exerciseLoadHistory(rid,did,exerciseName,limit=6){
+  // Semanas anteriores de la rutina (la más reciente primero) con al menos una serie hecha de ese ejercicio.
+  const target=normStr(exerciseName);
+  return gymWeekLog.filter(w=>w.routineId===rid&&w.id!==activeWeekId).sort((a,b)=>(b.createdAt||0)-(a.createdAt||0))
+    .map(w=>{const ex=w.days?.[did]?.exercises?.find(item=>normStr(item.name)===target);const logs=(ex?.setLogs||[]).filter(s=>s&&s.done);return logs.length?{weekStart:w.weekStart,logs}:null;})
+    .filter(Boolean).slice(0,limit);
+}
+function buildGymProgressContext(maxChars=2600){
+  const r=routines.find(x=>x.id===activeRid);
+  if(!r)return 'PROGRESIÓN DEL GYM: sin rutina activa.';
+  const cycle=getCycleStatus(r.id,activeWeekId);
+  const lines=['PROGRESIÓN DEL GYM (datos reales de la app; usalos y no inventes cargas):',
+    '- Rutina activa "'+r.name+'": bloque '+cycle.block+', semana '+cycle.week+' de '+cycle.length+' ('+cycle.phase+(cycle.phase==='Revisión'?': última semana del bloque, evaluá fatiga, dolor y adherencia antes de seguir':'')+').'];
+  (r.days||[]).forEach((d,di)=>{
+    lines.push('- Día '+(di+1)+' '+d.label+':');
+    (d.exercises||[]).forEach((ex,ei)=>{
+      const current=Array.from({length:ex.series},(_,si)=>getSetPerformance(r.id,d.id,ei,si));
+      const history=exerciseLoadHistory(r.id,d.id,ex.name,4);
+      const advice=exerciseProgression(r.id,d.id,ei,ex);
+      const when=current.some(s=>s.done)?'próxima vez':'hoy';
+      const tops=history.map(h=>Math.max(0,...h.logs.map(s=>Number(s.weight)||0))).reverse();
+      let line='  · '+ex.name+' '+ex.series+'×'+ex.reps;
+      const now=gymSetSummary(current);if(now)line+=' | esta semana: '+now;
+      if(history[0])line+=' | anterior ('+history[0].weekStart+'): '+gymSetSummary(history[0].logs);
+      if(tops.filter(Boolean).length>1)line+=' | tendencia kg: '+tops.join('→');
+      line+=' | la app sugiere: '+(advice.kind==='up'?when+' subir a '+advice.next+' kg y volver al mínimo del rango':advice.kind==='review'?'no subir, repetir carga y revisar':advice.kind==='hold'?'mantener carga y sumar reps':'faltan datos (kg, reps y RIR)');
+      lines.push(line);
+    });
+  });
+  const text=lines.join('\n');
+  return text.length>maxChars?text.slice(0,maxChars)+'…':text;
+}
+function suggestedSetValues(ex,previous,advice,si,sessionStarted){
+  // Lo que se ve como sugerencia en cada serie y lo que se anota al tocar ✓ si no escribiste nada.
+  // Si la app ya indicó subir, la sugerencia de hoy es la carga nueva con el mínimo del rango.
+  const logs=(previous?.setLogs||[]).filter(s=>s&&s.done);
+  const prev=previous?.setLogs?.[si]?.done?previous.setLogs[si]:logs[logs.length-1]||{};
+  const plan={weight:clampGymNumber(prev.weight??previous?.weight??'',0,1000,1),reps:clampGymNumber(prev.reps??'',0,100,0),rir:clampGymNumber(prev.rir??'',0,10,1),source:'previous'};
+  if(!sessionStarted&&advice?.kind==='up'&&advice.next){plan.weight=advice.next;plan.reps=parseRepRange(ex.reps).min||plan.reps;plan.rir='';plan.source='progression';}
+  return plan;
+}
+function fmtWeekLabel(weekStart){
+  const [,m,d]=String(weekStart||'').split('-');
+  return d&&m?'Sem. '+d+'/'+m:'Semana anterior';
+}
+function exerciseHistoryHTML(rid,did,ei,ex){
+  const current=Array.from({length:ex.series},(_,si)=>getSetPerformance(rid,did,ei,si)).filter(s=>s.done);
+  const rows=[...(current.length?[{label:'Esta semana',logs:current}]:[]),...exerciseLoadHistory(rid,did,ex.name,6).map(h=>({label:fmtWeekLabel(h.weekStart),logs:h.logs}))];
+  if(!rows.length)return `<div class="sec-t">Tu historial</div><div class="ex-hist-empty">Todavía no hay series anotadas de este ejercicio. Cuando anotes kg y reps, acá vas a ver cómo progresás semana a semana.</div>`;
+  const top=logs=>Math.max(0,...logs.map(s=>Number(s.weight)||0));
+  return `<div class="sec-t">Tu historial</div><div class="ex-hist">${rows.map((row,i)=>{
+    const t=top(row.logs),older=rows[i+1]?top(rows[i+1].logs):0,diff=t&&older?Math.round((t-older)*10)/10:0;
+    return `<div class="ex-hist-row"><div class="ex-hist-when">${esc(row.label)}</div><div class="ex-hist-sets">${esc(gymSetSummary(row.logs)||'—')}</div><div class="ex-hist-top">${t?t+' kg':'—'}${diff?`<span class="${diff>0?'up':'down'}">${diff>0?'▲ +':'▼ '}${Math.abs(diff)}</span>`:''}</div></div>`;
+  }).join('')}</div>`;
+}
+function fillSetFromSuggestion(row,rid,did,ei,si){
+  // Al tocar ✓ con kg o reps vacíos, anota lo que la serie mostraba como sugerencia (el RIR no: ese lo decidís vos).
+  if(!row)return false;
+  const [weightInp,repsInp]=row.querySelectorAll('.set-log-input');let filled=false;
+  [[weightInp,'weight'],[repsInp,'reps']].forEach(([inp,field])=>{
+    if(!inp||inp.value!==''||inp.placeholder===''||isNaN(Number(inp.placeholder)))return;
+    inp.value=inp.placeholder;saveSetPerformance(rid,did,ei,si,field,inp.placeholder);inp.classList.add('autofill');filled=true;
+  });
+  return filled;
+}
+function carrySuggestionToNextSets(row,values){
+  // Las series siguientes que siguen vacías heredan como sugerencia lo que acabás de hacer.
+  let next=row?.nextElementSibling;
+  while(next&&next.classList.contains('set-log-row')){
+    if(next.querySelector('.set-done.ck'))break;
+    const [weightInp,repsInp]=next.querySelectorAll('.set-log-input');
+    if(weightInp&&weightInp.value===''&&values.weight!=='')weightInp.placeholder=values.weight;
+    if(repsInp&&repsInp.value===''&&values.reps!=='')repsInp.placeholder=values.reps;
+    next=next.nextElementSibling;
+  }
+}
+function gymDayKey(ts){const d=new Date(ts);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+function findGymLogTarget(rs,acc){
+  // Ejercicio al que va una serie dictada. Con "dia" usa el resolvedor estricto;
+  // sin día, si el ejercicio está en varios días, gana el día que se está entrenando hoy.
+  const name=String(acc.ejercicio||acc.nombre||acc.exercise||'').trim();
+  if(!name)return {error:'Falta indicar el ejercicio'};
+  if(acc.dia)return resolveGymExerciseTarget(rs,{...acc,nombre_original:name});
+  const routine=rs.find(x=>x.id===activeRid)||rs[0];
+  const q=normalizeGymLookup(name),candidates=[];
+  routine.days.forEach(day=>day.exercises.forEach((exercise,exerciseIndex)=>{
+    const n=normalizeGymLookup(exercise.name);
+    if(n===q||n.includes(q)||q.includes(n))candidates.push({routine,day,exercise,exerciseIndex,exact:n===q});
+  }));
+  const pool=candidates.some(c=>c.exact)?candidates.filter(c=>c.exact):candidates;
+  if(!pool.length)return {error:'Ejercicio "'+name+'" no encontrado en la rutina "'+routine.name+'"'};
+  const today=todayStr();
+  const lastActivity=did=>Math.max(0,...Object.entries(setPerformance).filter(([k])=>k.startsWith(routine.id+'|'+did+'|')).map(([,v])=>Number(v?.updatedAt)||0));
+  const trainedToday=pool.filter(c=>{const ts=lastActivity(c.day.id);return ts&&gymDayKey(ts)===today;});
+  return trainedToday.length?trainedToday.sort((a,b)=>lastActivity(b.day.id)-lastActivity(a.day.id))[0]:pool[0];
 }
 
 const MONTHS=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
@@ -1035,6 +1154,7 @@ function openDay(rid,did){
     const mcl=MC[ex.muscle]||'#aaa';
     const previous=getPreviousExerciseLog(rid,did,ex.name);
     const advice=exerciseProgression(rid,did,ei,ex);
+    const sessionStarted=Array.from({length:ex.series},(_,si)=>getSetPerformance(rid,did,ei,si).done).some(Boolean);
     const ss=supersetMeta(d,ei);
     if(ss?.first)h+=`<div class="superset-banner"><span class="superset-code">BISERIE ${ss.label}</span><span style="font-size:10.5px;line-height:1.45;color:var(--text2)">Hacé ${ss.label}1 y ${ss.label}2 seguidos; descansá después de completar ambos.</span></div>`;
     h+=`<div id="er-${ei}" class="${ss?'superset-card':''}" style="background:${allDone?'rgba(0,196,140,.04)':'var(--bg2)'};border:1px solid ${allDone?'rgba(0,196,140,.2)':'var(--border)'};border-radius:var(--r-sm);padding:14px;margin-bottom:${ss&&!ss.first?'14':'9'}px;transition:all .3s">
@@ -1055,12 +1175,15 @@ function openDay(rid,did){
       <div class="set-log-head"><span>Serie</span><span>KG</span><span>Reps</span><span>RIR</span><span>Hecha</span></div>
       <div>
         ${Array.from({length:ex.series},(_,si)=>{
-          const perf=getSetPerformance(rid,did,ei,si),prev=previous?.setLogs?.[si]||{};
-          const prevWeight=clampGymNumber(prev.weight??'',0,1000,1),prevReps=clampGymNumber(prev.reps??'',0,100,0),prevRir=clampGymNumber(prev.rir??'',0,10,1);
+          const perf=getSetPerformance(rid,did,ei,si);
+          // Sugerencia: la última serie hecha hoy; si no hay, la progresión o la semana anterior.
+          let plan=suggestedSetValues(ex,previous,advice,si,sessionStarted);
+          for(let b=si-1;b>=0;b--){const done=getSetPerformance(rid,did,ei,b);if(done.done&&(done.weight!==''||done.reps!=='')){plan={...plan,weight:done.weight,reps:done.reps};break;}}
+          const prevWeight=plan.weight,prevReps=plan.reps,prevRir=plan.rir;
           return `<div class="set-log-row">
             <span class="set-log-num">${si+1}</span>
-            <input class="set-log-input" type="number" inputmode="decimal" min="0" max="1000" step="0.5" aria-label="Kilos serie ${si+1}" placeholder="${prevWeight||'—'}" value="${perf.weight}" oninput="saveSetPerformance('${rid}','${did}',${ei},${si},'weight',this.value)">
-            <input class="set-log-input" type="number" inputmode="numeric" min="0" max="100" step="1" aria-label="Repeticiones reales serie ${si+1}" placeholder="${prevReps||'—'}" value="${perf.reps}" oninput="saveSetPerformance('${rid}','${did}',${ei},${si},'reps',this.value)">
+            <input class="set-log-input" type="number" inputmode="decimal" min="0" max="1000" step="0.5" aria-label="Kilos serie ${si+1}" placeholder="${prevWeight===''?'—':prevWeight}" value="${perf.weight}" oninput="saveSetPerformance('${rid}','${did}',${ei},${si},'weight',this.value)">
+            <input class="set-log-input" type="number" inputmode="numeric" min="0" max="100" step="1" aria-label="Repeticiones reales serie ${si+1}" placeholder="${prevReps===''?'—':prevReps}" value="${perf.reps}" oninput="saveSetPerformance('${rid}','${did}',${ei},${si},'reps',this.value)">
             <input class="set-log-input" type="number" inputmode="decimal" min="0" max="10" step="0.5" aria-label="Repeticiones en reserva serie ${si+1}" placeholder="${prevRir===''?'—':prevRir}" value="${perf.rir}" oninput="saveSetPerformance('${rid}','${did}',${ei},${si},'rir',this.value)">
             <button class="set-done${perf.done?' ck':''}" aria-label="${perf.done?'Desmarcar':'Completar'} serie ${si+1}" onclick="toggleSetPerformance(this,'${rid}','${did}',${ei},${si},'${col}')">${perf.done?'✓':si+1}</button>
           </div>`;
@@ -1075,10 +1198,12 @@ function openDay(rid,did){
 }
 
 function toggleSetPerformance(btn,rid,did,ei,si,col){
+  const row=btn.closest('.set-log-row');
+  if(!getSetPerformance(rid,did,ei,si).done&&fillSetFromSuggestion(row,rid,did,ei,si)){const f=getSetPerformance(rid,did,ei,si);tst(`Serie ${Number(si)+1}: ${f.weight===''?'—':f.weight+' kg'} × ${f.reps===''?'—':f.reps} · sumá el RIR`,2600);}
   const k=gymSetKey(rid,did,ei,si),item={...getSetPerformance(rid,did,ei,si)};
   item.done=!item.done;item.updatedAt=Date.now();setPerformance[k]=item;sets[k]=item.done;
   S.s('setPerf3',setPerformance);S.s('sets2',sets);updateWeekLogFromCurrent();
-  if(item.done){btn.classList.add('ck');btn.textContent='✓';btn.setAttribute('aria-label','Desmarcar serie '+(Number(si)+1));navigator.vibrate?.(10);}
+  if(item.done){btn.classList.add('ck');btn.textContent='✓';btn.setAttribute('aria-label','Desmarcar serie '+(Number(si)+1));navigator.vibrate?.(10);carrySuggestionToNextSets(row,item);}
   else{btn.classList.remove('ck');btn.textContent=String(parseInt(si)+1);btn.setAttribute('aria-label','Completar serie '+(Number(si)+1));}
   const r=routines.find(x=>x.id===rid);const d=r?.days.find(x=>x.id===did);const ex=d?.exercises[parseInt(ei)];
   if(ex){const allDn=Array.from({length:ex.series},(_,s2)=>sets[`${rid}|${did}|${ei}|${s2}`]).every(Boolean);
@@ -1157,7 +1282,8 @@ function openExInfo(button){
     <div class="st"><div class="sv" style="color:${mc}">${ex.series}</div><div class="sl">Series</div></div>
     <div class="st"><div class="sv" style="color:${mc}">${esc(ex.reps)}</div><div class="sl">Reps</div></div></div>
   <div id="${mediaSlotId}" aria-live="polite" aria-busy="true"><div class="ex-media-skeleton">Cargando demostraci\u00f3n del movimiento...</div></div>
-  <button class="btn b-lg" style="width:100%;background:#FF0000;color:#fff;margin-bottom:18px" data-rid="${esc(rid)}" data-did="${esc(did)}" data-ei="${ei}" onclick="verTecnica(this)">▶ Ver técnica en YouTube</button>`;
+  <button class="btn b-lg" style="width:100%;background:#FF0000;color:#fff;margin-bottom:18px" data-rid="${esc(rid)}" data-did="${esc(did)}" data-ei="${ei}" onclick="verTecnica(this)">▶ Ver técnica en YouTube</button>
+  ${exerciseHistoryHTML(rid,did,ei,ex)}`;
   if(related.length){h+=`<div class="sec-t">Ejercicios similares</div>`;
     related.forEach(r=>{h+=`<div class="crd" style="margin-bottom:8px;display:flex;align-items:flex-start;gap:10px">
       <div style="width:34px;height:34px;border-radius:9px;background:${mc}18;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:16px">💪</div>
@@ -2266,8 +2392,9 @@ function normalizeSupersetAssignments(exercises){
   const groupIds=new Map();let openPair=null;
   (exercises||[]).forEach((ex,i)=>{
     const value=ex.superset||ex.biserie;delete ex.biserie;
-    const norm=(value===true?'true':String(value||'')).normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().trim()
-      .replace(/^(biserie|superserie|superset)\s*[-_:#]?\s*/,'').trim();
+    const plain=(value===true?'true':String(value||'')).normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().trim();
+    // "Biserie" o "superset" sin letra: la IA quiso decir que sí, igual que true.
+    const norm=/^(biserie|superserie|superset)$/.test(plain)?'true':plain.replace(/^(biserie|superserie|superset)\s*[-_:#]?\s*/,'').trim();
     if(!norm||/^(no|none|null|false|ninguna?|-|0)$/.test(norm)){delete ex.superset;openPair=null;return;}
     let key;
     if(/^(true|si|yes)$/.test(norm)){
@@ -4463,10 +4590,8 @@ async function sendChat(){
   const _slLast=_slKeys.length?_sleepLog[_slKeys[_slKeys.length-1]]:null;
   const sleepStr=_slLast?'Sueño: última noche '+_slLast.hours+'h ('+_slLast.quality+')'+(_slLast.wakeups?', '+_slLast.wakeups+' despertares':'')+'; promedio 7 días '+_slAvg+'h':'Sueño: sin registros';
   const profileStr='Perfil físico: '+(profile.height?'Altura:'+profile.height+'cm, ':'')+(profile.weight?'Peso:'+profile.weight+'kg, ':'')+'Experiencia:'+(profile.experience||0)+'años'+(profile.goal?', Objetivo:'+profile.goal:'')+(profile.dietRestrictions?', Dieta:'+profile.dietRestrictions:'')+' '+nutStr+' · '+sleepStr;
-  const exNameMap={};
-  routines.forEach(r=>{r.days.forEach(d=>{d.exercises.forEach((ex,ei)=>{exNameMap[r.id+'|'+d.id+'|'+ei]=ex.name;});});});
-  const weightsArr=Object.entries(weights);
-  const gymWeights=weightsArr.length?'\nPesos registrados: '+weightsArr.map(([k,v])=>(exNameMap[k]||'ej'+k.split('|').pop())+': '+v+'kg').join(', '):'';
+  // Cargas por serie, tendencia, ciclo y sugerencia de la app (antes: lista suelta de pesos sin serie).
+  const gymWeights='\n'+buildGymProgressContext();
   const needsMovementCatalog=shouldIncludeMovementCatalog(txt);
   const movementCatalog=needsMovementCatalog?await loadExerciseMediaCatalog().catch(()=>null):null;
   const gymMovementList=movementCatalog?exerciseMovementCatalogForAI(movementCatalog,'gym').split('\n').slice(0,100).join('\n'):'';
@@ -4676,7 +4801,8 @@ function buildAppContext(){
     '- Metas de ahorro: '+(metas||'ninguna')+'.\n'+
     '- Físico: '+(profile.weight?'peso '+profile.weight+'kg, ':'')+(profile.goal?'objetivo '+profile.goal+', ':'')+'entrenamientos registrados: '+diasEntreno+(gymRecientes?' (últimos: '+gymRecientes+')':'')+'.\n'+
     '- Agua hoy: '+waterGlasses+' vasos.\n'+
-    '- Próximos eventos: '+(proxEventos||'ninguno')+'.';
+    '- Próximos eventos: '+(proxEventos||'ninguno')+'.\n'+
+    buildGymProgressContext(1800);
 }
 
 function coachPrompt(userMsg, isVoice){
@@ -4698,6 +4824,7 @@ function coachPrompt(userMsg, isVoice){
     '- Sos honesto: si algo no va bien (gasta de más, no entrena, no avanza), se lo decís con respeto y cariño, no le mentís para caer bien.\n'+
     '- Respuestas breves y conversacionales (2-5 frases). Esto es un chat, no un ensayo.\n'+
     '- Podés sugerir acciones concretas: agendar algo, recordar un dato. Si querés agendar usá [ACCION]{"op":"evento","titulo":"...","fecha":"YYYY-MM-DD","hora":"HH:MM","recordatorio":15}[/ACCION]. ESTO ES MUY IMPORTANTE: Si la persona te cuenta algo duradero (hábitos, metas, gustos, historial), TENÉS QUE GUARDARLO con [ACCION]{"op":"recordar","dato":"...","tag":"general"}[/ACCION] o si no se te olvidará en el futuro.\n'+
+    '- ENTRENAMIENTO: seguí la PROGRESIÓN DEL GYM. Si pregunta qué peso usar, respondé con lo que sugiere la app para ese ejercicio y explicá por qué (reps y RIR de la última vez). Celebrá cuando la tendencia de kg sube. En la semana de Revisión (última del bloque) preguntá por fatiga, dolor y sueño antes de proponer seguir, mantener o bajar volumen. Nunca propongas subir carga si la app dice revisar o faltan datos.\n'+
     '- Para registrar un ejercicio de gimnasio: [ACCION]{"op":"registrar_serie","ejercicio":"nombre","serie":3,"peso":30,"reps":10}[/ACCION] o si te dice que lo terminó: [ACCION]{"op":"completar_ejercicio","ejercicio":"nombre"}[/ACCION]\n'+
     'LÍMITE IMPORTANTE DE SEGURIDAD:\n'+
     '- Si la persona expresa angustia profunda, desesperanza, o cualquier señal de querer lastimarse, NO intentes hacer de terapeuta. Respondé con calidez, validá lo que siente, y sugerile con suavidad hablar con un profesional de salud mental o alguien de confianza. En Uruguay puede llamar a la Línea Vida 0800 0767 o al 911 si es urgente. Tomátelo siempre en serio.\n\n'+
@@ -5168,6 +5295,8 @@ function aiActionContract(){
     '- Al analizar una meta, compará lo ahorrado, lo que falta, meses disponibles, aporte mensual necesario y dinero disponible real. Si el aporte no alcanza, proponé ajustar fecha, costo o ahorro mensual; no prometas resultados ni des asesoramiento financiero profesional.\n'+
     '- Fechas: m va de 0 (enero) a 11 (diciembre), y es año de cuatro dígitos. También podés usar fecha YYYY-MM-DD. Nunca uses montos negativos ni inventes importes.\n'+
     '- En Gym, registrar_serie debe conservar peso, repeticiones reales y RIR si el usuario los dijo. Nunca supongas reps ni RIR y nunca subas carga sólo porque una serie esté completa.\n'+
+    '- Si no dice qué número de serie, omití "serie": la app la anota en la primera pendiente. Si cuenta varias series juntas usá un solo registrar_serie con "series":[{"peso":60,"reps":8,"rir":2},{"peso":60,"reps":7,"rir":1}]. Si el ejercicio está en varios días y dice cuál, agregá "dia".\n'+
+    '- Cargas y progresión: usá la PROGRESIÓN DEL GYM (sugerencia de la app, tendencia y semana del bloque). No inventes kilos: si pregunta cuánto levantar, respondé con esa sugerencia.\n'+
     '- Para reemplazar un solo ejercicio usá cambiar_ejercicio, nunca crear_rutina. Indicá rutina, dia, nombre_original y nombre_nuevo. Conservá series, reps y músculo si el usuario no pidió cambiarlos. “Día 1” refiere al primer día de la rutina activa. No modifiques ningún otro ejercicio.\n'+
     '- Al crear o cambiar ejercicios, priorizá nombres exactos del CATÁLOGO CON MOVIMIENTO. Si un ejercicio fuera del catálogo es claramente mejor para el objetivo, limitación o equipamiento, podés usarlo: quedará sin GIF y la app ofrecerá buscar la técnica en YouTube.\n'+
     '- Para una biserie, marcá exactamente dos ejercicios consecutivos con el mismo campo "superset" (por ejemplo "A"). Cada ejercicio conserva sus propias series, reps, kg y RIR. No agrupes dos levantamientos pesados que comprometan la técnica.\n'+
@@ -5507,15 +5636,10 @@ function ejecutarAccion(acc){
   if(acc.op==='registrar_serie' || acc.op==='completar_ejercicio'){
     const rs=S.g('rt2',[]);
     if(!rs.length)return 'No hay rutinas creadas';
-    const r=rs.find(x=>x.id===activeRid) || rs[0];
-    let foundEx=null, foundDid=null, foundEi=null;
-    const exQuery = (acc.ejercicio||'').toLowerCase();
-    for(const d of r.days){
-      const ei = d.exercises.findIndex(e=>e.name.toLowerCase().includes(exQuery) || exQuery.includes(e.name.toLowerCase()));
-      if(ei!==-1){ foundEx=d.exercises[ei]; foundDid=d.id; foundEi=ei; break; }
-    }
-    if(!foundEx)return 'Ejercicio "'+acc.ejercicio+'" no encontrado en la rutina "'+r.name+'"';
-    
+    const target=findGymLogTarget(rs,acc);
+    if(target.error)return target.error;
+    const r=target.routine,foundEx=target.exercise,foundDid=target.day.id,foundEi=target.exerciseIndex;
+
     if(acc.op==='completar_ejercicio'){
       for(let s=0; s<foundEx.series; s++){
         const key=gymSetKey(r.id,foundDid,foundEi,s);sets[key]=true;
@@ -5526,17 +5650,31 @@ function ejecutarAccion(acc){
       return '💪 Ejercicio "'+foundEx.name+'" marcado como completamente realizado.';
     }
 
-    const sIndex = acc.serie ? (acc.serie - 1) : 0;
-    if(sIndex < 0 || sIndex >= foundEx.series) return 'Serie inválida (el ejercicio tiene '+foundEx.series+' series)';
-    
-    const key=gymSetKey(r.id,foundDid,foundEi,sIndex),perf={...getSetPerformance(r.id,foundDid,foundEi,sIndex)};
-    if(acc.peso!==undefined){const weight=clampGymNumber(acc.peso,0,1000,1);perf.weight=weight;weights[key]=String(weight);weights[`${r.id}|${foundDid}|${foundEi}`]=String(weight);S.s('wts2',weights);}
-    if(acc.reps!==undefined)perf.reps=clampGymNumber(acc.reps,0,100,0);
-    if(acc.rir!==undefined)perf.rir=clampGymNumber(acc.rir,0,10,1);
-    perf.done=true;perf.updatedAt=Date.now();setPerformance[key]=perf;sets[key]=true;
-    S.s('setPerf3',setPerformance);S.s('sets2',sets);updateWeekLogFromCurrent();
+    // Sin número de serie, va a la primera pendiente (antes pisaba siempre la serie 1).
+    // "series" como lista anota varias seguidas: [{"peso":60,"reps":8,"rir":2},...].
+    const entries=Array.isArray(acc.series)?acc.series.filter(x=>x&&typeof x==='object').slice(0,12):[acc];
+    if(!entries.length)return 'Faltan los datos de las series a registrar';
+    const pending=Array.from({length:foundEx.series},(_,si)=>si).find(si=>!getSetPerformance(r.id,foundDid,foundEi,si).done);
+    const requested=parseInt(acc.serie);
+    if(!requested&&pending===undefined)return 'No quedan series pendientes en "'+foundEx.name+'": decime qué serie corregir';
+    const start=requested?requested-1:pending;
+    if(start < 0 || start >= foundEx.series) return 'Serie inválida (el ejercicio tiene '+foundEx.series+' series)';
+    const done=[];
+    entries.forEach((entry,i)=>{
+      const sIndex=start+i;if(sIndex>=foundEx.series)return;
+      const key=gymSetKey(r.id,foundDid,foundEi,sIndex),perf={...getSetPerformance(r.id,foundDid,foundEi,sIndex)};
+      const peso=entry.peso??entry.kg??entry.weight,reps=entry.reps??entry.repeticiones,rir=entry.rir;
+      if(peso!==undefined){const weight=clampGymNumber(gymNumberInput(peso),0,1000,1);perf.weight=weight;weights[key]=String(weight);weights[`${r.id}|${foundDid}|${foundEi}`]=String(weight);}
+      if(reps!==undefined)perf.reps=clampGymNumber(gymNumberInput(reps),0,100,0);
+      if(rir!==undefined)perf.rir=clampGymNumber(gymNumberInput(rir),0,10,1);
+      perf.done=true;perf.updatedAt=Date.now();setPerformance[key]=perf;sets[key]=true;
+      done.push({index:sIndex,perf});
+    });
+    S.s('wts2',weights);S.s('setPerf3',setPerformance);S.s('sets2',sets);updateWeekLogFromCurrent();
     if(typeof renderGym==='function')renderGym();
-    return '💪 Serie '+(sIndex+1)+' de "'+foundEx.name+'" anotada'+(perf.weight!==''?' · '+perf.weight+'kg':'')+(perf.reps!==''?' × '+perf.reps:'')+(perf.rir!==''?' · RIR '+perf.rir:'')+'.';
+    const left=entries.length-done.length,leftNote=left?' · '+left+(left===1?' no entró':' no entraron')+' (el ejercicio tiene '+foundEx.series+' series)':'';
+    if(done.length===1){const {index,perf}=done[0];return '💪 Serie '+(index+1)+' de "'+foundEx.name+'" anotada'+(perf.weight!==''?' · '+perf.weight+'kg':'')+(perf.reps!==''?' × '+perf.reps:'')+(perf.rir!==''?' · RIR '+perf.rir:'')+leftNote+'.';}
+    return '💪 Anoté '+done.length+' series de "'+foundEx.name+'": '+gymSetSummary(done.map(x=>x.perf))+leftNote+'.';
   }
   if(acc.op==='compra'){
     const cards=(S.g('cards1',[])||[]);
@@ -7057,10 +7195,8 @@ async function interpretVoice(txt){
   const cards=(S.g('cards1',[])||[]).map(c=>'{id:"'+c.id+'",n:"'+c.n+'",cuota:'+(getCardMonthAmt(c.id)||0)+'}').join(',');
   const ultimosGastos=gastos.filter(g=>g.y>=y-1).slice(-30).map(g=>'{c:"'+g.c+'",v:'+g.v+',d:"'+(g.desc||'')+'",m:'+g.m+',y:'+g.y+'}').join(',');
   const sueldosData=sueldos&&Object.keys(sueldos).length?Object.entries(sueldos).map(([k,v])=>k+':'+v).join(', '):'(sin datos)';
-  const exNameMap={};
-  routines.forEach(r=>{r.days.forEach(d=>{d.exercises.forEach((ex,ei)=>{exNameMap[r.id+'|'+d.id+'|'+ei]=ex.name;});});});
-  const weightsArr=Object.entries(weights);
-  const gymWeights=weightsArr.length?'\nPesos registrados: '+weightsArr.map(([k,v])=>(exNameMap[k]||'ej'+k.split('|').pop())+': '+v+'kg').join(', '):'';
+  // Cargas por serie, tendencia, ciclo y sugerencia de la app (antes: lista suelta de pesos sin serie).
+  const gymWeights='\n'+buildGymProgressContext();
   const needsMovementCatalog=shouldIncludeMovementCatalog(txt);
   const movementCatalog=needsMovementCatalog?await loadExerciseMediaCatalog().catch(()=>null):null;
   const gymMovementList=movementCatalog?exerciseMovementCatalogForAI(movementCatalog,'gym').split('\n').slice(0,100).join('\n'):'';
