@@ -206,6 +206,9 @@ textarea.inp{resize:vertical;min-height:64px;line-height:1.45;font-family:inheri
 .backup-status strong{color:var(--text0)}
 .backup-status.stale{background:var(--gold-d);border-color:var(--gold-b)}
 .backup-status small{font-size:10.5px;color:var(--gold);line-height:1.45}
+.backup-keys{display:flex;align-items:flex-start;gap:10px;min-height:44px;padding:8px 2px 12px;font-size:12.5px;color:var(--text1);cursor:pointer}
+.backup-keys input{width:20px;height:20px;margin-top:1px;accent-color:var(--accent);flex-shrink:0}
+.backup-keys small{display:block;font-size:10.5px;color:var(--text2);margin-top:2px}
 .set-log-head.timed,.set-log-row.timed{grid-template-columns:30px minmax(80px,1.6fr) minmax(52px,.8fr) 48px}
 .progression-note.manual{border-color:var(--purple-b);background:var(--purple-d)}
 .wk-now{display:flex;align-items:center;gap:12px;padding:12px 14px;margin-bottom:14px;border-radius:var(--r-sm);background:linear-gradient(90deg,var(--accent-d),transparent);border:1px solid var(--accent-b)}
@@ -4554,6 +4557,7 @@ function rConfig(){
     <div class="div"></div>
     <div class="sec-t">📦 Respaldo</div>
     <div id="backup-status">${backupStatusHtml()}</div>
+    <label class="backup-keys"><input type="checkbox" id="backup-keys"><span>Incluir claves de IA<small>Solo si el archivo queda en un lugar privado: no lo compartas.</small></span></label>
     <button class="btn b-md b-p" style="width:100%;margin-bottom:8px;min-height:48px" onclick="exportData()">📤 Exportar datos</button>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
       <button class="btn b-md b-g" style="min-height:48px" onclick="document.getElementById('import-file').click()">📥 Importar archivo</button>
@@ -8901,17 +8905,20 @@ const BACKUP_DATA_KEYS=['rt2','arid','sets2','wts2','setPerf3','ghst2','gymWeekL
   'gst4','pf4','pe4','sld4','cats4','cards1','cpurch1','shop1','evts1','chat1','chatSessions','activeChatId','coachHist1','coachSessions',
   'activeCoachId','coachProfile1','userMem1','last_mem_compile','gemini_key','ai_provider','ai_free','ai_always_speak','seed_v2',
   'permissionPrimerDismissedV1','micPermissionGrantedV1','gymPlan1','lastBackupAt'];
-function buildBackup(){
+// Las claves de IA (…_key) no viajan en el respaldo salvo que se pida: el archivo se manda por WhatsApp o Drive.
+function isSecretBackupKey(key){return /_key$/.test(String(key));}
+function buildBackup(includeKeys=false){
   if(!currentUser)throw new Error('No hay una sesión activa');
   const prefix=currentUser.id+'_',entries={};
   for(let i=0;i<localStorage.length;i++){
     const k=localStorage.key(i);
     if(!k||!k.startsWith(prefix))continue;
     const cleanKey=k.slice(prefix.length);
+    if(!includeKeys&&isSecretBackupKey(cleanKey))continue;
     try{entries[cleanKey]=JSON.parse(localStorage.getItem(k));}catch{entries[cleanKey]=localStorage.getItem(k);}
   }
   const now=new Date();
-  const data={format:'martinapp-backup',version:2,exportedAt:now.toISOString(),userName:currentUser.name,entries};
+  const data={format:'martinapp-backup',version:2,exportedAt:now.toISOString(),userName:currentUser.name,includesApiKeys:!!includeKeys,entries};
   const fname=`app-backup-${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}.json`;
   return {json:JSON.stringify(data,null,2),fname,count:Object.keys(entries).length};
 }
@@ -8931,7 +8938,7 @@ function backupStatusHtml(){
 function refreshBackupStatus(){const el=document.getElementById('backup-status');if(el)el.innerHTML=backupStatusHtml();}
 async function exportData(){
   let backup;
-  try{backup=buildBackup();}catch(e){tst('Error al exportar: '+e.message);return;}
+  try{backup=buildBackup(!!document.getElementById('backup-keys')?.checked);}catch(e){tst('Error al exportar: '+e.message);return;}
   const mode=backupExportMode();
   if(mode==='native-share')return exportBackupNative(backup);
   if(mode==='native-no-plugins')return showBackupFallback(backup);
@@ -9023,6 +9030,8 @@ function applyBackup(entries){
     // La fecha del último respaldo es de este teléfono: se conserva la más reciente.
     const keptAt=Number(previous[prefix+'lastBackupAt'])||0,newAt=Number(localStorage.getItem(prefix+'lastBackupAt'))||0;
     if(keptAt>newAt)localStorage.setItem(prefix+'lastBackupAt',String(keptAt));
+    // Un respaldo sin claves de IA no borra las que ya están en el teléfono.
+    Object.entries(previous).forEach(([k,v])=>{if(isSecretBackupKey(k)&&localStorage.getItem(k)===null)localStorage.setItem(k,v);});
   }catch(writeErr){
     const partialKeys=[];
     for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k&&k.startsWith(prefix))partialKeys.push(k);}
