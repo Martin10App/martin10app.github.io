@@ -27,7 +27,7 @@ function financeFixture(){
       {id:'ute',n:'UTE',base:5500},
       {id:'super',n:'Supermercado',base:0},
       {id:'ahorro',n:'Ahorro',base:1500,ahorro:true},
-      {id:'card_oca',n:'OCA',base:0,cardRef:'oca'}
+      {id:'card_mc',n:'MASTERCARD',base:0,cardRef:'mc'}
     ],
     gastos:[
       {_id:1,c:'super',v:1200.25,m:6,y:2026,f:'03/07',desc:'Disco'},
@@ -52,7 +52,7 @@ function smartFinanceFixture(){
       {id:'super',n:'Supermercado'},
       {id:'nafta',n:'Combustible'},
       {id:'ute',n:'UTE'},
-      {id:'brou',n:'BROU RECOMPENSA',base:43000}
+      {id:'visa',n:'VISA ORO',base:40000}
     ],
     gastos:[
       {_id:10,c:'super',v:1200,desc:'Disco 8 de Octubre',m:6,y:2026,f:'10/07'},
@@ -148,9 +148,9 @@ test('el ejecutor diferencia ingreso total de ingreso adicional',()=>{
 
 test('suma importes al total mensual sin reemplazarlo ni crear gastos',()=>{
   const f=financeActionFixture(),expenseCount=f.db.gst4.length;
-  assert.match(f.ejecutarAccion({op:'ajustar_monto',cat:'BROU Recompensa',delta:1200,m:7,y:2026}),/Nuevo total: \$44200/);
-  assert.match(f.ejecutarAccion({op:'ajustar_monto',cat:'brou',delta:800,m:7,y:2026}),/Nuevo total: \$45000/);
-  assert.equal(f.db.pf4['brou_7_2026'],45000);
+  assert.match(f.ejecutarAccion({op:'ajustar_monto',cat:'Visa Oro',delta:1200,m:7,y:2026}),/Nuevo total: \$41200/);
+  assert.match(f.ejecutarAccion({op:'ajustar_monto',cat:'visa',delta:800,m:7,y:2026}),/Nuevo total: \$42000/);
+  assert.equal(f.db.pf4['visa_7_2026'],42000);
   assert.equal(f.db.gst4.length,expenseCount);
 });
 
