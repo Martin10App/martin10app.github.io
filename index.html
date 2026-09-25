@@ -319,7 +319,15 @@ textarea.inp{resize:vertical;min-height:64px;line-height:1.45;font-family:inheri
 .train-day.done{background:linear-gradient(90deg,color-mix(in srgb,var(--dc) 9%,transparent),var(--bg2))}
 .train-day-row{display:flex;align-items:center;gap:12px}
 .train-day-pct{font-family:var(--fm);font-size:24px;font-weight:700;color:var(--dc);flex-shrink:0}
+.set-log-num.bilbo{color:var(--gold);font-weight:800}
+.bilbo-note{margin-top:8px;padding:7px 10px;border-radius:8px;border:1px solid var(--gold-b);background:var(--gold-d);font-size:10.5px;line-height:1.45;color:var(--text1)}
+.bilbo-ask{display:block;width:100%;margin-top:8px;min-height:40px;padding:8px 10px;border-radius:8px;border:1px dashed var(--gold-b);background:transparent;color:var(--gold);font-size:11px;font-weight:700;text-align:left}
+.ex-feedback.bilbo{border-color:var(--gold-b);background:var(--gold-d);color:var(--text0)}.ex-feedback.bilbo+.ex-feedback{margin-top:6px}
 .progression-note{margin-top:10px;padding:10px 12px;border-radius:10px;border:1px solid var(--blue-b);background:rgba(59,127,255,.06);font-size:11px;line-height:1.45;color:var(--text1)}
+.set-cmp{grid-column:1/-1;justify-self:end;font-size:10.5px;font-weight:700;padding:2px 9px;border-radius:999px;margin-top:-1px}
+.set-cmp.up{color:var(--green);background:var(--green-d)}.set-cmp.down{color:var(--gold);background:var(--gold-d)}.set-cmp.same{color:var(--text2);background:var(--bg3)}
+.ex-feedback{margin-top:10px;padding:10px 12px;border-radius:10px;font-size:11.5px;line-height:1.45;border:1px solid var(--border);background:var(--bg3);color:var(--text1)}
+.ex-feedback.up,.ex-feedback.pr{border-color:var(--green-b);background:var(--green-d);color:var(--text0)}.ex-feedback.pr{font-weight:700}.ex-feedback.down{border-color:var(--gold-b);background:var(--gold-d)}
 .cycle-strip{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:12px 0 16px}
 .cycle-stat{padding:10px 8px;border-radius:11px;background:var(--bg3);border:1px solid var(--border);text-align:center}
 .cycle-stat b{display:block;font-family:var(--fm);font-size:15px;color:var(--text0);margin-bottom:3px}.cycle-stat span{font-size:9px;color:var(--text2);text-transform:uppercase;letter-spacing:.7px}
@@ -974,10 +982,11 @@ function exerciseProgression(rid,did,ei,ex){
     const r=routines.find(x=>x.id===rid);
     return {kind:'manual',text:[ex.note,r?.programProgression].filter(Boolean).join(' · ')||'Seguí la progresión del programa.'};
   }
-  const current=Array.from({length:ex.series},(_,si)=>getSetPerformance(rid,did,ei,si));
-  if(current.some(s=>s.done))return progressionForLogs(ex,current);
+  const skip=isBilbo(ex)?1:0,heavy=skip?{...ex,series:Math.max(1,ex.series-1)}:ex; // la serie Bilbo va por su cuenta
+  const current=Array.from({length:ex.series},(_,si)=>getSetPerformance(rid,did,ei,si)).slice(skip);
+  if(current.some(s=>s.done))return progressionForLogs(heavy,current);
   const previous=getPreviousExerciseLog(rid,did,ex.name);
-  return previous?.setLogs?.length?progressionForLogs(ex,previous.setLogs):{kind:'data',text:'Primera referencia: registrá kg, reps reales y RIR.'};
+  return previous?.setLogs?.length>skip?progressionForLogs(heavy,previous.setLogs.slice(skip)):{kind:'data',text:'Primera referencia: registrá kg, reps reales y RIR.'};
 }
 function ensureGymCycle(rid){
   if(!rid)return null;
@@ -1014,6 +1023,154 @@ function exerciseLoadHistory(rid,did,exerciseName,limit=6){
     .map(w=>{const ex=w.days?.[did]?.exercises?.find(item=>normStr(item.name)===target)||Object.values(w.days||{}).flatMap(d=>d.exercises||[]).find(item=>normStr(item.name)===target&&(item.setLogs||[]).some(s=>s&&s.done));const logs=(ex?.setLogs||[]).filter(s=>s&&s.done);return logs.length?{weekStart:w.weekStart,logs}:null;})
     .filter(Boolean).slice(0,limit);
 }
+// ── Feedback de progreso: cada serie y cada ejercicio contra la semana anterior ──
+// Sin IA: cuentas fijas, instantáneas y sin red. Nunca cambia cargas ni rutinas, solo informa.
+// Fuerza estimada = kg × (1 + (reps + RIR)/30): Epley contando las reps que quedaban en reserva.
+function estimatedStrength(weight,reps,rir){
+  const w=Number(weight),r=Number(reps);if(!(w>0)||!(r>0))return 0;
+  const reserve=rir===''||rir==null||!Number.isFinite(Number(rir))?0:Number(rir);
+  return w*(1+(r+reserve)/30);
+}
+function progressHasRir(s){return !!s&&s.rir!==''&&s.rir!=null&&Number.isFinite(Number(s.rir));}
+function progressKg(v){return String(Math.round(Number(v)*10)/10).replace('.',',');}
+function progressTimed(ex){return ex?.unit==='s'||ex?.unit==='m';}
+function bestProgressSet(logs,ex){
+  // La mejor serie hecha: fuerza estimada; sin kilos o con tiempo/distancia, la de más reps/seg/metros.
+  const done=(logs||[]).filter(s=>s&&s.done&&Number(s.reps)>0);if(!done.length)return null;
+  const score=s=>!progressTimed(ex)&&Number(s.weight)>0?estimatedStrength(s.weight,s.reps,s.rir):Number(s.reps)/1000;
+  return done.reduce((a,b)=>score(b)>score(a)?b:a);
+}
+function compareSetToLast(ex,cur,prev,si){
+  if(!cur||!(Number(cur.reps)>0))return null;
+  if(!prev||!(Number(prev.reps)>0))return {kind:'first',chip:'',dKg:0,dReps:0,dPct:0,hasRir:progressHasRir(cur)};
+  const dReps=Number(cur.reps)-Number(prev.reps);
+  if(progressTimed(ex)){
+    const u=ex.unit==='s'?' s':' m';
+    return {kind:dReps>0?'up':dReps<0?'down':'same',chip:dReps>0?'▲ +'+dReps+u:dReps<0?'▼ '+dReps+u:'=',dKg:0,dReps,dPct:0,hasRir:true};
+  }
+  const wC=Number(cur.weight)||0,wP=Number(prev.weight)||0,dKg=Math.round((wC-wP)*10)/10;
+  const both=progressHasRir(cur)&&progressHasRir(prev);
+  const eC=estimatedStrength(wC,cur.reps,both?cur.rir:''),eP=estimatedStrength(wP,prev.reps,both?prev.rir:'');
+  const dPct=eC&&eP?Math.round((eC/eP-1)*1000)/10:0;
+  let kind;
+  if(dKg>=0&&dReps>=0&&(dKg>0||dReps>0))kind='up';
+  else if(dKg<=0&&dReps<=0&&(dKg<0||dReps<0))kind='down';
+  else if(!dKg&&!dReps)kind='same';
+  else{ // kilos y reps en sentidos opuestos: decide la fuerza estimada; subir kilos sin salir del rango nunca es "abajo"
+    const min=parseRepRange(ex?.reps).min;
+    kind=dPct>1?'up':dPct<-2&&!(dKg>0&&min>0&&Number(cur.reps)>=min)?'down':'same';
+  }
+  // Serie Bilbo: subir kilos y seguir en 15+ es avanzar aunque bajen las reps; bajar de 15 cierra el ciclo.
+  if(Number(si)===0&&isBilbo(ex))kind=Number(cur.reps)<BILBO_MIN_REPS?'same':dKg>0||(!dKg&&dReps>0)?'up':!dKg&&dReps<0?'down':'same';
+  const parts=[];
+  if(dKg)parts.push((dKg>0?'+':'')+progressKg(dKg)+' kg');
+  if(dReps)parts.push((dReps>0?'+':'')+dReps+' reps');
+  const chip=!parts.length?'=':(kind==='up'?'▲ ':kind==='down'?'▼ ':'≈ ')+parts.join(' · ');
+  return {kind,chip,dKg,dReps,dPct,hasRir:both||(wC===0&&wP===0)};
+}
+function exerciseProgressFeedback(ex,curLogs,prevLogs,bestEver){
+  if(isBilbo(ex)){
+    const b=bilboFeedback(curLogs?.[0],prevLogs?.[0]);
+    const rest=exerciseProgressFeedback({...ex,bilbo:false,series:Math.max(1,(Number(ex.series)||1)-1)},(curLogs||[]).slice(1),(prevLogs||[]).slice(1),bestEver);
+    if(!b)return rest;
+    if(!rest)return {...b,dPct:0,bilbo:b.text};
+    return {...rest,bilbo:b.text,rest:rest.text,text:b.text+' Series pesadas: '+rest.text};
+  }
+  const cur=bestProgressSet(curLogs,ex);if(!cur)return null;
+  const prev=bestProgressSet(prevLogs,ex),name=ex?.name||'el ejercicio';
+  const fmt=s=>progressTimed(ex)?s.reps+(ex.unit==='s'?' s':' m'):(Number(s.weight)>0?progressKg(s.weight)+'×'+s.reps:s.reps+' reps');
+  if(!prev)return {kind:'first',dPct:0,text:'Primera marca registrada en '+name+': '+fmt(cur)+'.'};
+  const c=compareSetToLast(ex,cur,prev),vs=' ('+fmt(prev)+' → '+fmt(cur)+')',manual=ex?.autoProgress===false;
+  const e=progressTimed(ex)?0:estimatedStrength(cur.weight,cur.reps,cur.rir);
+  if(e>0&&bestEver>0&&e>bestEver*1.005)return {...c,kind:'pr',text:'🏆 Récord en '+name+vs+': tu mejor marca estimada.'};
+  const min=parseRepRange(ex?.reps).min;
+  if(c.kind!=='up'&&c.dKg>0&&c.dReps<0&&min>0&&Number(cur.reps)>=min&&!progressTimed(ex))
+    return {...c,kind:'same',text:'Subiste peso y seguís dentro del rango ('+ex.reps+'): bien'+vs+'.'+(c.dPct<0?' La fuerza estimada da '+progressKg(Math.abs(c.dPct))+'% menos solo porque la semana pasada hiciste más reps; es normal al subir.':'')+(c.hasRir?'':' Sumá el RIR para comparar mejor.')};
+  let text;
+  if(c.kind==='up'){
+    if(c.dKg>0&&c.dReps>=0)text='Más peso con las mismas reps o más: progreso claro 💪'+vs;
+    else if(!c.dKg&&c.dReps>0){
+      const top=parseRepRange(ex?.reps).max,atTop=!manual&&top>0&&Number(cur.reps)>=top,loaded=Number(cur.weight)>0;
+      if(progressTimed(ex))text='Más '+(ex.unit==='s'?'tiempo':'distancia')+' que la semana pasada: vas bien'+vs;
+      else if(!loaded)text='Más reps que la semana pasada: vas bien'+(atTop?'; llegaste al tope del rango, probá sumar lastre o una variante más difícil':'')+vs;
+      else text='Mismo peso, más reps: vas bien'+(manual?'':atTop?'; llegaste al tope del rango, la próxima subí peso':'; cuando llegues al tope del rango, subís')+vs;
+    }
+    else if(c.dKg>0)text='Subiste peso; las reps bajaron pero tu fuerza estimada subió '+progressKg(c.dPct)+'%'+vs;
+    else text='Menos peso pero más reps: tu fuerza estimada subió '+progressKg(c.dPct)+'%'+vs;
+  }else if(c.kind==='down'){
+    if(c.dKg>0&&!manual)text='Subiste un poco antes de tiempo: probá volver a '+progressKg(prev.weight)+' kg hasta completar el rango'+vs+'.';
+    else text='Hoy rendiste '+(c.dPct?progressKg(Math.abs(c.dPct))+'% ':'')+'menos que la semana pasada'+vs+'. Un día flojo pasa; si se repite la próxima, revisá sueño y descanso.';
+  }else text='Igual que la semana pasada'+vs+(progressTimed(ex)?'. Buscá un poco más la próxima.':'. Buscá una rep más la próxima.');
+  if(!c.hasRir)text+=' Sumá el RIR para comparar mejor.';
+  return {...c,text};
+}
+// ── Método Bilbo (Jesús Varela): la serie 1 es explosiva, RIR 1-3, a 15 reps o más; +2,5 kg por sesión.
+// Cuando baja de 15 reps termina el ciclo: descarga de 3-5 días y ciclo nuevo más pesado que el anterior (27-35 reps).
+const BILBO_MIN_REPS=15,BILBO_STEP=2.5;
+function isBilbo(ex){return !!ex?.bilbo&&!progressTimed(ex);}
+function bilboNextWeight(prev){
+  return prev?.done&&Number(prev.reps)>=BILBO_MIN_REPS&&Number(prev.weight)>0?Math.round((Number(prev.weight)+BILBO_STEP)*10)/10:'';
+}
+function bilboFeedback(cur,prev){
+  if(!cur?.done||!(Number(cur.reps)>0))return null;
+  const w=Number(cur.weight)||0,r=Number(cur.reps),fmt=s=>progressKg(Number(s.weight)||0)+'×'+s.reps;
+  const hasPrev=!!(prev?.done&&Number(prev.reps)>0),vs=hasPrev?' ('+fmt(prev)+' → '+fmt(cur)+')':' ('+fmt(cur)+')';
+  if(r<BILBO_MIN_REPS)return {kind:'cycle',text:'Bilbo: bajaste de '+BILBO_MIN_REPS+' reps'+vs+', terminó el ciclo 🎯. Hacé 3-5 días de descarga (4 series de 8-10, lejos del fallo) y arrancá un ciclo nuevo con un peso que te dé 27-35 reps, más alto que el inicio del ciclo anterior.'};
+  const next=' Próxima sesión: '+progressKg(w+BILBO_STEP)+' kg.';
+  if(!hasPrev)return {kind:'first',text:'Bilbo'+vs+': seguís en '+BILBO_MIN_REPS+' o más.'+next};
+  const dKg=Math.round((w-(Number(prev.weight)||0))*10)/10,dReps=r-Number(prev.reps);
+  if(dKg>0)return {kind:'up',text:'Bilbo: +'+progressKg(dKg)+' kg y seguís en '+BILBO_MIN_REPS+' o más 💪'+vs+'.'+next};
+  if(dKg<0)return {kind:'first',text:'Bilbo: ciclo nuevo desde '+progressKg(w)+' kg'+vs+'.'+next};
+  return {kind:dReps>0?'up':dReps<0?'down':'same',text:'Bilbo: mismo peso, '+(dReps>0?'+'+dReps+' reps':dReps<0?dReps+' reps':'mismas reps')+vs+'. Tocaba subir '+progressKg(BILBO_STEP)+' kg.'+next};
+}
+function looksLikeBilbo(history){
+  // 2 de las últimas 3 semanas: serie 1 de 15+ reps y después solo series más pesadas de menos de 10.
+  return (history||[]).slice(0,3).filter(logs=>{
+    const [a,...rest]=(logs||[]).filter(s=>s&&s.done&&Number(s.reps)>0);
+    return a&&Number(a.reps)>=BILBO_MIN_REPS&&rest.length>0&&rest.every(s=>Number(s.reps)<10&&Number(s.weight)>Number(a.weight));
+  }).length>=2;
+}
+function markBilbo(rid,did,ei){
+  const ex=getRoutineExercise(rid,did,ei);if(!ex)return;
+  ex.bilbo=true;S.s('rt2',routines);tst('✓ Serie 1 de '+ex.name+': método Bilbo');openDay(rid,did);
+}
+function exerciseBestEver(name,excludeWeekId,skipFirst=false){
+  // Mejor fuerza estimada de ese ejercicio en cualquier rutina y semana anterior (para detectar récords).
+  const target=normStr(name);let best=0;
+  gymWeekLog.forEach(w=>{if(w.id===excludeWeekId)return;Object.values(w.days||{}).forEach(d=>(d.exercises||[]).forEach(ex=>{
+    if(normStr(ex.name)!==target)return;
+    (ex.setLogs||[]).forEach((s,i)=>{if(skipFirst&&i===0)return;if(s&&s.done){const e=estimatedStrength(s.weight,s.reps,s.rir);if(e>best)best=e;}});
+  }));});
+  return best;
+}
+function sessionProgressSummary(items){
+  // items: [{name, fb}] de los ejercicios hechos hoy → "Hoy: 4 mejoras · 1 igual · 1 abajo · mejor avance: X +6%".
+  const c={up:0,same:0,down:0};let bestName='',bestPct=-Infinity;
+  (items||[]).forEach(({name,fb})=>{
+    if(!fb||fb.kind==='first')return;
+    const k=fb.kind==='pr'?'up':fb.kind;if(!(k in c))return;c[k]++;
+    if(k==='up'&&(fb.dPct||0)>bestPct){bestPct=fb.dPct||0;bestName=name;}
+  });
+  if(!c.up&&!c.same&&!c.down)return '';
+  return 'Hoy: '+plural(c.up,'mejora','mejoras')+' · '+c.same+' igual · '+c.down+' abajo'+(bestName?' · mejor avance: '+bestName+(bestPct>0?' +'+progressKg(bestPct)+'%':''):'');
+}
+function dayProgressItems(rid,did){
+  const r=routines.find(x=>x.id===rid),d=r?.days.find(x=>x.id===did);if(!d)return [];
+  return (d.exercises||[]).map((ex,ei)=>{
+    const cur=Array.from({length:ex.series},(_,si)=>getSetPerformance(rid,did,ei,si));
+    const prev=getPreviousExerciseLog(rid,did,ex.name);
+    return {name:ex.name,fb:exerciseProgressFeedback(ex,cur,prev?.setLogs,exerciseBestEver(ex.name,activeWeekId,isBilbo(ex)))};
+  }).filter(x=>x.fb);
+}
+function setCompareHtml(ex,perf,prevSet,si){
+  if(!perf?.done)return '';
+  const c=compareSetToLast(ex,perf,prevSet,si);
+  return c&&c.kind!=='first'&&c.chip?`<span class="set-cmp ${c.kind}">${esc(c.chip)}</span>`:'';
+}
+function exerciseFeedbackHtml(fb){
+  if(fb?.bilbo)return `<div class="ex-feedback bilbo">${esc(fb.bilbo)}</div>`+(fb.rest?`<div class="ex-feedback ${fb.kind}">${esc('Series pesadas: '+fb.rest)}</div>`:'');
+  return fb?`<div class="ex-feedback ${fb.kind}">${esc(fb.text)}</div>`:'';
+}
 function buildGymProgressContext(maxChars=2600){
   const r=routines.find(x=>x.id===activeRid);
   if(!r)return 'PROGRESIÓN DEL GYM: sin rutina activa.';
@@ -1030,10 +1187,14 @@ function buildGymProgressContext(maxChars=2600){
       const advice=exerciseProgression(r.id,d.id,ei,ex);
       const when=current.some(s=>s.done)?'próxima vez':'hoy';
       const tops=history.map(h=>Math.max(0,...h.logs.map(s=>Number(s.weight)||0))).reverse();
-      let line='  · '+ex.name+' '+ex.series+'×'+ex.reps;
+      let line='  · '+ex.name+' '+ex.series+'×'+ex.reps+(isBilbo(ex)?' [serie 1 = método Bilbo: 15+ reps explosivas, +2,5 kg por sesión]':'');
       const now=gymSetSummary(current);if(now)line+=' | esta semana: '+now;
       if(history[0])line+=' | anterior ('+history[0].weekStart+'): '+gymSetSummary(history[0].logs);
       if(tops.filter(Boolean).length>1)line+=' | tendencia kg: '+tops.join('→');
+      const fb=exerciseProgressFeedback(ex,current,history[0]?.logs,0);
+      if(fb&&fb.kind!=='first')line+=' | hoy vs anterior: '+(fb.kind==='up'?'mejoró':fb.kind==='down'?'bajó':'igual')+(fb.dPct?' ('+(fb.dPct>0?'+':'')+fb.dPct+'% fuerza estimada)':'');
+      const strength=history.map(h=>{const b=bestProgressSet(h.logs,ex);return b?estimatedStrength(b.weight,b.reps,b.rir):0;}).filter(Boolean);
+      if(strength.length>=3&&Math.max(strength[0],strength[1])<=strength[2]*1.01)line+=' | ESTANCADO: sin mejora de fuerza estimada en 3 semanas';
       line+=' | la app sugiere: '+(advice.kind==='up'?when+' subir a '+advice.next+' kg y volver al mínimo del rango':advice.kind==='review'?'no subir, repetir carga y revisar':advice.kind==='hold'?'mantener carga y sumar reps':advice.kind==='manual'?'seguir el programa ('+advice.text.slice(0,140)+')':'faltan datos (kg, reps y RIR)');
       lines.push(line);
     });
@@ -1044,6 +1205,10 @@ function buildGymProgressContext(maxChars=2600){
 function suggestedSetValues(ex,previous,advice,si,sessionStarted){
   // Lo que se ve como sugerencia en cada serie y lo que se anota al tocar ✓ si no escribiste nada.
   // Si la app ya indicó subir, la sugerencia de hoy es la carga nueva con el mínimo del rango.
+  if(si===0&&isBilbo(ex)){
+    const p=previous?.setLogs?.[0],next=bilboNextWeight(p);
+    return {weight:next!==''?next:clampGymNumber(p?.weight??'',0,1000,1),reps:'',rir:'',source:'bilbo'};
+  }
   const logs=(previous?.setLogs||[]).filter(s=>s&&s.done);
   const prev=previous?.setLogs?.[si]?.done?previous.setLogs[si]:logs[logs.length-1]||{};
   const plan={weight:clampGymNumber(prev.weight??previous?.weight??'',0,1000,1),reps:clampGymNumber(prev.reps??'',0,100,0),rir:clampGymNumber(prev.rir??'',0,10,1),source:'previous'};
@@ -1349,6 +1514,7 @@ function openDay(rid,did){
     const previous=getPreviousExerciseLog(rid,did,ex.name);
     const advice=exerciseProgression(rid,did,ei,ex);
     const sessionStarted=Array.from({length:ex.series},(_,si)=>getSetPerformance(rid,did,ei,si).done).some(Boolean);
+    const feedback=allDone?exerciseProgressFeedback(ex,Array.from({length:ex.series},(_,si)=>getSetPerformance(rid,did,ei,si)),previous?.setLogs,exerciseBestEver(ex.name,activeWeekId,isBilbo(ex))):null;
     const ss=supersetMeta(d,ei);
     if(ss?.first)h+=`<div class="superset-banner"><span class="superset-code">BISERIE ${ss.label}</span><span style="font-size:10.5px;line-height:1.45;color:var(--text2)">Hacé ${ss.label}1 y ${ss.label}2 seguidos; descansá después de completar ambos.</span></div>`;
     h+=`<div id="er-${ei}" class="${ss?'superset-card':''}" style="background:${allDone?'rgba(0,196,140,.04)':'var(--bg2)'};border:1px solid ${allDone?'rgba(0,196,140,.2)':'var(--border)'};border-radius:var(--r-sm);padding:14px;margin-bottom:${ss&&!ss.first?'14':'9'}px;transition:all .3s">
@@ -1362,6 +1528,8 @@ function openDay(rid,did){
             <span style="font-size:9px;font-weight:700;color:${mcl};background:${mcl}18;border:1px solid ${mcl}33;padding:2px 7px;border-radius:5px;letter-spacing:.5px;text-transform:uppercase">${esc(ex.muscle)}</span>
             <span style="font-size:11px;color:var(--text2)">Objetivo ${ex.series}×${esc(ex.reps)}${ex.unit==='s'?' s':ex.unit==='m'?' m':''} · RIR ${esc(ex.rir||'1–3')}</span>
           </div>
+          ${isBilbo(ex)?`<div class="bilbo-note"><strong>B · Serie Bilbo:</strong> explosiva, sin rebotar, RIR 1-3 y 15 reps o más. Cada sesión +2,5 kg hasta bajar de 15.</div>`:''}
+          ${!ex.bilbo&&!timed&&looksLikeBilbo(exerciseLoadHistory(rid,did,ex.name,3).map(h=>h.logs))?`<button class="bilbo-ask" type="button" onclick="markBilbo('${rid}','${did}',${ei})">¿Tu serie 1 es Bilbo? Marcala y la comparo aparte</button>`:''}
           ${ex.rest||ex.note?`<div class="ex-cues">${ex.rest?`<span class="ex-rest">⏱ ${esc(ex.rest)}</span>`:''}${ex.note?`<span class="ex-note">${esc(ex.note)}</span>`:''}</div>`:''}
         </div>
         ${previous?`<button class="btn b-xs b-g" style="margin-left:8px;min-height:44px" onclick="copyPreviousLoads('${rid}','${did}',${ei})">Usar anterior</button>`:''}
@@ -1373,17 +1541,19 @@ function openDay(rid,did){
           const perf=getSetPerformance(rid,did,ei,si);
           // Sugerencia: la última serie hecha hoy; si no hay, la progresión o la semana anterior.
           let plan=suggestedSetValues(ex,previous,advice,si,sessionStarted);
-          for(let b=si-1;b>=0;b--){const done=getSetPerformance(rid,did,ei,b);if(done.done&&(done.weight!==''||done.reps!=='')){plan={...plan,weight:done.weight,reps:done.reps};break;}}
+          for(let b=si-1;b>=(isBilbo(ex)?1:0);b--){const done=getSetPerformance(rid,did,ei,b);if(done.done&&(done.weight!==''||done.reps!=='')){plan={...plan,weight:done.weight,reps:done.reps};break;}}
           const prevWeight=plan.weight,prevReps=plan.reps,prevRir=plan.rir;
           return `<div class="set-log-row${timed?' timed':''}">
-            <span class="set-log-num">${si+1}</span>
+            ${si===0&&isBilbo(ex)?'<span class="set-log-num bilbo" title="Serie Bilbo">B</span>':`<span class="set-log-num">${si+1}</span>`}
             ${timed?'':`<input class="set-log-input" data-field="weight" type="number" inputmode="decimal" min="0" max="1000" step="0.5" aria-label="Kilos serie ${si+1}" placeholder="${prevWeight===''?'—':prevWeight}" value="${perf.weight}" oninput="saveSetPerformance('${rid}','${did}',${ei},${si},'weight',this.value)">`}
             <input class="set-log-input" data-field="reps" type="number" inputmode="numeric" min="0" max="${ex.unit==='m'?'10000':ex.unit==='s'?'3600':'100'}" step="1" aria-label="${timed?(ex.unit==='s'?'Segundos':'Metros'):'Repeticiones reales'} serie ${si+1}" placeholder="${prevReps===''?'—':prevReps}" value="${perf.reps}" oninput="saveSetPerformance('${rid}','${did}',${ei},${si},'reps',this.value)">
             <input class="set-log-input" data-field="rir" type="number" inputmode="decimal" min="0" max="10" step="0.5" aria-label="Repeticiones en reserva serie ${si+1}" placeholder="${prevRir===''?'—':prevRir}" value="${perf.rir}" oninput="saveSetPerformance('${rid}','${did}',${ei},${si},'rir',this.value)">
             <button class="set-done${perf.done?' ck':''}" aria-label="${perf.done?'Desmarcar':'Completar'} serie ${si+1}" onclick="toggleSetPerformance(this,'${rid}','${did}',${ei},${si},'${col}')">${perf.done?'✓':si+1}</button>
+            ${setCompareHtml(ex,perf,previous?.setLogs?.[si],si)}
           </div>`;
         }).join('')}
       </div>
+      <div id="fb-${ei}">${exerciseFeedbackHtml(feedback)}</div>
       <div class="progression-note${advice.kind==='manual'?' manual':''}" id="prog-${ei}"><strong>${advice.kind==='up'?'Subir carga':advice.kind==='review'?'Revisar':advice.kind==='manual'?'Según el programa':'Progresión'}:</strong> ${esc(advice.text)}</div>
       <button class="btn b-sm b-g" style="width:100%;margin-top:10px;min-height:44px" onclick="addSet('${rid}','${did}','${ei}','${col}')">+ Agregar serie</button>
     </div>`;
@@ -1398,10 +1568,18 @@ function toggleSetPerformance(btn,rid,did,ei,si,col){
   const k=gymSetKey(rid,did,ei,si),item={...getSetPerformance(rid,did,ei,si)};
   item.done=!item.done;item.updatedAt=Date.now();setPerformance[k]=item;sets[k]=item.done;
   S.s('setPerf3',setPerformance);S.s('sets2',sets);updateWeekLogFromCurrent();
-  if(item.done){btn.classList.add('ck');btn.textContent='✓';btn.setAttribute('aria-label','Desmarcar serie '+(Number(si)+1));navigator.vibrate?.(10);carrySuggestionToNextSets(row,item);}
+  if(item.done){btn.classList.add('ck');btn.textContent='✓';btn.setAttribute('aria-label','Desmarcar serie '+(Number(si)+1));navigator.vibrate?.(10);if(!(Number(si)===0&&isBilbo(getRoutineExercise(rid,did,ei))))carrySuggestionToNextSets(row,item);}
+  row?.querySelector('.set-cmp')?.remove();
+  if(item.done){const exNow=getRoutineExercise(rid,did,ei),prevLog=exNow?getPreviousExerciseLog(rid,did,exNow.name):null;if(exNow)row?.insertAdjacentHTML('beforeend',setCompareHtml(exNow,item,prevLog?.setLogs?.[si],si));}
   else{btn.classList.remove('ck');btn.textContent=String(parseInt(si)+1);btn.setAttribute('aria-label','Completar serie '+(Number(si)+1));}
   const r=routines.find(x=>x.id===rid);const d=r?.days.find(x=>x.id===did);const ex=d?.exercises[parseInt(ei)];
   if(ex){const allDn=Array.from({length:ex.series},(_,s2)=>sets[`${rid}|${did}|${ei}|${s2}`]).every(Boolean);
+    const fbEl=document.getElementById('fb-'+ei);
+    if(fbEl){
+      const fb=allDn?exerciseProgressFeedback(ex,Array.from({length:ex.series},(_,s2)=>getSetPerformance(rid,did,ei,s2)),getPreviousExerciseLog(rid,did,ex.name)?.setLogs,exerciseBestEver(ex.name,activeWeekId,isBilbo(ex))):null;
+      fbEl.innerHTML=exerciseFeedbackHtml(fb);
+      if(fb&&item.done&&S.g('ai_always_speak',false))speak(fb.text.replace(/[💪🏆]/gu,'').trim());
+    }
     const row=document.getElementById('er-'+ei);
     if(row){row.style.background=allDn?'rgba(0,196,140,.04)':'var(--bg2)';row.style.borderColor=allDn?'rgba(0,196,140,.2)':'var(--border)';const nm=row.querySelector('div>div');if(nm){nm.style.color=allDn?'var(--text2)':'var(--text0)';nm.style.textDecoration=allDn?'line-through':'';}}}
   const pct=getDayPct(rid,did);ring('dr',pct,col,pct+'%',52);updWring();
@@ -1433,8 +1611,10 @@ function saveSess(rid,did){
 }
 function finishGymSession(rid,did){
   const pct=getDayPct(rid,did),r=routines.find(x=>x.id===rid),d=r?.days.find(x=>x.id===did);if(!r||!d)return;
-  gymHist=[{d:new Date().toLocaleDateString('es-ES',{day:'numeric',month:'short'}),rn:r.name,dn:d.label,pct,energy:Number(document.getElementById('sess-energy')?.value)||3,rpe:Number(document.getElementById('sess-rpe')?.value)||8,note:(document.getElementById('sess-note')?.value||'').trim().slice(0,180),ts:Date.now()},...gymHist].slice(0,80);
-  S.s('ghst2',gymHist);updateWeekLogFromCurrent();tst(`✓ ${d.label} — ${pct}%`);cOv2();cOv1();updWring();
+  const progressSummary=sessionProgressSummary(dayProgressItems(rid,did));
+  gymHist=[{d:new Date().toLocaleDateString('es-ES',{day:'numeric',month:'short'}),rn:r.name,dn:d.label,pct,progress:progressSummary,energy:Number(document.getElementById('sess-energy')?.value)||3,rpe:Number(document.getElementById('sess-rpe')?.value)||8,note:(document.getElementById('sess-note')?.value||'').trim().slice(0,180),ts:Date.now()},...gymHist].slice(0,80);
+  S.s('ghst2',gymHist);updateWeekLogFromCurrent();tst(`✓ ${d.label} — ${pct}%`+(progressSummary?' · '+progressSummary:''),progressSummary?5500:2300);cOv2();cOv1();updWring();
+  if(progressSummary&&S.g('ai_always_speak',false))speak(progressSummary);
 }
 
 function addSet(rid,did,ei,col){
@@ -2637,6 +2817,7 @@ function prepareMovementExercises(rawExercises,catalog,requireMovement=false){
       else muscle='Pecho';
     }
     const base={name,muscle,series:Math.max(1,Math.min(8,parseInt(item.series??item.sets??item.num_series??item.cantidad_series??item.sets_count??nestedExercise.series)||3)),reps:String(item.reps??item.repeticiones??item.rango_reps??item.rango??item.rep_range??item.repetition_range??nestedExercise.reps??'10').trim().slice(0,20)||'10'};
+    if(item.bilbo===true)base.bilbo=true;
     if(item.superset||item.biserie||item.superserie)base.superset=String(item.superset||item.biserie||item.superserie).slice(0,20);
     [['rir',item.rir??item.RIR,12],['rest',item.rest??item.descanso,20],['note',item.note??item.nota,200]].forEach(([key,value,max])=>{if(value!=null&&String(value).trim())base[key]=String(value).trim().slice(0,max);});
     const canonical=catalog?canonicalExerciseMovement(base,catalog):null;
@@ -2834,6 +3015,7 @@ function openExerciseSheet(dayId,ei=null){
       <div class="fld"><label for="xs-rest">Descanso</label><input class="inp" id="xs-rest" value="${esc(ex.rest||'')}" placeholder="2-3 min"></div>
     </div>
     ${ex.seriesByWeek||ex.repsByWeek||ex.rirByWeek?`<label class="xs-check xs-weekly"><input type="checkbox" id="xs-weekly" checked><span><strong>Sigue el plan semanal del programa</strong><small>Series, reps y RIR cambian solos al empezar cada semana. Destildalo para fijarlos a mano.</small></span></label>`:''}
+    <label class="xs-check xs-bilbo"><input type="checkbox" id="xs-bilbo"${ex.bilbo?' checked':''}><span><strong>Serie 1 = método Bilbo</strong><small>Serie explosiva de 15 reps o más. Se compara aparte de las pesadas y te sugiere +2,5 kg por sesión.</small></span></label>
     <div class="fld"><label for="xs-note">Nota</label><textarea class="inp" id="xs-note" rows="2" maxlength="200" placeholder="Técnica, tempo, agarre…">${esc(ex.note||'')}</textarea></div>
     ${!isNew&&d.days.length>1?`<div class="fld"><label for="xs-day">Día</label><select class="inp" id="xs-day">${d.days.map((x,i)=>`<option value="${x.id}"${x.id===dayId?' selected':''}>Día ${i+1}${x.label?' · '+esc(x.label):''}</option>`).join('')}</select></div>`:''}
     ${!isNew&&(ss||next)?`<label class="xs-check"><input type="checkbox" id="xs-ss"${ss?' checked':''}><span><strong>Biserie</strong> ${ss?'con '+esc(partner?.name||''):'con el siguiente: '+esc(next.name)}<small>Se hacen seguidos y se descansa después de los dos.</small></span></label>`:''}
@@ -2873,6 +3055,7 @@ function saveExerciseSheet(dayId,ei){
   ex.reps=val('xs-reps').slice(0,20)||ex.reps||'10';
   [['rir','xs-rir',12],['rest','xs-rest',20],['note','xs-note',200]].forEach(([key,id,max])=>{const v=val(id).slice(0,max);if(v)ex[key]=v;else delete ex[key];});
   const unit=val('xs-unit');if(unit)ex.unit=unit;else delete ex.unit;
+  const bilbo=document.getElementById('xs-bilbo');if(bilbo){if(bilbo.checked&&!ex.unit)ex.bilbo=true;else delete ex.bilbo;}
   const weekly=document.getElementById('xs-weekly');if(weekly&&!weekly.checked){delete ex.seriesByWeek;delete ex.repsByWeek;delete ex.rirByWeek;}
   if(window._xsPick&&normStr(window._xsPick.name)===normStr(name))ex.mediaId=window._xsPick.id;
   else if(renamed){const movement=exactCatalogMovement(name);if(movement)ex.mediaId=movement.id;else delete ex.mediaId;}
@@ -3021,6 +3204,7 @@ function routineFromProgram(p,catalog){
       const ex={name:String(e.name),muscle:e.muscle,series:Math.max(1,Number(e.series)||3),reps:String(e.reps??'10')};
       ['rir','rest','note','unit'].forEach(k=>{if(e[k]!=null&&String(e[k]).trim())ex[k]=String(e[k]);});
       if(e.autoProgress===false)ex.autoProgress=false;
+      if(e.bilbo===true)ex.bilbo=true;
       ['repsByWeek','seriesByWeek','rirByWeek'].forEach(k=>{if(Array.isArray(e[k])&&e[k].length)ex[k]=e[k].slice();});
       if(e.superset)ex.superset=String(e.superset);
       const movement=findCatalogMovement(e.name,catalog);if(movement)ex.mediaId=movement.id;
@@ -6052,7 +6236,7 @@ function buildGymAIContext(sourceRoutines=routines){
       id:d.id,
       referencia:'Día '+(di+1),
       nombre:d.label,
-      ejercicios:(d.exercises||[]).map((e,ei)=>{const ss=supersetMeta(d,ei);return {posicion:ei+1,nombre:e.name,musculo:e.muscle,series:e.series,reps:e.reps,...(e.rir?{rir:e.rir}:{}),...(e.rest?{descanso:e.rest}:{}),...(e.note?{nota:e.note}:{}),movimiento:!!e.mediaId,biserie:ss?ss.label+ss.position:null};})
+      ejercicios:(d.exercises||[]).map((e,ei)=>{const ss=supersetMeta(d,ei);return {posicion:ei+1,nombre:e.name,musculo:e.muscle,series:e.series,reps:e.reps,...(e.rir?{rir:e.rir}:{}),...(e.rest?{descanso:e.rest}:{}),...(e.note?{nota:e.note}:{}),movimiento:!!e.mediaId,biserie:ss?ss.label+ss.position:null,...(e.bilbo?{bilbo:true}:{})};})
     }))
   }));
   return 'ESTRUCTURA EXACTA DE RUTINAS (usá estos nombres y días):\n'+JSON.stringify(data);

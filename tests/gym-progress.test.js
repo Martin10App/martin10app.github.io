@@ -23,9 +23,10 @@ function extractFunction(name,source=html){
 
 const FUNCTIONS=['todayStr','gymSetKey','parseRepRange','clampGymNumber','getSetPerformance','normStr','normalizeGymLookup','gymLookupMatches',
   'resolveGymExerciseTarget','getPreviousExerciseLog','progressionForLogs','exerciseProgression','ensureGymCycle','getCycleStatus',
-  'gymNumberInput','gymSetSummary','exerciseLoadHistory','programWeekInfo','buildGymProgressContext','gymDayKey','findGymLogTarget','suggestedSetValues',
+  'gymNumberInput','gymSetSummary','exerciseLoadHistory','programWeekInfo','estimatedStrength','progressHasRir','progressKg','progressTimed','bestProgressSet','compareSetToLast','isBilbo','bilboNextWeight','bilboFeedback','exerciseProgressFeedback','buildGymProgressContext','gymDayKey','findGymLogTarget','suggestedSetValues',
   'cleanupSupersetGroups','normalizeSupersetAssignments','supersetMeta','plural','prepareMovementExercises','normalizeAIRoutinePayload','ejecutarAccion'];
 
+const BILBO_CONST=html.match(/const BILBO_MIN_REPS=[^;]+;/)[0].replace('const','var')+'\n';
 function routinesFixture(){
   return [{id:'r1',name:'Hipertrofia',days:[
     {id:'d1',label:'Empuje',exercises:[
@@ -50,7 +51,7 @@ function makeContext({setPerformance={},gymWeekLog=[],activeWeekId='w3'}={}){
   };
   db.rt2=structuredClone(context.routines);
   vm.createContext(context);
-  vm.runInContext(FUNCTIONS.map(name=>extractFunction(name)).join('\n'),context);
+  vm.runInContext(BILBO_CONST+FUNCTIONS.map(name=>extractFunction(name)).join('\n'),context);
   return context;
 }
 
