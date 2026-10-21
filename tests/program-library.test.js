@@ -32,7 +32,7 @@ function makeContext(){
   vm.createContext(context);
   vm.runInContext([extractFunction('normExerciseMediaName',mediaJs),
     ...['findCatalogMovement','routineFromProgram','programWeekValue','applyProgramWeek','cleanupSupersetGroups','normalizeSupersetAssignments','supersetMeta',
-      'yearTemplatePlan','monthKey','nextMonthKeys','gymProgFilter','filteredPrograms','exerciseProgression','ensureGymCycle','getCycleStatus','programWeekInfo','upcomingCycleWeek'].map(n=>extractFunction(n))].join('\n'),context);
+      'yearTemplatePlan','monthKey','nextMonthKeys','planHorizon','setPlanHorizon','computeWeeklyMuscleVolume','gymProgFilter','filteredPrograms','exerciseProgression','ensureGymCycle','getCycleStatus','programWeekInfo','upcomingCycleWeek'].map(n=>extractFunction(n))].join('\n'),context);
   return context;
 }
 const plain=x=>JSON.parse(JSON.stringify(x));
@@ -122,3 +122,29 @@ test('[T4] filtros: arrancan en "hasta 4 días" y se guardan como preferencia',(
   ctx.S.s('gymProgFilter1',{discipline:'boxeo',maxDays:0,level:'all'});
   assert.deepEqual([...new Set(ctx.filteredPrograms().map(p=>p.discipline))],['boxeo']);
 });
+
+test('plan de 3, 6 o 12 meses y volumen semanal por músculo',()=>{
+  const ctx=makeContext();
+  ctx.renderGym=()=>{};
+  assert.equal(ctx.planHorizon(),12);
+  ctx.setPlanHorizon(3);
+  assert.equal(ctx.planHorizon(),3);
+  const k3=plain(ctx.nextMonthKeys(ctx.planHorizon(),new Date(2026,10,15)));
+  assert.equal(k3.length,3);
+  const p3=plain(ctx.yearTemplatePlan(programs.yearTemplates[0],{},k3,true));
+  assert.equal(Object.keys(p3).length,3);
+
+  ctx.setPlanHorizon(6);
+  assert.equal(ctx.planHorizon(),6);
+  const k6=plain(ctx.nextMonthKeys(ctx.planHorizon(),new Date(2026,10,15)));
+  assert.equal(k6.length,6);
+
+  const vol=plain(ctx.computeWeeklyMuscleVolume({
+    days:{d1:{exercises:[{name:'Press banca',muscle:'Pecho',totalSets:12,completedSets:10}]}}
+  },null));
+  assert.equal(vol[0].muscle,'Pecho');
+  assert.equal(vol[0].planned,12);
+  assert.equal(vol[0].done,10);
+  assert.match(vol[0].status,/Óptimo/);
+});
+

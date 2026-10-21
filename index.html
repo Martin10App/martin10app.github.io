@@ -1507,6 +1507,19 @@ function openDay(rid,did){
   </div>`;
   const wk=programWeekInfo(r);
   if(wk)h+=`<div class="wk-now"><span class="wk-n">S${wk.week}</span><div><strong>${esc(wk.focus)}</strong><small>Semana ${wk.week} de ${wk.length} · RIR ${esc(wk.rir)} · Volumen ${esc(wk.volume)}</small></div></div>`;
+  h+=`<div id="live-rest-bar" style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:9px 12px;margin-bottom:14px;background:var(--bg2);border:1px solid ${timerOn?'var(--green-b)':'var(--border)'};border-radius:12px">
+    <div style="display:flex;align-items:center;gap:8px">
+      <span style="font-size:15px">⏱</span>
+      <div>
+        <div style="font-size:10px;color:var(--text2);font-weight:700;letter-spacing:.6px">DESCANSO EN VIVO</div>
+        <div id="live-rest-val" style="font-family:var(--fm);font-size:16px;font-weight:800;color:${timerOn?'var(--green)':'var(--text0)'}">${Math.floor(timerS/60)}:${String(timerS%60).padStart(2,'0')}</div>
+      </div>
+    </div>
+    <div style="display:flex;gap:5px;flex-wrap:wrap;justify-content:flex-end">
+      ${[[60,'60s'],[90,'90s'],[120,'2m'],[180,'3m']].map(([s,l])=>`<button class="btn b-xs ${timerP===s?'b-p':'b-g'}" onclick="setLiveRestPreset(${s})">${l}</button>`).join('')}
+      <button class="btn b-xs ${timerOn?'b-red':'b-grn'}" id="live-rest-btn" onclick="toggleLiveRestTimer()">${timerOn?'Parar':'Iniciar'}</button>
+    </div>
+  </div>`;
   d.exercises.forEach((ex,ei)=>{
     const timed=ex.unit==='s'||ex.unit==='m',repsLabel=ex.unit==='s'?'Seg':ex.unit==='m'?'Metros':'Reps';
     const allDone=Array.from({length:ex.series},(_,si)=>sets[`${rid}|${did}|${ei}|${si}`]).every(Boolean);
@@ -1532,7 +1545,10 @@ function openDay(rid,did){
           ${!ex.bilbo&&!timed&&looksLikeBilbo(exerciseLoadHistory(rid,did,ex.name,3).map(h=>h.logs))?`<button class="bilbo-ask" type="button" onclick="markBilbo('${rid}','${did}',${ei})">¿Tu serie 1 es Bilbo? Marcala y la comparo aparte</button>`:''}
           ${ex.rest||ex.note?`<div class="ex-cues">${ex.rest?`<span class="ex-rest">⏱ ${esc(ex.rest)}</span>`:''}${ex.note?`<span class="ex-note">${esc(ex.note)}</span>`:''}</div>`:''}
         </div>
-        ${previous?`<button class="btn b-xs b-g" style="margin-left:8px;min-height:44px" onclick="copyPreviousLoads('${rid}','${did}',${ei})">Usar anterior</button>`:''}
+        <div style="display:flex;gap:5px;margin-left:8px;flex-shrink:0">
+          ${previous?`<button class="btn b-xs b-g" style="min-height:44px" onclick="copyPreviousLoads('${rid}','${did}',${ei})">Usar anterior</button>`:''}
+          <button class="btn b-xs b-g" style="min-height:44px" title="Cambiar ejercicio" onclick="openQuickSwapModal('${rid}','${did}',${ei})">⇄</button>
+        </div>
       </div>
       ${previous?`<div style="font-size:10px;color:var(--text2);margin:8px 0">Última vez: ${esc((previous.setLogs||[]).filter(s=>s.done).map(s=>`${s.weight||'—'}kg × ${s.reps||'—'} · RIR ${s.rir===''?'—':s.rir}`).join(' / ')||`${previous.weight||'—'} kg`)}</div>`:''}
       <div class="set-log-head${timed?' timed':''}"><span>Serie</span>${timed?'':'<span>KG</span>'}<span>${repsLabel}</span><span>RIR</span><span>Hecha</span></div>
@@ -1562,13 +1578,93 @@ function openDay(rid,did){
   oOv1(h);setTimeout(()=>ring('dr',pct,col,pct+'%',52),50);
 }
 
+function updateLiveRestUI(){
+  const valEl=document.getElementById('live-rest-val');
+  if(valEl){
+    valEl.textContent=`${Math.floor(timerS/60)}:${String(timerS%60).padStart(2,'0')}`;
+    valEl.style.color=timerOn?'var(--green)':'var(--text0)';
+  }
+  const btnEl=document.getElementById('live-rest-btn');
+  if(btnEl){
+    btnEl.textContent=timerOn?'Parar':'Iniciar';
+    btnEl.className=`btn b-xs ${timerOn?'b-red':'b-grn'}`;
+  }
+  const barEl=document.getElementById('live-rest-bar');
+  if(barEl)barEl.style.borderColor=timerOn?'var(--green-b)':'var(--border)';
+}
+function setLiveRestPreset(seconds){
+  timerP=seconds;
+  startLiveRestCountdown(seconds);
+}
+function startLiveRestCountdown(seconds){
+  timerP=seconds||timerP||90;
+  timerS=timerP;
+  timerOn=true;
+  clearInterval(timerIv);
+  updateLiveRestUI();
+  timerIv=setInterval(()=>{
+    if(timerS>0){
+      timerS--;
+      updateLiveRestUI();
+      drawTimerRing();
+    }else{
+      timerOn=false;
+      clearInterval(timerIv);
+      updateLiveRestUI();
+      navigator.vibrate?.([120,60,120]);
+      tst('⏱ ¡Descanso terminado! A darle a la siguiente serie');
+    }
+  },1000);
+}
+function toggleLiveRestTimer(){
+  if(timerOn){
+    timerOn=false;clearInterval(timerIv);timerS=timerP;updateLiveRestUI();
+  }else{
+    startLiveRestCountdown(timerP);
+  }
+}
+async function openQuickSwapModal(rid,did,ei){
+  const ex=getRoutineExercise(rid,did,ei);if(!ex)return;
+  let options=[];
+  try{
+    const catalog=await loadExerciseMediaCatalog();
+    options=(catalog.exercises||[]).filter(item=>exerciseMovementMuscle(item)===ex.muscle).map(item=>({
+      name:exerciseMovementName(item),
+      muscle:ex.muscle,
+      mediaId:item.id
+    }));
+  }catch(_e){
+    options=(apiForMuscle(ex.muscle)||[]).map(item=>({name:item.nombre||item.name,muscle:ex.muscle,mediaId:null}));
+  }
+  options=options.filter(o=>normStr(o.name)!==normStr(ex.name));
+  let h=`<div class="mt">⇄ Cambiar ejercicio</div>
+    <div style="font-size:12px;color:var(--text2);margin-bottom:12px">Reemplazar <b>${esc(ex.name)}</b> (${esc(ex.muscle)} · ${ex.series}×${esc(ex.reps)}) por otro del mismo grupo muscular:</div>
+    <div style="max-height:55dvh;overflow-y:auto;margin-bottom:12px">
+      ${options.map(o=>`<div class="card" style="margin-bottom:7px;padding:10px 12px;cursor:pointer;display:flex;justify-content:space-between;align-items:center" onclick="applyQuickSwap('${rid}','${did}',${ei},'${esc(o.name)}')">
+        <div><div style="font-size:13px;font-weight:700">${esc(o.name)}</div><div style="font-size:10px;color:var(--text2)">${esc(o.muscle)} · conserva ${ex.series}×${esc(ex.reps)}</div></div>
+        <span style="color:var(--green);font-weight:700;font-size:13px">Elegir →</span>
+      </div>`).join('')}
+    </div>`;
+  oOv2(h);
+}
+function applyQuickSwap(rid,did,ei,newName){
+  const ex=getRoutineExercise(rid,did,ei);if(!ex||!newName)return;
+  const res=applyGymExerciseReplacement(ex,{nombre_nuevo:newName});
+  if(res.error){tst(res.error);return;}
+  S.s('rt2',routines);
+  updateWeekLogFromCurrent();
+  cOv2();
+  openDay(rid,did);
+  tst(`✓ Cambiado por ${ex.name}`);
+}
+
 function toggleSetPerformance(btn,rid,did,ei,si,col){
   const row=btn.closest('.set-log-row');
   if(!getSetPerformance(rid,did,ei,si).done&&fillSetFromSuggestion(row,rid,did,ei,si)){const f=getSetPerformance(rid,did,ei,si);tst(`Serie ${Number(si)+1}: ${f.weight===''?'—':f.weight+' kg'} × ${f.reps===''?'—':f.reps} · sumá el RIR`,2600);}
   const k=gymSetKey(rid,did,ei,si),item={...getSetPerformance(rid,did,ei,si)};
   item.done=!item.done;item.updatedAt=Date.now();setPerformance[k]=item;sets[k]=item.done;
   S.s('setPerf3',setPerformance);S.s('sets2',sets);updateWeekLogFromCurrent();
-  if(item.done){btn.classList.add('ck');btn.textContent='✓';btn.setAttribute('aria-label','Desmarcar serie '+(Number(si)+1));navigator.vibrate?.(10);if(!(Number(si)===0&&isBilbo(getRoutineExercise(rid,did,ei))))carrySuggestionToNextSets(row,item);}
+  if(item.done){btn.classList.add('ck');btn.textContent='✓';btn.setAttribute('aria-label','Desmarcar serie '+(Number(si)+1));navigator.vibrate?.(10);startLiveRestCountdown(timerP||90);if(!(Number(si)===0&&isBilbo(getRoutineExercise(rid,did,ei))))carrySuggestionToNextSets(row,item);}
   row?.querySelector('.set-cmp')?.remove();
   if(item.done){const exNow=getRoutineExercise(rid,did,ei),prevLog=exNow?getPreviousExerciseLog(rid,did,exNow.name):null;if(exNow)row?.insertAdjacentHTML('beforeend',setCompareHtml(exNow,item,prevLog?.setLogs?.[si],si));}
   else{btn.classList.remove('ck');btn.textContent=String(parseInt(si)+1);btn.setAttribute('aria-label','Completar serie '+(Number(si)+1));}
@@ -1740,6 +1836,28 @@ function rGymWeeks(){
     <button class="btn b-md b-blu" style="flex:1;min-height:48px" onclick="generarAnalisisSobrecargaIA()">Revisar con IA</button>
   </div>`;
   h+=`<button class="btn b-md b-g" style="width:100%;margin-bottom:16px;min-height:44px" onclick="openCycleSettings()">Configurar bloque y progresión</button>`;
+  const volRows=computeWeeklyMuscleVolume(activeW,routines.find(x=>x.id===activeRid));
+  if(volRows.length){
+    h+=`<div class="card" style="margin-bottom:16px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <div class="sec-t" style="margin:0">📊 Volumen semanal por músculo</div>
+        <span style="font-size:10px;color:var(--text2)">Meta: 10–20 series/sem</span>
+      </div>
+      ${volRows.map(v=>{
+        const col=MC[v.muscle]||'var(--blue)';
+        const pct=v.planned>0?Math.min(100,Math.round((v.done/v.planned)*100)):0;
+        return `<div style="margin-bottom:8px">
+          <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px">
+            <span><b style="color:${col}">${esc(v.muscle)}</b> <span style="font-size:10px;color:var(--text3)">· ${esc(v.status)}</span></span>
+            <span style="font-family:var(--fm);font-weight:700">${v.done}/${v.planned} series</span>
+          </div>
+          <div style="height:6px;background:var(--bg3);border-radius:4px;overflow:hidden">
+            <div style="width:${pct}%;height:100%;background:${col};border-radius:4px"></div>
+          </div>
+        </div>`;
+      }).join('')}
+    </div>`;
+  }
 
   // Past weeks
   const pastWeeks=weeks.filter(w=>w.completed||w.id!==activeWeekId);
@@ -1770,26 +1888,62 @@ function rGymWeeks(){
   return h+'</div>';
 }
 
+function computeWeeklyMuscleVolume(weekObj,routineObj){
+  const muscles=['Pecho','Espalda','Hombros','Cuádriceps','Femoral','Bíceps','Tríceps','Gemelos','Abdomen'];
+  const summary={};
+  muscles.forEach(m=>{summary[m]={muscle:m,done:0,planned:0};});
+  if(weekObj&&weekObj.days){
+    Object.values(weekObj.days).forEach(day=>{
+      (day.exercises||[]).forEach(ex=>{
+        const m=summary[ex.muscle]?ex.muscle:'Pecho';
+        summary[m].planned+=Number(ex.totalSets??ex.series)||0;
+        summary[m].done+=Number(ex.completedSets)||0;
+      });
+    });
+  }else if(routineObj&&routineObj.days){
+    routineObj.days.forEach(day=>{
+      (day.exercises||[]).forEach((ex,ei)=>{
+        const m=summary[ex.muscle]?ex.muscle:'Pecho';
+        const s=Number(ex.series)||0;
+        summary[m].planned+=s;
+        for(let si=0;si<s;si++){if(sets[`${routineObj.id}|${day.id}|${ei}|${si}`])summary[m].done++;}
+      });
+    });
+  }
+  return Object.values(summary).filter(x=>x.planned>0||x.done>0).map(x=>{
+    const status=x.planned>=10&&x.planned<=20?'Óptimo (10–20)':x.planned>=6&&x.planned<10?'Mantenimiento (6–9)':x.planned>20?'Alto (>20)':'Bajo (<6)';
+    return {...x,status};
+  });
+}
+
 function openCycleSettings(){
   if(!activeRid){tst('Activá una rutina primero');return;}
   const cycle=ensureGymCycle(activeRid),p=gymProfile||{};
-  oOv1(`<div class="mt">Bloque de progresión</div>
+  const curMonths=Number(cycle.planMonths||planHorizon())||12;
+  oOv1(`<div class="mt">Bloque y Plan (3 / 6 / 12 meses)</div>
     <div class="fld"><label>Objetivo principal</label><select class="inp" id="cycle-goal">
       ${[['hipertrofia','Hipertrofia'],['fuerza','Fuerza'],['resistencia','Resistencia'],['salud','Salud general']].map(([v,t])=>`<option value="${v}" ${(cycle.goal||p.goal)===v?'selected':''}>${t}</option>`).join('')}
     </select></div>
+    <div class="fld"><label>Duración del plan por meses</label><select class="inp" id="cycle-plan-months">
+      ${[[3,'3 meses (Trimestral)'],[6,'6 meses (Semestral)'],[12,'12 meses (Anual)']].map(([m,lbl])=>`<option value="${m}" ${curMonths===m?'selected':''}>${lbl}</option>`).join('')}
+    </select></div>
     <div class="inp-r">
-      <div class="fld"><label>Semanas por bloque</label><select class="inp" id="cycle-length">${[4,5,6,8].map(n=>`<option value="${n}" ${Number(cycle.length)===n?'selected':''}>${n}</option>`).join('')}</select></div>
+      <div class="fld"><label>Semanas por bloque</label><select class="inp" id="cycle-length">${[4,5,6,8,12].map(n=>`<option value="${n}" ${Number(cycle.length)===n?'selected':''}>${n}</option>`).join('')}</select></div>
       <div class="fld"><label>Incremento mínimo</label><select class="inp" id="cycle-inc">${[0.5,1,1.25,2.5,5].map(n=>`<option value="${n}" ${Number(p.loadIncrement||2.5)===n?'selected':''}>${n} kg</option>`).join('')}</select></div>
     </div>
     <div class="alert al-info"><div class="al-t">La app usa doble progresión: primero reps, después carga. Nunca sube peso sólo por marcar una serie.</div></div>
+    <button class="btn b-md b-g" style="width:100%;margin-bottom:8px" onclick="openYearPlan()">🗓 Abrir Plan de 3, 6 o 12 meses</button>
     <button class="btn b-lg b-p" onclick="saveCycleSettings()">Guardar bloque</button>`);
 }
 function saveCycleSettings(){
   const cycle=ensureGymCycle(activeRid);if(!cycle)return;
   cycle.goal=document.getElementById('cycle-goal')?.value||'hipertrofia';
+  const pm=Number(document.getElementById('cycle-plan-months')?.value)||12;
+  cycle.planMonths=pm;
+  S.s('gymPlanHorizon1',pm);
   cycle.length=Math.max(3,Math.min(12,Number(document.getElementById('cycle-length')?.value)||6));
   gymProfile={...(gymProfile||{}),goal:cycle.goal,loadIncrement:Number(document.getElementById('cycle-inc')?.value)||2.5};
-  S.s('gymCycles1',gymCycles);S.s('gymProfile',gymProfile);cOv1();renderGym();tst('Bloque de progresión actualizado');
+  S.s('gymCycles1',gymCycles);S.s('gymProfile',gymProfile);cOv1();renderGym();tst(`✓ Bloque actualizado (Plan ${pm} meses)`);
 }
 
 function compareWeekRow(prev,curr){
@@ -1914,7 +2068,10 @@ function rGymNutricion(){
   h+=`<div class="card" style="margin-bottom:14px;border-color:#34D39940">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
       <div class="sec-t" style="margin:0">🎯 Mi objetivo</div>
-      <button class="btn b-sm b-g" onclick="openNutGoalModal()" style="font-size:11px">Editar</button>
+      <div style="display:flex;gap:6px">
+        <button class="btn b-sm b-grn" onclick="openNutTemplatesModal()" style="font-size:11px">🇺🇾 Planes listos</button>
+        <button class="btn b-sm b-g" onclick="openNutGoalModal()" style="font-size:11px">Editar</button>
+      </div>
     </div>`;
   if(nd.dietType){
     h+=`<div style="display:flex;gap:16px;flex-wrap:wrap;font-size:12px">
@@ -1973,14 +2130,6 @@ function rGymNutricion(){
         <div style="font-size:11px;color:var(--text2)">de ${target} vasos · ${remaining>0?`faltan ${remaining}`:'¡Completado! ✅'}</div>
       </div>
     </div>
-    <div class="inp-r">
-      <div class="fld"><label>Minutos por sesión</label>
-        <select class="inp" id="air-mins"><option>35</option><option>45</option><option selected>60</option><option>75</option><option>90</option></select>
-      </div>
-      <div class="fld"><label>Semanas del bloque</label>
-        <select class="inp" id="air-cycle"><option>4</option><option selected>6</option><option>8</option></select>
-      </div>
-    </div>
     <div class="pbar" style="margin-bottom:12px"><div class="pfill" style="width:${waterPct}%;background:${glasses>=target?'var(--green)':'var(--blue)'}"></div></div>
     <div style="display:flex;gap:8px">
       <button class="btn b-md b-grn" style="flex:1" onclick="addWater(1)">+ 1 vaso (250ml)</button>
@@ -2027,21 +2176,139 @@ function rGymNutricion(){
   // ── Plan semanal IA ──
   h+=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
     <div class="sec-t" style="margin:0">📅 Plan semanal</div>
-    ${key?`<button class="btn b-sm b-p" onclick="askWeeklyPlan()">✨ Generar semana</button>`:`<span style="font-size:10px;color:var(--text2)">Configurá IA</span>`}
+    <div style="display:flex;gap:6px">
+      <button class="btn b-sm b-grn" onclick="openNutTemplatesModal()">🇺🇾 Planes listos</button>
+      ${key?`<button class="btn b-sm b-p" onclick="askWeeklyPlan()">✨ Con IA</button>`:''}
+    </div>
   </div>`;
   if(nd.weeklyPlan){
     h+=`<div class="card">${nd.weeklyPlan}</div>`;
   } else {
     h+=`<div class="card" style="text-align:center;padding:20px">
       <div style="font-size:24px;margin-bottom:6px">📅</div>
-      <div style="font-size:12px;color:var(--text2);line-height:1.5">${key?'La IA arma un plan de 7 días según tu objetivo, tipo de dieta y lo que entrenás.':'Configurá tu IA en el chat'}</div>
-      ${key?`<button class="btn b-md b-p" style="margin-top:12px" onclick="askWeeklyPlan()">✨ Generar plan semanal</button>`:''}
+      <div style="font-size:12px;color:var(--text2);line-height:1.5">${key?'Elegí un plan uruguayo listo o generá uno de 7 días con IA según tu objetivo.':'Elegí uno de los 4 planes nutricionales uruguayos listos para usar.'}</div>
+      <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:12px">
+        <button class="btn b-md b-grn" onclick="openNutTemplatesModal()">🇺🇾 Elegir plan uruguayo</button>
+        ${key?`<button class="btn b-md b-p" onclick="askWeeklyPlan()">✨ Generar con IA</button>`:''}
+      </div>
     </div>`;
   }
 
   h+=`</div>`;
   setTimeout(()=>{ring('wtr-ring',waterPct,glasses>=target?'var(--green)':'var(--blue)',waterPct+'%',64);if(calGoal>0)ring('cal-ring',calPct,consumed>calGoal?'var(--red)':'var(--green)',calPct+'%',64);},50);
   return h;
+}
+
+const GYM_NUT_TEMPLATES=[
+  {
+    id:'nut_deficit_uy',
+    title:'🔥 Déficit Sostenible & Saciedad (Definición)',
+    dietType:'bajar_lento',
+    cals:2150,
+    prot:185,
+    desc:'Alto en proteína y volumen vegetal para perder grasa corporal sin perder fuerza en los básicos.',
+    plan:[
+      {momento:'Desayuno',comida:'3 huevos revueltos + 2 tostadas de pan integral + café o mate amargo',calorias:390,proteinas:26,nota:'Proteína alta desde temprano para controlar el apetito.'},
+      {momento:'Almuerzo',comida:'220g de pechuga de pollo a la plancha + ensalada grande (tomate, hojas verdes, zanahoria) con 1 cdita de oliva + 120g de arroz o papa al horno',calorias:580,proteinas:56,nota:'Almuerzo saciante sin somnolencia a la tarde.'},
+      {momento:'Merienda (Pre-entreno)',comida:'1 yogur natural proteico o descremado + 1 scoop de whey protein (o 3 claras + 1 huevo) + 1 banana mediana',calorias:360,proteinas:34,nota:'45-60 min antes de entrenar para rendir al máximo.'},
+      {momento:'Cena (Post-entreno)',comida:'220g de churrasco magro (cuadril/bola de lomo) o atún/merluza + 180g de boniato al horno + brócoli o zapallitos',calorias:610,proteinas:54,nota:'Recuperación muscular nocturna.'},
+      {momento:'Colación opcional',comida:'200g de gelatina sin azúcar o 150g de queso magro / ricota descremada',calorias:160,proteinas:15,nota:'Solo si tenés hambre antes de dormir.'}
+    ],
+    consejo:'Priorizá 2.2g de proteína por kg de peso y caminá 7.000-9.000 pasos diarios.',
+    aguaRecomendada:'3.0 a 3.5 litros diarios'
+  },
+  {
+    id:'nut_recomp_uy',
+    title:'⚡ Recomposición Corporal Alta Proteína (85-90 kg)',
+    dietType:'recomp',
+    cals:2550,
+    prot:195,
+    desc:'Calorías de mantenimiento ajustadas para ganar masa muscular y reducir cintura al mismo tiempo.',
+    plan:[
+      {momento:'Desayuno',comida:'Omelette de 3 huevos + 50g de avena con leche descremada y canela + mate',calorias:520,proteinas:34,nota:'Energía sostenida para toda la mañana.'},
+      {momento:'Media mañana',comida:'1 fruta (manzana o mandarina) + 30g de frutos secos o 2 huevos duros',calorias:230,proteinas:12,nota:'Colación práctica para el trabajo.'},
+      {momento:'Almuerzo',comida:'250g de bife de vacío magro / nalga / pollo + 200g de arroz cocido + ensalada mixta',calorias:740,proteinas:60,nota:'Plato completo y fácil de sostener.'},
+      {momento:'Merienda',comida:'Licuado o bowl: 250ml leche + 1 scoop whey (o 150g ricota magra) + 1 banana + 1 cda mantequilla de maní',calorias:440,proteinas:38,nota:'Ideal pre o post entrenamiento.'},
+      {momento:'Cena',comida:'220g de suprema de pollo o merluza + 250g de puré de calabaza y papa + 1 huevo duro picado',calorias:620,proteinas:51,nota:'Excelente digestión antes de dormir.'}
+    ],
+    consejo:'En los días de torso pesado o pierna, concentrá el arroz y la banana alrededor del entrenamiento.',
+    aguaRecomendada:'3.2 a 3.5 litros diarios'
+  },
+  {
+    id:'nut_fuerza_mantenimiento_uy',
+    title:'🏋️ Mantenimiento Atlético & Fuerza (Bilbo / 4D)',
+    dietType:'mantener',
+    cals:2800,
+    prot:190,
+    desc:'Pensado para etapas de récord de fuerza o Método Bilbo donde necesitás máxima recuperación articular y nerviosa.',
+    plan:[
+      {momento:'Desayuno',comida:'3 huevos + 2 rebanadas de pan integral tostado + 1 palta chica + café con leche',calorias:590,proteinas:30,nota:'Grasas saludables y proteína completa.'},
+      {momento:'Almuerzo',comida:'250g de carne vacuna magra + 250g de fideos al dente o arroz + ensalada verde con aceite de oliva',calorias:850,proteinas:62,nota:'Alto aporte energético para sostener cargas altas.'},
+      {momento:'Merienda Pre-entreno',comida:'Yogur griego/proteico + 60g de avena + 1 banana + 5g de creatina monohidrato',calorias:490,proteinas:28,nota:'La creatina diaria (5g) mejora directamente las repeticiones explosivas.'},
+      {momento:'Cena Post-entreno',comida:'250g de pollo al horno o colita de cuadril + 250g de papas rústicas al horno + vegetales asados',calorias:750,proteinas:58,nota:'Reposición completa de glucógeno muscular.'},
+      {momento:'Media tarde',comida:'1 lata de atún o 40g de queso colonia magro + 1 fruta',calorias:180,proteinas:16,nota:'Refuerzo proteico simple.'}
+    ],
+    consejo:'Dormir 7.5h+ y tomar 5g de creatina todos los días multiplica la respuesta en bloques de fuerza.',
+    aguaRecomendada:'3.5 litros diarios'
+  },
+  {
+    id:'nut_masa_limpia_uy',
+    title:'📈 Volumen Limpio Rioplatense (Masa Muscular)',
+    dietType:'masa',
+    cals:3150,
+    prot:200,
+    desc:'Superávit controlado (+300 kcal) con comida real para ganar músculo minimizando la ganancia de grasa abdominal.',
+    plan:[
+      {momento:'Desayuno',comida:'4 huevos revueltos + 70g de avena con leche + 1 banana + miel',calorias:720,proteinas:40,nota:'Arranque calórico limpio y denso.'},
+      {momento:'Media mañana',comida:'Sándwich en pan integral con 120g de pollo desmenuzado o atún + queso magro',calorias:380,proteinas:32,nota:'Práctico para llevar al trabajo.'},
+      {momento:'Almuerzo',comida:'250g de carne roja magra + 280g de arroz o pastas + 1 cda aceite de oliva + ensalada',calorias:920,proteinas:62,nota:'Base del superávit diario.'},
+      {momento:'Merienda',comida:'Batido: 300ml leche + 1 scoop whey + 50g avena + 1 cda pasta de maní',calorias:510,proteinas:38,nota:'Calorías líquidas fáciles de digerir antes o después de entrenar.'},
+      {momento:'Cena',comida:'220g de pollo o pescado + 250g de boniato/papa + ensalada con 1 huevo duro',calorias:620,proteinas:52,nota:'Cierre proteico sin pesadez.'}
+    ],
+    consejo:'Buscá subir entre 0.8 y 1.2 kg por mes como máximo; si subís más rápido, reducí 50g de arroz en almuerzo y cena.',
+    aguaRecomendada:'3.5 litros diarios'
+  }
+];
+
+function openNutTemplatesModal(){
+  let h=`<div class="mt">🇺🇾 Planes Nutricionales Uruguayos</div>
+    <div style="font-size:11.5px;color:var(--text2);line-height:1.5;margin-bottom:12px">Elegí un plan base con alimentos cotidianos de Uruguay. Se guarda en tu sección de Nutrición como plan del día y guía semanal (sin consumir cuota de IA).</div>
+    <div style="max-height:68dvh;overflow-y:auto">`;
+  GYM_NUT_TEMPLATES.forEach(t=>{
+    h+=`<div class="card" style="margin-bottom:10px;border-color:rgba(16,210,155,.28)">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">
+        <div style="font-family:var(--fd);font-size:15px;font-weight:800">${esc(t.title)}</div>
+        <span class="chip" style="background:var(--green-d);color:var(--green);border:1px solid var(--green-b)">${t.cals} kcal · ${t.prot}g P</span>
+      </div>
+      <div style="font-size:11.5px;color:var(--text2);line-height:1.45;margin-bottom:8px">${esc(t.desc)}</div>
+      <div style="font-size:11px;color:var(--text1);background:var(--bg3);border-radius:8px;padding:8px 10px;margin-bottom:10px">
+        ${t.plan.map(m=>`<div style="margin-bottom:4px"><b>${esc(m.momento)}:</b> ${esc(m.comida)} <span style="color:var(--text2)">(${m.calorias} kcal · ${m.proteinas}g P)</span></div>`).join('')}
+      </div>
+      <button class="btn b-md b-grn" style="width:100%" onclick="applyNutTemplate('${t.id}')">✓ Usar este plan nutricional</button>
+    </div>`;
+  });
+  h+=`</div>`;
+  oOv1(h);
+}
+function applyNutTemplate(templateId){
+  const t=GYM_NUT_TEMPLATES.find(x=>x.id===templateId);if(!t)return;
+  nutData.dietType=t.dietType;
+  const weekDays=['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado','Domingo'];
+  let weeklyHtml=`<div style="font-size:12px;color:var(--text2);margin-bottom:8px"><b>${esc(t.title)}</b> · Meta ~${t.cals} kcal y ${t.prot}g de proteína diaria.</div>`;
+  weekDays.forEach((dName,idx)=>{
+    const isTrainDay=idx===0||idx===1||idx===3||idx===4;
+    weeklyHtml+=`<div style="font-weight:700;color:#34D399;margin:10px 0 4px;font-size:13px">${dName} ${isTrainDay?'(Día de Entreno 💪)':'(Recuperación / Cardio suave 🚶)'}</div>
+      <div style="font-size:12px;line-height:1.55;color:var(--text1)">
+        ${t.plan.map(m=>`• <b>${esc(m.momento)}:</b> ${esc(m.comida)} (${m.calorias} kcal)`).join('<br>')}
+      </div>`;
+  });
+  weeklyHtml+=`<div style="font-size:11px;color:var(--blue);margin-top:10px;padding-top:8px;border-top:1px solid var(--border)">💡 ${esc(t.consejo)} · 💧 ${esc(t.aguaRecomendada)}</div>`;
+  nutData.weeklyPlan=weeklyHtml;
+  nutData.weeklyPlanDate=todayStr();
+  S.s('nutData',nutData);
+  cOv1();
+  renderGym();
+  tst(`🥗 Plan "${t.title}" activado`);
 }
 
 // ════════════════════════════════════════════
@@ -3256,6 +3523,8 @@ function monthKey(date=new Date()){return date.getFullYear()+'-'+String(date.get
 function monthLabel(key,short=false){const [y,m]=key.split('-').map(Number);return (short?MS:MONTHS)[m-1]+(short?'':' '+y);}
 function nextMonthKeys(n=12,from=new Date()){return Array.from({length:n},(_,i)=>monthKey(new Date(from.getFullYear(),from.getMonth()+i,1)));}
 function gymPlan(){return S.g('gymPlan1',{})||{};}
+function planHorizon(){const h=Number(S.g('gymPlanHorizon1',12));return [3,6,12].includes(h)?h:12;}
+function setPlanHorizon(months){const m=Number(months);if(![3,6,12].includes(m))return;S.s('gymPlanHorizon1',m);if(typeof window!=='undefined')window._renderYearPlan?.();if(typeof renderGym==='function')renderGym();}
 function ensureProgramsForGym(){
   if(_programsData||_programsPromise)return;
   loadPrograms().then(()=>{if(curPage==='gym'&&(curGT===7||curGT===0))renderGym();}).catch(()=>{if(curPage==='gym'&&curGT===7)renderGym();});
@@ -3280,12 +3549,12 @@ function rGymPrograms(){
     if(_programsError&&!_programsPromise)return `<div class="sec"><div class="empty"><div class="empty-i">📚</div><div class="empty-t">No se pudo cargar la biblioteca</div><div class="empty-s">${esc(_programsError)}</div><button class="btn b-md b-p" style="margin-top:14px" onclick="_programsError='';renderGym()">Reintentar</button></div></div>`;
     return `<div class="sec"><div class="pg-skel"></div><div class="pg-skel"></div><div class="pg-skel"></div></div>`;
   }
-  const f=gymProgFilter(),list=filteredPrograms(),plan=gymPlan(),thisMonth=plan[monthKey()];
+  const f=gymProgFilter(),list=filteredPrograms(),plan=gymPlan(),thisMonth=plan[monthKey()],horizon=planHorizon();
   const disciplines=Object.entries(_programsData.disciplines||{});
   const activeProgram=routines.find(r=>r.id===activeRid)?.programId;
   return `<div class="sec">
     ${monthPlanBannerHtml()}
-    <button type="button" class="plan-open" onclick="openYearPlan()"><span class="plan-open-i" aria-hidden="true">🗓</span><span><strong>Plan del año</strong><small>${Object.keys(plan).filter(k=>nextMonthKeys().includes(k)).length} de 12 meses con programa</small></span><span aria-hidden="true">›</span></button>
+    <button type="button" class="plan-open" onclick="openYearPlan()"><span class="plan-open-i" aria-hidden="true">🗓</span><span><strong>Plan de ${horizon} meses (3 / 6 / 12m)</strong><small>${Object.keys(plan).filter(k=>nextMonthKeys(horizon).includes(k)).length} de ${horizon} meses con programa</small></span><span aria-hidden="true">›</span></button>
     <div class="pg-filters">
       <div class="pg-row" role="group" aria-label="Disciplina">${progChip('Todas',f.discipline==='all',"setProgFilter('discipline','all')")}${disciplines.map(([id,name])=>progChip(esc(name),f.discipline===id,`setProgFilter('discipline','${id}')`)).join('')}</div>
       <div class="pg-row" role="group" aria-label="Días por semana">${[2,3,4,6].map(n=>progChip('Hasta '+n+' días',Number(f.maxDays)===n,`setProgFilter('maxDays',${n})`)).join('')}${progChip('Cualquiera',!f.maxDays,"setProgFilter('maxDays',0)")}</div>
@@ -3372,13 +3641,14 @@ function startMonthProgram(){const id=gymPlan()[monthKey()];if(id)useProgram(id)
 function openYearPlan(pickId=null){
   window._planPick=pickId;
   const render=()=>{
-    const plan=gymPlan(),keys=nextMonthKeys(),pick=window._planPick&&programById(window._planPick);
-    return `<div class="mt" style="margin-bottom:4px">Plan del año</div>
-      <div class="ed-sum" style="margin-bottom:14px">Un programa por mes. Al empezar cada mes, la app te avisa cuál toca.</div>
+    const horizon=planHorizon(),plan=gymPlan(),keys=nextMonthKeys(horizon),pick=window._planPick&&programById(window._planPick);
+    return `<div class="mt" style="margin-bottom:4px">Plan de ${horizon} meses</div>
+      <div class="ed-sum" style="margin-bottom:10px">Elegí si querés armar tu plan a <b>3 meses</b>, <b>6 meses</b> o <b>12 meses</b>. Un programa por mes; al empezar cada mes la app te avisa cuál toca.</div>
+      <div class="pg-row" role="group" aria-label="Duración del plan" style="margin-bottom:14px">${[3,6,12].map(m=>progChip(m+' meses',horizon===m,`setPlanHorizon(${m})`)).join('')}</div>
       ${pick?`<div class="plan-pick" style="--pc:${programColor(pick)}">Tocá el mes donde querés <strong>${esc(pick.name)}</strong></div>`:''}
       <div class="year-grid">${keys.map((k,i)=>{const p=programById(plan[k]);return `<button type="button" class="year-cell${p?' set':''}${i===0?' now':''}" style="--pc:${p?programColor(p):'var(--border2)'}" onclick="pickPlanMonth('${k}')" aria-label="${monthLabel(k)}: ${p?esc(p.name):'sin programa'}">
         <span class="year-m">${monthLabel(k,true)}${k.endsWith('-01')||i===0?' '+k.slice(0,4):''}</span><span class="year-p">${p?esc(p.name.split('·')[0].trim()):'—'}</span></button>`;}).join('')}</div>
-      <div class="sec-t" style="margin-top:18px">Cargar un año armado</div>
+      <div class="sec-t" style="margin-top:18px">Cargar un plan armado (${horizon} meses)</div>
       ${(_programsData?.yearTemplates||[]).map(t=>`<button type="button" class="tpl-card" onclick="applyYearTemplate('${esc(t.id)}')"><strong>${esc(t.name)}</strong><small>${esc(t.summary||'')}${t.maxDaysPerWeek?' · hasta '+Number(t.maxDaysPerWeek)+' días':''}</small></button>`).join('')}`;
   };
   window._renderYearPlan=()=>{const el=document.getElementById('year-plan');if(el)el.innerHTML=render();};
@@ -3405,12 +3675,12 @@ function yearTemplatePlan(template,plan,keys,replace){
 }
 function applyYearTemplate(id){
   const t=_programsData?.yearTemplates?.find(x=>x.id===id);if(!t)return;
-  const plan=gymPlan(),keys=nextMonthKeys();
-  if(!confirm(`¿Cargar "${t.name}" de ${monthLabel(keys[0])} a ${monthLabel(keys[11])}?`))return;
+  const horizon=planHorizon(),plan=gymPlan(),keys=nextMonthKeys(horizon);
+  if(!confirm(`¿Cargar "${t.name}" por ${horizon} meses (${monthLabel(keys[0])} a ${monthLabel(keys[keys.length-1])})?`))return;
   const monthOf=k=>t.months?.[Number(k.slice(5,7))-1];
   const taken=keys.filter(k=>plan[k]&&monthOf(k)&&plan[k]!==monthOf(k)).length;
   const replace=taken>0&&confirm(`Ya elegiste programa en ${plural(taken,'mes','meses')} distinto${taken===1?'':'s'}. ¿Reemplazarlo${taken===1?'':'s'} también? (Cancelar = los dejo como están)`);
-  S.s('gymPlan1',yearTemplatePlan(t,plan,keys,replace));window._renderYearPlan?.();renderGym();tst('✓ Plan del año cargado');
+  S.s('gymPlan1',yearTemplatePlan(t,plan,keys,replace));window._renderYearPlan?.();renderGym();tst(`✓ Plan de ${horizon} meses cargado`);
 }
 // ── Crear rutina con IA (incluye opción de entrenar en casa) ──
 function openAIRoutine(){
@@ -3431,6 +3701,14 @@ function openAIRoutine(){
       </div>
       <div class="fld"><label>Nivel</label>
         <select class="inp" id="air-nivel"><option value="principiante">Principiante</option><option value="intermedio" selected>Intermedio</option><option value="avanzado">Avanzado</option></select>
+      </div>
+    </div>
+    <div class="inp-r">
+      <div class="fld"><label>Minutos por sesión</label>
+        <select class="inp" id="air-mins"><option>35</option><option>45</option><option selected>60</option><option>75</option><option>90</option></select>
+      </div>
+      <div class="fld"><label>Semanas del bloque</label>
+        <select class="inp" id="air-cycle"><option>4</option><option selected>6</option><option>8</option></select>
       </div>
     </div>
     <div class="fld"><label>Objetivo</label>

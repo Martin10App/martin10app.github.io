@@ -7,7 +7,10 @@
     {
       "id": "0025",
       "aliases": [
-        "Press banca plano con barra"
+        "Press banca plano con barra",
+        "Press banca plano Método Bilbo",
+        "Press de banca plano con barra",
+        "Press banca con pausa"
       ],
       "name": "barbell bench press",
       "body_part": "chest",
@@ -20,7 +23,9 @@
     {
       "id": "0314",
       "aliases": [
-        "Press banca inclinado con mancuernas"
+        "Press banca inclinado con mancuernas",
+        "Press inclinado con mancuernas",
+        "Press inclinado en máquina"
       ],
       "name": "dumbbell incline bench press",
       "body_part": "chest",
@@ -124,7 +129,10 @@
     {
       "id": "0662",
       "aliases": [
-        "Push-up con lastre"
+        "Push-up con lastre",
+        "Flexiones explosivas",
+        "Flexiones en el suelo",
+        "Lagartijas"
       ],
       "name": "push-up",
       "body_part": "chest",
@@ -137,7 +145,10 @@
     {
       "id": "0652",
       "aliases": [
-        "Dominadas con agarre prono"
+        "Dominadas con agarre prono",
+        "Dominadas estrictas con agarre prono, neutro o supino",
+        "Dominadas lastradas",
+        "Dominadas supinas"
       ],
       "name": "pull-up",
       "body_part": "back",
@@ -150,7 +161,9 @@
     {
       "id": "0027",
       "aliases": [
-        "Remo con barra"
+        "Remo con barra",
+        "Remo Pendlay con barra",
+        "Remo con pecho apoyado en máquina o banco"
       ],
       "name": "barbell bent over row",
       "body_part": "back",
@@ -163,7 +176,9 @@
     {
       "id": "2330",
       "aliases": [
-        "Jalón al pecho en polea alta"
+        "Jalón al pecho en polea alta",
+        "Jalón al pecho con agarre neutro o prono",
+        "Jalón al pecho agarre neutro"
       ],
       "name": "cable lat pulldown full range of motion",
       "body_part": "back",
@@ -176,7 +191,9 @@
     {
       "id": "0213",
       "aliases": [
-        "Remo en polea baja con barra V"
+        "Remo en polea baja con barra V",
+        "Remo unilateral en máquina o polea con apoyo",
+        "Remo sentado en polea"
       ],
       "name": "cable seated high row (v-bar)",
       "body_part": "back",
@@ -268,7 +285,9 @@
     {
       "id": "0043",
       "aliases": [
-        "Sentadilla con barra"
+        "Sentadilla con barra",
+        "Sentadilla Goblet con mancuerna",
+        "Salto vertical con contramovimiento"
       ],
       "name": "barbell full squat",
       "body_part": "upper legs",
@@ -281,7 +300,9 @@
     {
       "id": "0739",
       "aliases": [
-        "Prensa 45°"
+        "Prensa 45°",
+        "Hack squat",
+        "Prensa de piernas 45°"
       ],
       "name": "sled 45в° leg press",
       "body_part": "upper legs",
@@ -294,7 +315,8 @@
     {
       "id": "0585",
       "aliases": [
-        "Extensión de cuádriceps en máquina"
+        "Extensión de cuádriceps en máquina",
+        "Extensión de cuádriceps"
       ],
       "name": "lever leg extension",
       "body_part": "upper legs",
@@ -307,7 +329,9 @@
     {
       "id": "0586",
       "aliases": [
-        "Curl femoral tumbado"
+        "Curl femoral tumbado",
+        "Curl femoral sentado",
+        "Curl femoral en máquina"
       ],
       "name": "lever lying leg curl",
       "body_part": "upper legs",
@@ -320,7 +344,9 @@
     {
       "id": "0116",
       "aliases": [
-        "Peso muerto piernas rígidas"
+        "Peso muerto piernas rígidas",
+        "Peso muerto rumano con barra",
+        "Peso muerto rumano con mancuernas"
       ],
       "name": "barbell straight leg deadlift",
       "body_part": "upper legs",
@@ -450,7 +476,8 @@
     {
       "id": "0383",
       "aliases": [
-        "Pájaro inclinado con mancuernas"
+        "Pájaro inclinado con mancuernas",
+        "Vuelo de pájaros en máquina"
       ],
       "name": "dumbbell reverse fly",
       "body_part": "shoulders",
@@ -476,7 +503,8 @@
     {
       "id": "0603",
       "aliases": [
-        "Press en máquina de hombros"
+        "Press en máquina de hombros",
+        "Press militar en máquina"
       ],
       "name": "lever shoulder press",
       "body_part": "shoulders",
@@ -489,7 +517,9 @@
     {
       "id": "0178",
       "aliases": [
-        "Elevaciones laterales en polea baja"
+        "Elevaciones laterales en polea baja",
+        "Elevación lateral unilateral en polea baja",
+        "Elevaciones laterales en máquina o polea"
       ],
       "name": "cable lateral raise",
       "body_part": "shoulders",
@@ -502,7 +532,8 @@
     {
       "id": "0405",
       "aliases": [
-        "Press con mancuernas sentado"
+        "Press con mancuernas sentado",
+        "Press militar con mancuernas sentado"
       ],
       "name": "dumbbell seated shoulder press",
       "body_part": "shoulders",
@@ -515,7 +546,8 @@
     {
       "id": "0031",
       "aliases": [
-        "Curl con barra recta"
+        "Curl con barra recta",
+        "Curl de bíceps con barra Z"
       ],
       "name": "barbell curl",
       "body_part": "upper arms",
@@ -528,7 +560,8 @@
     {
       "id": "0285",
       "aliases": [
-        "Curl con mancuernas alternado"
+        "Curl con mancuernas alternado",
+        "Curl inclinado con mancuernas"
       ],
       "name": "dumbbell alternate biceps curl",
       "body_part": "upper arms",
@@ -541,7 +574,8 @@
     {
       "id": "1627",
       "aliases": [
-        "Curl predicador con barra Z"
+        "Curl predicador con barra Z",
+        "Curl de bíceps en banco Scott o polea baja"
       ],
       "name": "ez barbell close grip preacher curl",
       "body_part": "upper arms",
@@ -580,7 +614,9 @@
     {
       "id": "0241",
       "aliases": [
-        "Extensión de tríceps en polea alta"
+        "Extensión de tríceps en polea alta",
+        "Extensión de tríceps por encima de la cabeza con cuerda",
+        "Extensión de tríceps en polea con cuerda"
       ],
       "name": "cable triceps pushdown (v-bar)",
       "body_part": "upper arms",

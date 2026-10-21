@@ -6416,6 +6416,299 @@
      "url": "https://www.muscleandstrength.com/workouts/phul-workout"
     }
    ]
+  },
+  {
+   "id": "salida-estancamiento-4d",
+   "name": "Salida de estancamiento · Fuerza, hipertrofia y explosividad A/B/C+D 4 días",
+   "discipline": "fuerza",
+   "level": "avanzado",
+   "daysPerWeek": 4,
+   "weeks": 6,
+   "sessionMin": 55,
+   "equipment": [
+    "gimnasio completo"
+   ],
+   "goal": "fuerza",
+   "summary": "Versión optimizada de 6 ejercicios clave por sesión para salir de una meseta de fuerza y sostener 90-100% de adherencia semanal sin acumular volumen basura ni fatiga articular.",
+   "progression": "Doble progresión en los dos primeros ejercicios del día (RIR 1-2) y biseries antagonistas al cierre para sostener densidad en menos de 60 minutos.",
+   "basedOn": "Periodización ondulante diaria (DUP) y recorte de volumen redundante según Pelland et al. (2024) y Helms et al. (3DMJ) para atletas intermedios-avanzados con agenda laboral exigente.",
+   "weekPlan": [
+    {"week": 1, "focus": "Ajuste de cargas reales en los 6 ejercicios por día", "rir": "2-3", "volume": "100%"},
+    {"week": 2, "focus": "Acumulación fluida sin fallar repeticiones", "rir": "2", "volume": "100%"},
+    {"week": 3, "focus": "Subida de repeticiones en básicos de torso y pierna", "rir": "1-2", "volume": "100%"},
+    {"week": 4, "focus": "Salto de carga (+2,5 kg) al alcanzar el tope del rango", "rir": "1-2", "volume": "100%"},
+    {"week": 5, "focus": "Semana de récord controlado en básicos", "rir": "1", "volume": "100%"},
+    {"week": 6, "focus": "Descarga activa para supercompensar", "rir": "3-4", "volume": "60% de las series"}
+   ],
+   "days": [
+    {
+     "label": "Día A · Torso Fuerza",
+     "exercises": [
+      {"name": "Press banca plano con barra", "muscle": "Pecho", "series": 4, "reps": "4-6", "rir": "2", "rest": "3 min"},
+      {"name": "Dominadas con agarre prono", "muscle": "Espalda", "series": 4, "reps": "6-8", "rir": "2", "rest": "2-3 min"},
+      {"name": "Press banca inclinado con mancuernas", "muscle": "Pecho", "series": 3, "reps": "8-10", "rir": "1-2", "rest": "2 min"},
+      {"name": "Remo con barra", "muscle": "Espalda", "series": 3, "reps": "6-10", "rir": "2", "rest": "2 min"},
+      {"name": "Elevaciones laterales en polea baja", "muscle": "Hombros", "series": 3, "reps": "12-15", "rir": "1", "rest": "60 s", "superset": "A"},
+      {"name": "Press francés con barra Z", "muscle": "Tríceps", "series": 3, "reps": "8-12", "rir": "1", "rest": "60 s", "superset": "A"}
+     ]
+    },
+    {
+     "label": "Día B · Pierna Fuerza y Core",
+     "exercises": [
+      {"name": "Sentadilla con barra", "muscle": "Cuádriceps", "series": 4, "reps": "5-6", "rir": "2", "rest": "3 min"},
+      {"name": "Peso muerto piernas rígidas", "muscle": "Femoral", "series": 4, "reps": "6-8", "rir": "2", "rest": "2-3 min"},
+      {"name": "Prensa 45°", "muscle": "Cuádriceps", "series": 3, "reps": "8-10", "rir": "1-2", "rest": "2 min"},
+      {"name": "Curl femoral tumbado", "muscle": "Femoral", "series": 3, "reps": "10-12", "rir": "1", "rest": "90 s"},
+      {"name": "Gemelos de pie en máquina", "muscle": "Gemelos", "series": 4, "reps": "10-15", "rir": "1", "rest": "60 s", "superset": "A"},
+      {"name": "Rueda abdominal (Ab wheel)", "muscle": "Abdomen", "series": 3, "reps": "8-12", "rir": "1-2", "rest": "60 s", "superset": "A"}
+     ]
+    },
+    {
+     "label": "Día C · Torso Hipertrofia",
+     "exercises": [
+      {"name": "Press con mancuernas sentado", "muscle": "Hombros", "series": 4, "reps": "6-10", "rir": "1-2", "rest": "2 min"},
+      {"name": "Jalón al pecho en polea alta", "muscle": "Espalda", "series": 4, "reps": "8-12", "rir": "1-2", "rest": "2 min"},
+      {"name": "Fondos en paralelas", "muscle": "Pecho", "series": 3, "reps": "8-12", "rir": "1-2", "rest": "2 min"},
+      {"name": "Remo en polea baja con barra V", "muscle": "Espalda", "series": 3, "reps": "10-12", "rir": "1", "rest": "90 s"},
+      {"name": "Face pull en polea", "muscle": "Hombros", "series": 3, "reps": "12-15", "rir": "1", "rest": "60 s", "superset": "A"},
+      {"name": "Curl con barra recta", "muscle": "Bíceps", "series": 3, "reps": "8-12", "rir": "1", "rest": "60 s", "superset": "A"}
+     ]
+    },
+    {
+     "label": "Día D · Pierna Hipertrofia y Explosividad",
+     "exercises": [
+      {"name": "Hip thrust con barra", "muscle": "Femoral", "series": 4, "reps": "8-10", "rir": "1-2", "rest": "2 min"},
+      {"name": "Sentadilla búlgara", "muscle": "Cuádriceps", "series": 3, "reps": "8-10", "rir": "1-2", "rest": "2 min"},
+      {"name": "Extensión de cuádriceps en máquina", "muscle": "Cuádriceps", "series": 3, "reps": "12-15", "rir": "1", "rest": "75 s", "superset": "A"},
+      {"name": "Curl femoral sentado", "muscle": "Femoral", "series": 3, "reps": "12-15", "rir": "1", "rest": "75 s", "superset": "A"},
+      {"name": "Curl con mancuernas en banco inclinado", "muscle": "Bíceps", "series": 3, "reps": "10-12", "rir": "1", "rest": "60 s", "superset": "B"},
+      {"name": "Extensión de tríceps en polea alta", "muscle": "Tríceps", "series": 3, "reps": "10-15", "rir": "1", "rest": "60 s", "superset": "B"}
+     ]
+    }
+   ],
+   "nutrition": {
+    "target": "Mantenimiento o recomposición corporal para sostener fuerza sin pesadez",
+    "calories": "Mantenimiento (~31-33 kcal/kg) con carbohidratos concentrados antes y después de entrenar",
+    "protein": "1,8 a 2,2 g por kg de peso corporal por día",
+    "note": "Priorizar hidratación (3+ litros) y 7,5 h de sueño en las semanas 4 y 5."
+   },
+   "sources": [
+    {"title": "Pelland et al. (2024) — The Resistance Training Dose-Response: Meta-Regressions", "url": "https://pubmed.ncbi.nlm.nih.gov/38970765/"}
+   ]
+  },
+  {
+   "id": "arnold-antagonista-4d",
+   "name": "Arnold Split Antagonista · Pecho/Espalda y Hombros/Brazos 4 días",
+   "discipline": "culturismo-natural",
+   "level": "intermedio",
+   "daysPerWeek": 4,
+   "weeks": 6,
+   "sessionMin": 55,
+   "equipment": [
+    "gimnasio completo"
+   ],
+   "goal": "hipertrofia",
+   "summary": "Empareja músculos antagonistas (pecho con espalda y bíceps con tríceps) en biseries para lograr mayor congestión, mejor rendimiento entre series y sesiones ágiles.",
+   "progression": "Subí repeticiones dentro del rango en ambos ejercicios de la biserie antes de incrementar la carga.",
+   "basedOn": "Evidencia sobre series emparejadas de agonistas-antagonistas (Robbins et al., Paz et al.) aplicada al clásico split antagonista.",
+   "weekPlan": [
+    {"week": 1, "focus": "Adaptación al ritmo de biseries antagonistas", "rir": "2-3", "volume": "100%"},
+    {"week": 2, "focus": "Acumulación con descansos controlados", "rir": "2", "volume": "100%"},
+    {"week": 3, "focus": "Progresión de repeticiones en torso", "rir": "1-2", "volume": "100%"},
+    {"week": 4, "focus": "Incremento de cargas en primeros pares", "rir": "1-2", "volume": "100%"},
+    {"week": 5, "focus": "Pico de densidad e hipertrofia", "rir": "1", "volume": "100%"},
+    {"week": 6, "focus": "Descarga de volumen", "rir": "3-4", "volume": "60%"}
+   ],
+   "days": [
+    {
+     "label": "Día 1 · Pecho y Espalda Antagonistas",
+     "exercises": [
+      {"name": "Press banca plano con barra", "muscle": "Pecho", "series": 4, "reps": "6-8", "rir": "2", "rest": "90 s", "superset": "A"},
+      {"name": "Remo con barra", "muscle": "Espalda", "series": 4, "reps": "8-10", "rir": "2", "rest": "90 s", "superset": "A"},
+      {"name": "Press banca inclinado con mancuernas", "muscle": "Pecho", "series": 3, "reps": "8-12", "rir": "1-2", "rest": "90 s", "superset": "B"},
+      {"name": "Jalón al pecho en polea alta", "muscle": "Espalda", "series": 3, "reps": "8-12", "rir": "1-2", "rest": "90 s", "superset": "B"},
+      {"name": "Aperturas en máquina Peck Deck", "muscle": "Pecho", "series": 3, "reps": "12-15", "rir": "1", "rest": "60 s", "superset": "C"},
+      {"name": "Pull-over en polea alta", "muscle": "Espalda", "series": 3, "reps": "12-15", "rir": "1", "rest": "60 s", "superset": "C"}
+     ]
+    },
+    {
+     "label": "Día 2 · Hombros y Brazos Completos",
+     "exercises": [
+      {"name": "Press Arnold con mancuernas", "muscle": "Hombros", "series": 4, "reps": "8-12", "rir": "1-2", "rest": "2 min"},
+      {"name": "Elevaciones laterales con mancuernas", "muscle": "Hombros", "series": 4, "reps": "12-15", "rir": "1", "rest": "60 s", "superset": "A"},
+      {"name": "Pájaro inclinado con mancuernas", "muscle": "Hombros", "series": 3, "reps": "12-15", "rir": "1", "rest": "60 s", "superset": "A"},
+      {"name": "Curl con barra recta", "muscle": "Bíceps", "series": 3, "reps": "8-12", "rir": "1", "rest": "60 s", "superset": "B"},
+      {"name": "Press francés con barra Z", "muscle": "Tríceps", "series": 3, "reps": "8-12", "rir": "1", "rest": "60 s", "superset": "B"},
+      {"name": "Curl martillo con mancuernas", "muscle": "Bíceps", "series": 3, "reps": "10-12", "rir": "1", "rest": "60 s", "superset": "C"},
+      {"name": "Extensión de tríceps en polea alta", "muscle": "Tríceps", "series": 3, "reps": "12-15", "rir": "1", "rest": "60 s", "superset": "C"}
+     ]
+    },
+    {
+     "label": "Día 3 · Pierna Completa y Core",
+     "exercises": [
+      {"name": "Sentadilla con barra", "muscle": "Cuádriceps", "series": 4, "reps": "6-10", "rir": "2", "rest": "3 min"},
+      {"name": "Peso muerto piernas rígidas", "muscle": "Femoral", "series": 3, "reps": "8-10", "rir": "2", "rest": "2 min"},
+      {"name": "Prensa 45°", "muscle": "Cuádriceps", "series": 3, "reps": "10-12", "rir": "1-2", "rest": "2 min"},
+      {"name": "Curl femoral tumbado", "muscle": "Femoral", "series": 3, "reps": "10-15", "rir": "1", "rest": "90 s"},
+      {"name": "Gemelos de pie en máquina", "muscle": "Gemelos", "series": 4, "reps": "12-15", "rir": "1", "rest": "60 s", "superset": "A"},
+      {"name": "Elevación de piernas colgado", "muscle": "Abdomen", "series": 3, "reps": "10-15", "rir": "1", "rest": "60 s", "superset": "A"}
+     ]
+    },
+    {
+     "label": "Día 4 · Torso Frecuencia 2",
+     "exercises": [
+      {"name": "Press en máquina Smith", "muscle": "Pecho", "series": 3, "reps": "8-12", "rir": "1-2", "rest": "2 min"},
+      {"name": "Dominadas con agarre prono", "muscle": "Espalda", "series": 3, "reps": "6-10", "rir": "1-2", "rest": "2 min"},
+      {"name": "Elevaciones laterales en polea baja", "muscle": "Hombros", "series": 4, "reps": "12-15", "rir": "1", "rest": "60 s"},
+      {"name": "Curl predicador con barra Z", "muscle": "Bíceps", "series": 3, "reps": "10-12", "rir": "1", "rest": "60 s", "superset": "A"},
+      {"name": "Fondos en paralelas", "muscle": "Tríceps", "series": 3, "reps": "8-12", "rir": "1", "rest": "60 s", "superset": "A"}
+     ]
+    }
+   ],
+   "sources": [
+    {"title": "Robbins et al. — Agonist-Antagonist Paired Set Resistance Training", "url": "https://pubmed.ncbi.nlm.nih.gov/20683341/"}
+   ]
+  },
+  {
+   "id": "sin-carga-axial-4d",
+   "name": "Hipertrofia sin carga axial · Cuidado lumbar y rodilla 4 días",
+   "discipline": "culturismo-natural",
+   "level": "intermedio",
+   "daysPerWeek": 4,
+   "weeks": 6,
+   "sessionMin": 50,
+   "equipment": [
+    "gimnasio completo"
+   ],
+   "goal": "hipertrofia",
+   "summary": "Diseñado para ganar músculo sin comprimir la columna lumbar: reemplaza sentadilla libre, peso muerto pesado y remo con barra libre por máquinas apoyadas, poleas y trabajo unilateral controlado.",
+   "progression": "Progresión doble priorizando tempos controlados (2 segundos de bajada) y rango completo sin molestia articular.",
+   "basedOn": "Selección biomecánica de ejercicios con soporte torácico y pélvico para minimizar cizalla lumbar manteniendo alta tensión mecánica.",
+   "weekPlan": [
+    {"week": 1, "focus": "Control postural y ajuste de respaldos/asientos", "rir": "3", "volume": "100%"},
+    {"week": 2, "focus": "Acumulación estable sin dolor", "rir": "2", "volume": "100%"},
+    {"week": 3, "focus": "Aumento de repeticiones con pausa en estiramiento", "rir": "2", "volume": "100%"},
+    {"week": 4, "focus": "Subida progresiva de carga", "rir": "1-2", "volume": "100%"},
+    {"week": 5, "focus": "Esfuerzo alto en máquinas guiadas", "rir": "1", "volume": "100%"},
+    {"week": 6, "focus": "Descarga articular", "rir": "4", "volume": "60%"}
+   ],
+   "days": [
+    {
+     "label": "Día 1 · Torso Apoyado A",
+     "exercises": [
+      {"name": "Press en máquina de pecho sentado", "muscle": "Pecho", "series": 4, "reps": "8-12", "rir": "1-2", "rest": "2 min"},
+      {"name": "Remo en máquina sentado", "muscle": "Espalda", "series": 4, "reps": "8-12", "rir": "1-2", "rest": "2 min"},
+      {"name": "Press banca inclinado con mancuernas", "muscle": "Pecho", "series": 3, "reps": "10-12", "rir": "1-2", "rest": "90 s"},
+      {"name": "Jalón al pecho en polea alta", "muscle": "Espalda", "series": 3, "reps": "10-12", "rir": "1-2", "rest": "90 s"},
+      {"name": "Elevaciones laterales en polea baja", "muscle": "Hombros", "series": 3, "reps": "12-15", "rir": "1", "rest": "60 s", "superset": "A"},
+      {"name": "Extensión de tríceps en polea alta", "muscle": "Tríceps", "series": 3, "reps": "12-15", "rir": "1", "rest": "60 s", "superset": "A"}
+     ]
+    },
+    {
+     "label": "Día 2 · Pierna Sin Compresión Espinal A",
+     "exercises": [
+      {"name": "Prensa 45°", "muscle": "Cuádriceps", "series": 4, "reps": "10-12", "rir": "2", "rest": "2 min"},
+      {"name": "Hip thrust con barra", "muscle": "Femoral", "series": 4, "reps": "8-12", "rir": "1-2", "rest": "2 min"},
+      {"name": "Extensión de cuádriceps en máquina", "muscle": "Cuádriceps", "series": 3, "reps": "12-15", "rir": "1", "rest": "75 s", "superset": "A"},
+      {"name": "Curl femoral sentado", "muscle": "Femoral", "series": 3, "reps": "12-15", "rir": "1", "rest": "75 s", "superset": "A"},
+      {"name": "Gemelos sentado en máquina", "muscle": "Gemelos", "series": 4, "reps": "12-15", "rir": "1", "rest": "60 s"}
+     ]
+    },
+    {
+     "label": "Día 3 · Torso Apoyado B",
+     "exercises": [
+      {"name": "Press en máquina de hombros", "muscle": "Hombros", "series": 4, "reps": "8-12", "rir": "1-2", "rest": "2 min"},
+      {"name": "Remo en polea baja con barra V", "muscle": "Espalda", "series": 3, "reps": "10-12", "rir": "1-2", "rest": "90 s"},
+      {"name": "Aperturas en máquina Peck Deck", "muscle": "Pecho", "series": 3, "reps": "12-15", "rir": "1", "rest": "75 s"},
+      {"name": "Face pull en polea", "muscle": "Hombros", "series": 3, "reps": "12-15", "rir": "1", "rest": "60 s"},
+      {"name": "Curl predicador con barra Z", "muscle": "Bíceps", "series": 3, "reps": "10-12", "rir": "1", "rest": "60 s", "superset": "A"},
+      {"name": "Extensión de tríceps sobre cabeza con cuerda", "muscle": "Tríceps", "series": 3, "reps": "10-15", "rir": "1", "rest": "60 s", "superset": "A"}
+     ]
+    },
+    {
+     "label": "Día 4 · Pierna Unilateral y Core",
+     "exercises": [
+      {"name": "Sentadilla búlgara", "muscle": "Cuádriceps", "series": 3, "reps": "8-12", "rir": "2", "rest": "2 min"},
+      {"name": "Curl femoral tumbado", "muscle": "Femoral", "series": 4, "reps": "10-15", "rir": "1", "rest": "90 s"},
+      {"name": "Zancadas caminando con mancuernas", "muscle": "Cuádriceps", "series": 3, "reps": "10-12", "rir": "2", "rest": "90 s"},
+      {"name": "Gemelos de pie en máquina", "muscle": "Gemelos", "series": 4, "reps": "12-15", "rir": "1", "rest": "60 s", "superset": "A"},
+      {"name": "Crunch en polea alta", "muscle": "Abdomen", "series": 3, "reps": "12-15", "rir": "1", "rest": "60 s", "superset": "A"}
+     ]
+    }
+   ],
+   "sources": [
+    {"title": "Schoenfeld et al. — Resistance Training Volume and Hypertrophy", "url": "https://pubmed.ncbi.nlm.nih.gov/27433992/"}
+   ]
+  },
+  {
+   "id": "en-casa-mancuernas-4d",
+   "name": "En casa con mancuernas · Torso/Pierna 4 días",
+   "discipline": "culturismo-natural",
+   "level": "principiante",
+   "daysPerWeek": 4,
+   "weeks": 6,
+   "sessionMin": 45,
+   "equipment": [
+    "mancuernas",
+    "banco o silla firme"
+   ],
+   "goal": "hipertrofia",
+   "summary": "Programa completo para entrenar en casa únicamente con un par de mancuernas regulables y un banco o silla estable, cubriendo todos los patrones de movimiento.",
+   "progression": "Cuando tenés tope de peso en mancuernas, progresá sumando repeticiones hasta 15 y haciendo 3 segundos de bajada controlada.",
+   "basedOn": "Adaptación de volumen eficaz con pesos libres y trabajo unilateral para entrenamiento domiciliario.",
+   "weekPlan": [
+    {"week": 1, "focus": "Aprender recorridos y estabilidad unilateral", "rir": "3", "volume": "100%"},
+    {"week": 2, "focus": "Acumulación de repeticiones", "rir": "2", "volume": "100%"},
+    {"week": 3, "focus": "Pausa de 1 segundo en el punto de máximo estiramiento", "rir": "2", "volume": "100%"},
+    {"week": 4, "focus": "Subida de repeticiones o carga en mancuernas", "rir": "1-2", "volume": "100%"},
+    {"week": 5, "focus": "Semana de mayor densidad", "rir": "1", "volume": "100%"},
+    {"week": 6, "focus": "Descarga", "rir": "3-4", "volume": "60%"}
+   ],
+   "days": [
+    {
+     "label": "Día 1 · Torso A con Mancuernas",
+     "exercises": [
+      {"name": "Press banca con mancuernas", "muscle": "Pecho", "series": 4, "reps": "8-12", "rir": "1-2", "rest": "90 s"},
+      {"name": "Remo con mancuerna un brazo", "muscle": "Espalda", "series": 4, "reps": "8-12", "rir": "1-2", "rest": "90 s"},
+      {"name": "Press con mancuernas sentado", "muscle": "Hombros", "series": 3, "reps": "8-12", "rir": "1-2", "rest": "90 s"},
+      {"name": "Elevaciones laterales con mancuernas", "muscle": "Hombros", "series": 3, "reps": "12-15", "rir": "1", "rest": "60 s", "superset": "A"},
+      {"name": "Curl con mancuernas alternado", "muscle": "Bíceps", "series": 3, "reps": "10-15", "rir": "1", "rest": "60 s", "superset": "A"}
+     ]
+    },
+    {
+     "label": "Día 2 · Pierna A con Mancuernas",
+     "exercises": [
+      {"name": "Sentadilla goblet con mancuerna", "muscle": "Cuádriceps", "series": 4, "reps": "10-15", "rir": "1-2", "rest": "90 s"},
+      {"name": "Peso muerto rumano con mancuernas", "muscle": "Femoral", "series": 4, "reps": "8-12", "rir": "1-2", "rest": "90 s"},
+      {"name": "Sentadilla búlgara", "muscle": "Cuádriceps", "series": 3, "reps": "8-12", "rir": "1-2", "rest": "90 s"},
+      {"name": "Elevación de gemelos con mancuernas", "muscle": "Gemelos", "series": 4, "reps": "15-20", "rir": "1", "rest": "45 s", "superset": "A"},
+      {"name": "Crunch bicicleta", "muscle": "Abdomen", "series": 3, "reps": "15-20", "rir": "1", "rest": "45 s", "superset": "A"}
+     ]
+    },
+    {
+     "label": "Día 3 · Torso B con Mancuernas",
+     "exercises": [
+      {"name": "Press banca inclinado con mancuernas", "muscle": "Pecho", "series": 4, "reps": "8-12", "rir": "1-2", "rest": "90 s"},
+      {"name": "Remo inclinado con mancuernas", "muscle": "Espalda", "series": 4, "reps": "10-12", "rir": "1-2", "rest": "90 s"},
+      {"name": "Press Arnold con mancuernas", "muscle": "Hombros", "series": 3, "reps": "10-12", "rir": "1-2", "rest": "90 s"},
+      {"name": "Pájaro inclinado con mancuernas", "muscle": "Hombros", "series": 3, "reps": "12-15", "rir": "1", "rest": "60 s"},
+      {"name": "Curl martillo con mancuernas", "muscle": "Bíceps", "series": 3, "reps": "10-12", "rir": "1", "rest": "60 s", "superset": "A"},
+      {"name": "Patada de tríceps con mancuerna", "muscle": "Tríceps", "series": 3, "reps": "12-15", "rir": "1", "rest": "60 s", "superset": "A"}
+     ]
+    },
+    {
+     "label": "Día 4 · Pierna B con Mancuernas",
+     "exercises": [
+      {"name": "Zancadas caminando con mancuernas", "muscle": "Cuádriceps", "series": 4, "reps": "10-12", "rir": "1-2", "rest": "90 s"},
+      {"name": "Peso muerto rumano con mancuernas", "muscle": "Femoral", "series": 3, "reps": "10-12", "rir": "1-2", "rest": "90 s"},
+      {"name": "Sentadilla goblet con mancuerna", "muscle": "Cuádriceps", "series": 3, "reps": "12-15", "rir": "1", "rest": "90 s"},
+      {"name": "Elevación de gemelos con mancuernas", "muscle": "Gemelos", "series": 4, "reps": "15-20", "rir": "1", "rest": "45 s"}
+     ]
+    }
+   ],
+   "sources": [
+    {"title": "Schoenfeld et al. (2017) — Low- vs. High-Load Resistance Training Meta-Analysis", "url": "https://pubmed.ncbi.nlm.nih.gov/28834797/"}
+   ]
   }
  ],
  "yearTemplates": [
