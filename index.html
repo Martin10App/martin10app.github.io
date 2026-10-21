@@ -44,10 +44,11 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
 #scr{flex:1;overflow-y:auto;overflow-x:hidden;overscroll-behavior-y:contain;-webkit-overflow-scrolling:touch}
 #nav{flex-shrink:0;display:grid;grid-template-columns:repeat(5,1fr);background:rgba(10,11,17,.86);backdrop-filter:blur(28px) saturate(180%);-webkit-backdrop-filter:blur(28px) saturate(180%);border-top:1px solid var(--border2);box-shadow:0 -10px 40px -12px rgba(0,0,0,.7);padding:10px 0 max(10px,env(safe-area-inset-bottom));z-index:100;position:relative}
 #nav::before{content:"";position:absolute;top:0;left:18%;right:18%;height:1px;background:linear-gradient(90deg,transparent,var(--accent-b),transparent)}
-.nb{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;min-height:48px;color:var(--text2);font-size:10px;font-weight:600;letter-spacing:.8px;text-transform:uppercase;padding:6px 6px;transition:color .2s,transform .2s;font-family:var(--fd)}
+.nb{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;min-height:48px;color:var(--text2);font-size:10px;font-weight:600;letter-spacing:.8px;text-transform:uppercase;padding:6px 6px;transition:color .2s,transform .2s;font-family:var(--fd);position:relative}
 .nb svg{width:24px;height:24px;stroke-width:1.8;transition:all .2s}
 .nb:active{transform:scale(.9)}
-.nb.on{color:var(--accent2)}.nb.on svg{filter:drop-shadow(0 0 10px var(--accent-b))}
+.nb.on{color:var(--accent2)}.nb.on svg{filter:drop-shadow(0 0 10px var(--accent-b));transform:translateY(-1px)}
+.nb.on::after{content:"";position:absolute;top:2px;width:20px;height:3px;border-radius:99px;background:linear-gradient(90deg,var(--accent),var(--accent2));box-shadow:0 0 10px var(--accent-b)}
 
 .pg{display:none;min-height:100%;padding-bottom:24px}
 #pg-gym,#pg-gastos,#pg-agenda{padding-bottom:calc(96px + env(safe-area-inset-bottom))}
@@ -74,10 +75,10 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
 .ph-icon-btn:active{transform:scale(.94)}
 .ph-t{font-family:var(--fd);font-size:clamp(19px,5.8vw,23px);font-weight:800;letter-spacing:-.6px;line-height:1.05}
 .ph-s{font-size:10px;color:var(--text2);letter-spacing:2.5px;font-weight:600;margin-top:3px;text-transform:uppercase}
-.tabs{display:flex;overflow-x:auto;scrollbar-width:none;margin:0 -20px;padding:0 20px}
+.tabs{display:flex;overflow-x:auto;scrollbar-width:none;margin:0 -20px;padding:0 20px;-webkit-mask-image:linear-gradient(90deg,#000 92%,transparent);mask-image:linear-gradient(90deg,#000 92%,transparent)}
 .tabs::-webkit-scrollbar{display:none}
-.tab{flex-shrink:0;padding:10px 14px;min-height:44px;color:var(--text2);font-size:12px;font-weight:600;border-bottom:2px solid transparent;margin-bottom:-1px;transition:color .15s;font-family:var(--fd);white-space:nowrap}
-.tab.on{color:var(--text0);border-color:var(--accent)}
+.tab{flex-shrink:0;padding:10px 14px;min-height:44px;color:var(--text2);font-size:12px;font-weight:600;border-bottom:2px solid transparent;margin-bottom:-1px;transition:color .18s,border-color .18s,background .18s;font-family:var(--fd);white-space:nowrap;border-radius:10px 10px 0 0}
+.tab.on{color:var(--text0);border-color:var(--accent);background:linear-gradient(180deg,transparent,rgba(99,102,241,.08))}
 .tab-line{border-bottom:1px solid var(--border)}
 
 .sec{padding:18px 20px}
@@ -92,7 +93,7 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
 .stats{display:grid;gap:9px}
 .s2{grid-template-columns:1fr 1fr}.s3{grid-template-columns:1fr 1fr 1fr}.s4{grid-template-columns:repeat(4,1fr)}
 .st{background:linear-gradient(180deg,#191c29,var(--bg2));border:1px solid var(--border2);border-radius:var(--r-sm);padding:14px 10px;text-align:center;min-width:0;box-shadow:var(--shadow-sm)}
-.sv{font-family:var(--fm);font-size:18px;font-weight:700;line-height:1;margin-bottom:5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sv{font-family:var(--fm);font-variant-numeric:tabular-nums;font-size:18px;font-weight:700;line-height:1;margin-bottom:5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .sl{font-size:9px;color:var(--text2);letter-spacing:1.5px;text-transform:uppercase;font-weight:600;line-height:1.3}
 
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;border-radius:var(--r-sm);font-size:13px;font-weight:600;transition:all .18s;white-space:nowrap}
@@ -109,9 +110,15 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
 .b-red{background:var(--red-d);border:1px solid var(--red-b);color:var(--red)}
 .btn:active{transform:scale(.97)}
 
-.paid-btn{display:inline-flex;align-items:center;gap:5px;padding:7px 13px;border-radius:9px;font-size:11px;font-weight:700;letter-spacing:.3px;transition:all .2s}
-.paid-btn.no{background:var(--bg3);border:1px solid var(--border2);color:var(--text2)}
+.paid-btn{display:inline-flex;align-items:center;justify-content:center;gap:5px;min-height:40px;padding:7px 12px;border-radius:10px;font-size:11px;font-weight:700;letter-spacing:.3px;transition:all .2s;flex-shrink:0}
+.paid-btn.no{background:var(--bg3);border:1px solid var(--border2);color:var(--text1)}
 .paid-btn.yes{background:var(--green-d);border:1px solid var(--green-b);color:var(--green)}
+.fin-pills{display:flex;gap:6px;margin-bottom:12px;overflow-x:auto;scrollbar-width:none}
+.fin-pills::-webkit-scrollbar{display:none}
+.fin-pill{flex-shrink:0;padding:7px 13px;min-height:34px;border-radius:999px;font-size:11px;font-weight:700;background:var(--bg2);border:1px solid var(--border2);color:var(--text2);transition:all .18s}
+.fin-pill.on{background:var(--accent-d);border-color:var(--accent);color:var(--text0)}
+.rep-btn{width:36px;height:40px;border-radius:10px;background:var(--bg3);border:1px solid var(--border2);color:var(--text2);display:inline-flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;transition:all .18s}
+.rep-btn:active{transform:scale(.93);color:var(--text0)}
 
 .fld{margin-bottom:14px}
 .fld label{display:block;font-size:10px;color:var(--text2);letter-spacing:2px;font-weight:700;text-transform:uppercase;margin-bottom:7px}
@@ -1499,27 +1506,28 @@ function updWring(){const pct=activeRid?getRoutinePct(activeRid):0;ring('wring',
 function openDay(rid,did){
   const r=routines.find(x=>x.id===rid);const d=r?.days.find(x=>x.id===did);if(!r||!d)return;
   const di=r.days.indexOf(d);const col=DC[di%DC.length];const pct=getDayPct(rid,did);
-  let h=`<div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:20px">
+  let h=`<div style="position:sticky;top:-20px;z-index:20;background:rgba(13,14,19,.93);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);margin:-20px -20px 14px;padding:18px 20px 12px;border-bottom:1px solid var(--border2)">
+  <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:12px">
     <div><div style="font-size:10px;color:${col};font-weight:700;letter-spacing:2px;margin-bottom:4px">DÍA ${di+1}</div>
     <div class="ct ct-lg">${esc(d.label)}</div>
     <div style="font-size:11px;color:var(--text2);margin-top:3px">${plural(d.exercises.length,'ejercicio','ejercicios')} · ${plural(d.exercises.reduce((s,e)=>s+e.series,0),'serie','series')}</div></div>
     <div class="ring-w"><canvas id="dr" width="52" height="52"></canvas><span class="ring-l" id="dr-lbl" style="font-size:9px">${pct}%</span></div>
-  </div>`;
-  const wk=programWeekInfo(r);
-  if(wk)h+=`<div class="wk-now"><span class="wk-n">S${wk.week}</span><div><strong>${esc(wk.focus)}</strong><small>Semana ${wk.week} de ${wk.length} · RIR ${esc(wk.rir)} · Volumen ${esc(wk.volume)}</small></div></div>`;
-  h+=`<div id="live-rest-bar" style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:9px 12px;margin-bottom:14px;background:var(--bg2);border:1px solid ${timerOn?'var(--green-b)':'var(--border)'};border-radius:12px">
+  </div>
+  <div id="live-rest-bar" style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 11px;background:var(--bg2);border:1px solid ${timerOn?'var(--green-b)':'var(--border)'};border-radius:12px">
     <div style="display:flex;align-items:center;gap:8px">
       <span style="font-size:15px">⏱</span>
       <div>
-        <div style="font-size:10px;color:var(--text2);font-weight:700;letter-spacing:.6px">DESCANSO EN VIVO</div>
-        <div id="live-rest-val" style="font-family:var(--fm);font-size:16px;font-weight:800;color:${timerOn?'var(--green)':'var(--text0)'}">${Math.floor(timerS/60)}:${String(timerS%60).padStart(2,'0')}</div>
+        <div style="font-size:9px;color:var(--text2);font-weight:700;letter-spacing:.6px">DESCANSO EN VIVO</div>
+        <div id="live-rest-val" style="font-family:var(--fm);font-size:15px;font-weight:800;color:${timerOn?'var(--green)':'var(--text0)'}">${Math.floor(timerS/60)}:${String(timerS%60).padStart(2,'0')}</div>
       </div>
     </div>
     <div style="display:flex;gap:5px;flex-wrap:wrap;justify-content:flex-end">
       ${[[60,'60s'],[90,'90s'],[120,'2m'],[180,'3m']].map(([s,l])=>`<button class="btn b-xs ${timerP===s?'b-p':'b-g'}" onclick="setLiveRestPreset(${s})">${l}</button>`).join('')}
       <button class="btn b-xs ${timerOn?'b-red':'b-grn'}" id="live-rest-btn" onclick="toggleLiveRestTimer()">${timerOn?'Parar':'Iniciar'}</button>
     </div>
-  </div>`;
+  </div></div>`;
+  const wk=programWeekInfo(r);
+  if(wk)h+=`<div class="wk-now"><span class="wk-n">S${wk.week}</span><div><strong>${esc(wk.focus)}</strong><small>Semana ${wk.week} de ${wk.length} · RIR ${esc(wk.rir)} · Volumen ${esc(wk.volume)}</small></div></div>`;
   d.exercises.forEach((ex,ei)=>{
     const timed=ex.unit==='s'||ex.unit==='m',repsLabel=ex.unit==='s'?'Seg':ex.unit==='m'?'Metros':'Reps';
     const allDone=Array.from({length:ex.series},(_,si)=>sets[`${rid}|${did}|${ei}|${si}`]).every(Boolean);
@@ -4100,14 +4108,22 @@ function km(m,y){return `${m}_${y}`}
 function montoPago(catId,m,y){const cat=cats.find(x=>x.id===catId);const ky=k(catId,m,y);if(pagosFijos[ky]!==undefined)return pagosFijos[ky];if(cat&&cat.cardRef)return getCardMonthAmt(cat.cardRef,m,y);return cat?.base||0;}
 function setMontoPago(catId,m,y,v){pagosFijos[k(catId,m,y)]=v;S.s('pf4',pagosFijos);}
 function isPaid(catId,m,y){return !!pagosEstado[k(catId,m,y)]}
-function togPaid(catId,m,y){pagosEstado[k(catId,m,y)]=!pagosEstado[k(catId,m,y)];S.s('pe4',pagosEstado);}
+function togPaid(catId,m,y){
+  const ky=k(catId,m,y),next=!pagosEstado[ky];
+  pagosEstado[ky]=next;
+  if(next&&pagosFijos[ky]===undefined){
+    const cat=cats.find(x=>x.id===catId);
+    if(cat){const val=montoCat(cat,m,y);if(val>0){pagosFijos[ky]=val;S.s('pf4',pagosFijos);}}
+  }
+  S.s('pe4',pagosEstado);
+}
 function getSueldo(m,y){return sueldos[km(m,y)]||0;}
 function setSueldo(m,y,v){sueldos[km(m,y)]=v;S.s('sld4',sueldos);}
 
 function totalCatMes(catId,m,y){return sumMoney(gastos.filter(g=>g.c===catId&&g.m===m&&g.y===y),g=>g.v);}
 function montoCat(c,m,y){
   const ky=k(c.id,m,y);
-  if(!c.cardRef)return pagosFijos[ky]!==undefined?money(pagosFijos[ky]):money(c.base);
+  if(!c.cardRef)return pagosFijos[ky]!==undefined?money(pagosFijos[ky]):(c.archived?0:money(c.base));
   return pagosFijos[ky]!==undefined?money(pagosFijos[ky]):getCardMonthAmt(c.cardRef,m,y);
 }
 function totalCompromisosMes(m,y){
@@ -4175,7 +4191,6 @@ function applyFinancialGoalFields(category,acc){
 function totalPagadoMes(m,y){
   let t=0;
   cats.forEach(c=>{
-    if(c.cardRef)return;
     if(c.ahorro)return;
     const ky=k(c.id,m,y);
     if(!pagosEstado[ky])return;
@@ -4222,6 +4237,38 @@ function tieneDatos(m,y){
 }
 
 // ── TAB 0: MES ──
+function setMesFilter(f){window._mesFilter=f;renderGastos();}
+function openCommitRepeatModal(catId,m,y){
+  const cat=cats.find(x=>x.id===catId);if(!cat)return;
+  const monto=montoCat(cat,m,y);
+  oOv1(`<div class="mt">📅 Repetir compromiso</div>
+    <div style="font-size:12px;color:var(--text2);line-height:1.55;margin-bottom:14px">Proyectá el monto de <b>${esc(cat.n)}</b> desde <b>${MONTHS[m]} ${y}</b> hacia los próximos meses (útil para préstamos, cuotas fijas o alquileres).</div>
+    <div class="fld"><label>Monto mensual ($)</label><input class="inp" id="rep-amt" type="text" inputmode="decimal" value="${monto}" style="font-family:var(--fm);font-size:18px;font-weight:700;text-align:right"></div>
+    <div class="fld"><label>Repetir durante</label>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">
+        <button type="button" class="btn b-md b-p" onclick="applyCommitRepeat('${cat.id}',${m},${y},3)">3 meses</button>
+        <button type="button" class="btn b-md b-p" onclick="applyCommitRepeat('${cat.id}',${m},${y},6)">6 meses</button>
+        <button type="button" class="btn b-md b-p" onclick="applyCommitRepeat('${cat.id}',${m},${y},12)">12 meses</button>
+      </div>
+    </div>
+    <button type="button" class="btn b-md b-g" style="width:100%;margin-top:6px" onclick="cOv1()">Cancelar</button>`);
+}
+function applyCommitRepeat(catId,startM,startY,monthsCount){
+  const cat=cats.find(x=>x.id===catId);if(!cat)return;
+  const val=parseMoney(document.getElementById('rep-amt')?.value);
+  if(!val||val<=0){tst('Ingresá un monto válido mayor a 0');return;}
+  for(let i=0;i<monthsCount;i++){
+    const totalM=startM+i;
+    const m=totalM%12;
+    const y=startY+Math.floor(totalM/12);
+    pagosFijos[k(catId,m,y)]=val;
+  }
+  S.s('pf4',pagosFijos);
+  cOv1();
+  renderGastos();
+  tst(`✓ ${cat.n}: ${fmtFull(val)} repetido por ${monthsCount} meses`);
+}
+
 function rMes(){
   const m=curM,y=curY;
   const sueldo=getSueldo(m,y);
@@ -4233,6 +4280,10 @@ function rMes(){
   const disponible=money(sueldo-totalGastos-ahorroMes);
   const pctGasto=sueldo>0?Math.round((totalGastos/sueldo)*100):0;
   const color=pctGasto>100?'var(--red)':pctGasto>85?'var(--gold)':'var(--green)';
+  const totalPagarMes=money(compromisos+cardTotal);
+  const pagadoMes=totalPagadoMes(m,y);
+  const faltaPagarMes=money(Math.max(0,totalPagarMes-pagadoMes));
+  const pctPagadoMes=totalPagarMes>0?Math.min(100,Math.round((pagadoMes/totalPagarMes)*100)):0;
 
   const pm=m===0?11:m-1,py=m===0?y-1:y;
   const prevTotal=totalGastosMes(pm,py);
@@ -4247,6 +4298,13 @@ function rMes(){
       <div style="font-size:10px;color:var(--text2)">Tocá para editar</div>
     </div>
     <input class="sueldo-inp" id="sld-inp" type="text" inputmode="decimal" placeholder="0" value="${sueldo||''}" oninput="onSueldoChange(this.value)">
+    ${totalPagarMes>0?`<div style="margin-top:12px;padding-top:10px;border-top:1px solid rgba(59,130,246,.22)">
+      <div style="display:flex;justify-content:space-between;align-items:baseline;font-size:11px;margin-bottom:6px">
+        <span style="color:var(--text2)">Pagado: <b style="color:var(--green);font-family:var(--fm)">${fmtFull(pagadoMes)}</b> (${pctPagadoMes}%)</span>
+        <span style="color:${faltaPagarMes>0?'var(--gold)':'var(--green)'};font-weight:700;font-family:var(--fm)">${faltaPagarMes>0?'Falta pagar: '+fmtFull(faltaPagarMes):'✓ Todo al día'}</span>
+      </div>
+      <div class="pbar"><div class="pfill" style="width:${pctPagadoMes}%;background:${pctPagadoMes===100?'var(--green)':'var(--blue)'}"></div></div>
+    </div>`:''}
   </div>`;
 
   h+=`<div class="stats s2" style="margin-bottom:10px">
@@ -4367,15 +4425,26 @@ function rMes(){
         <span><span style="color:var(--blue)">●</span> Fijos ${Math.round(pctC)}%</span>
         <span><span style="color:var(--gold)">●</span> Variables ${Math.round(pctV)}%</span>
         <span><span style="color:var(--purple)">●</span> Tarjetas ${Math.round(pctK)}%</span>
-        <span><span style="color:var(--green)">●</span> Ahorro ${Math.round(resto)}%</span>
+        <span><span style="color:var(--green)">●</span> Disp./Ahorro ${Math.round(Math.max(0,resto))}%</span>
       </div>
     </div>`;
   }
 
+  const allCommitCats=cats.filter(c=>!c.ahorro&&montoCat(c,m,y)>0);
+  const paidCommitCount=allCommitCats.filter(c=>isPaid(c.id,m,y)).length;
+  const pendCommitCount=allCommitCats.length-paidCommitCount;
+  const mesFilter=window._mesFilter||'all';
   h+=`<div class="sec-t" style="display:flex;justify-content:space-between;align-items:center">
     <span>Compromisos · Tocá montos para editar</span>
-    <span style="color:var(--text2);text-transform:none;letter-spacing:.5px;font-size:10px">${cats.filter(c=>!c.ahorro&&montoCat(c,m,y)>0&&isPaid(c.id,m,y)).length}/${cats.filter(c=>!c.ahorro&&montoCat(c,m,y)>0).length} ✓</span>
+    <span style="color:var(--text2);text-transform:none;letter-spacing:.5px;font-size:10px">${paidCommitCount}/${allCommitCats.length} ✓</span>
   </div>`;
+  if(allCommitCats.length>0){
+    h+=`<div class="fin-pills">
+      <button type="button" class="fin-pill ${mesFilter==='all'?'on':''}" onclick="setMesFilter('all')">Todos (${allCommitCats.length})</button>
+      <button type="button" class="fin-pill ${mesFilter==='pending'?'on':''}" onclick="setMesFilter('pending')">⏳ Falta pagar (${pendCommitCount})</button>
+      <button type="button" class="fin-pill ${mesFilter==='paid'?'on':''}" onclick="setMesFilter('paid')">✓ Pagados (${paidCommitCount})</button>
+    </div>`;
+  }
 
   if(!cats.length)h+=`<div style="font-size:12px;color:var(--text2);padding:14px;text-align:center">Sin categorías todavía · Agregá tus primeros compromisos desde <strong>Editar</strong> o cargá gastos</div>`;
   cats.forEach(cat=>{
@@ -4385,6 +4454,8 @@ function rMes(){
     if(monto<=0)return;
     const tieneMonto=pagosFijos[k(cat.id,m,y)]!==undefined;
     const paid=isPaid(cat.id,m,y);
+    if(mesFilter==='pending'&&paid)return;
+    if(mesFilter==='paid'&&!paid)return;
     h+=`<div class="pres-row${paid?' paid':''}"${isCard?` onclick="if(event.target.tagName!=='INPUT'&&event.target.tagName!=='BUTTON'){xTab(4);setTimeout(()=>openCardDetail('${cat.cardRef}',${m},${y}),100)}"`:''}>
       <div style="width:36px;height:36px;border-radius:10px;background:${cat.c}18;border:1px solid ${cat.c}44;display:flex;align-items:center;justify-content:center;flex-shrink:0">
         <div class="cdot" style="background:${cat.c};width:11px;height:11px"></div>
@@ -4392,13 +4463,14 @@ function rMes(){
       <div style="flex:1;min-width:0">
         <div style="font-size:13px;font-weight:700;${paid?'text-decoration:line-through;color:var(--text2)':''}">${esc(cat.n)}</div>
         <div style="display:flex;align-items:center;gap:6px;margin-top:3px">
-          ${isCard?`<span style="font-size:10px;color:var(--purple)">💳 ${tieneMonto?'Editado':'Cuota del mes'}</span>`:(tieneMonto?`<span style="font-size:10px;color:var(--text2)">Editado</span>`:`<span style="font-size:10px;color:var(--text2)">Base: ${fmt(cat.base)}</span>`)}
+          ${isCard?`<span style="font-size:10px;color:var(--purple)">💳 ${tieneMonto?'Editado':'Cuota del mes'}</span>`:(tieneMonto?`<span style="font-size:10px;color:var(--gold)">● Mes editado</span>`:`<span style="font-size:10px;color:var(--text2)">Base: ${fmt(cat.base)}</span>`)}
         </div>
       </div>
       <input class="amt-inp${tieneMonto?' edited':''}" type="text" inputmode="decimal" value="${monto}"
         ${isCard?`style="color:var(--purple);font-weight:700"`:`style=""`}
         onfocus="this.select()" onchange="event.stopPropagation();onMontoChange('${cat.id}',${m},${y},this.value)">
-      <button class="paid-btn ${paid?'yes':'no'}" onclick="event.stopPropagation();onTogglePaid('${cat.id}',${m},${y})">${paid?'✓':'○'}</button>
+      ${!isCard?`<button type="button" class="rep-btn" title="Repetir este monto varios meses" onclick="event.stopPropagation();openCommitRepeatModal('${cat.id}',${m},${y})">📅</button>`:''}
+      <button class="paid-btn ${paid?'yes':'no'}" onclick="event.stopPropagation();onTogglePaid('${cat.id}',${m},${y})">${paid?'✓':'Pagar'}</button>
     </div>${(()=>{
       const lim=money(cat.limite||0);
       if(lim<=0)return'';
@@ -4507,16 +4579,17 @@ async function analizarGastos(){
 // ── TAB 1: PAGOS ──
 function rPagos(){
   const m=curM,y=curY;
-  const totalC=totalCompromisosMes(m,y);
+  const cardTotal=sumMoney(cats.filter(c=>c.cardRef),c=>montoCat(c,m,y));
+  const totalC=money(totalCompromisosMes(m,y)+cardTotal);
   const totalP=totalPagadoMes(m,y);
-  const restante=totalC-totalP;
-  const pct=totalC>0?Math.round((totalP/totalC)*100):0;
+  const restante=money(Math.max(0,totalC-totalP));
+  const pct=totalC>0?Math.min(100,Math.round((totalP/totalC)*100)):0;
 
   let h=`<div class="sec">`+mnav(m,y);
   h+=`<div class="card" style="margin-bottom:16px;border-color:${pct===100?'var(--green-b)':'var(--blue-b)'};background:${pct===100?'rgba(0,196,140,.04)':'rgba(59,127,255,.03)'}">
     <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px">
       <div>
-        <div style="font-size:11px;color:var(--text2);font-weight:600">Estado de pagos</div>
+        <div style="font-size:11px;color:var(--text2);font-weight:600">Estado de pagos (Fijos + Tarjetas)</div>
         <div style="font-family:var(--fd);font-size:20px;font-weight:800;margin-top:3px">${fmtFull(totalP)} <span style="font-size:13px;color:var(--text2);font-weight:400">de ${fmtFull(totalC)}</span></div>
         ${restante>0?`<div style="font-size:11px;color:var(--gold);margin-top:4px">Falta pagar: <strong>${fmtFull(restante)}</strong></div>`:totalC>0?`<div style="font-size:11px;color:var(--green);margin-top:4px">✅ Todo pagado este mes</div>`:''}
       </div>
@@ -4525,7 +4598,7 @@ function rPagos(){
     <div class="pbar"><div class="pfill" style="width:${pct}%;background:${pct===100?'var(--green)':'var(--blue)'}"></div></div>
   </div>`;
 
-  const catsConMonto=cats.filter(c=>montoCat(c,m,y)>0);
+  const catsConMonto=cats.filter(c=>!c.ahorro&&montoCat(c,m,y)>0);
   const pendientes=catsConMonto.filter(c=>!isPaid(c.id,m,y));
   const pagados=catsConMonto.filter(c=>isPaid(c.id,m,y));
 
@@ -5129,7 +5202,7 @@ function rConfig(){
     <div class="div"></div>
     <div class="sec-t">Compromisos fijos (montos base)</div>
     <div style="font-size:11px;color:var(--text2);margin-bottom:14px;line-height:1.6">El "monto base" se usa por defecto en meses nuevos. Cada mes puede editarse individualmente desde "Mes" sin afectar a los otros.</div>
-    ${cats.filter(c=>!c.cardRef).map((c)=>{
+    ${cats.filter(c=>!c.cardRef&&!c.archived).map((c)=>{
       return`<div style="display:flex;align-items:center;gap:10px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--r-sm);padding:11px 13px;margin-bottom:8px">
       <div class="cdot" style="background:${c.c};width:12px;height:12px;flex-shrink:0"></div>
       <div style="flex:1;font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(c.n)}</div>
@@ -5175,7 +5248,19 @@ function rConfig(){
     <input id="import-file" type="file" accept=".json" style="display:none" onchange="importData(event)">
   </div>`;
 }
-function delCat(i){const c=cats[i];if(!c||c.cardRef){tst('Las tarjetas se eliminan desde Tarjetas');return;}if(!confirm(`¿Eliminar "${c.n}"?`))return;cats.splice(i,1);S.s('cats4',cats);if(activeProfileTab==='config'){openUserMgmt();}renderGastos();}
+function catHasHistory(catId){
+  const prefix=catId+'_';
+  return Object.keys(pagosFijos||{}).some(k=>k.startsWith(prefix))||Object.keys(pagosEstado||{}).some(k=>k.startsWith(prefix))||(gastos||[]).some(g=>g.c===catId);
+}
+function delCat(i){
+  const c=cats[i];if(!c||c.cardRef){tst('Las tarjetas se eliminan desde Tarjetas');return;}
+  const hasHist=catHasHistory(c.id);
+  if(!confirm(hasHist?`¿Archivar "${c.n}"? Dejará de aparecer en meses nuevos pero conservará su historial en meses anteriores.`:`¿Eliminar "${c.n}"?`))return;
+  if(hasHist){c.archived=true;c.base=0;}else{cats.splice(i,1);}
+  S.s('cats4',cats);
+  if(activeProfileTab==='config'){openUserMgmt();}
+  renderGastos();
+}
 function addCatModal(){const colors=['#FF3B4E','#3B7FFF','#00C48C','#FFB347','#A855F7','#22D3EE','#F97316','#84CC16','#14B8A6','#E879F9','#FB7185','#38BDF8'];window._ncc='#FF3B4E';
   oOv1(`<div class="mt">Nueva categoría</div>
   <div class="fld"><label>Nombre</label><input class="inp" id="nc-n" placeholder="Netflix, Gimnasio…"></div>

@@ -248,3 +248,18 @@ test('el catálogo de ejercicios solo se agrega para cambios de gym',()=>{
   assert.equal(f.shouldIncludeMovementCatalog('Haceme una rutina de gimnasio'),true);
   assert.equal(f.shouldIncludeMovementCatalog('Cambiame press banca por mancuernas'),true);
 });
+
+test('congela el monto pagado del mes al marcar pago e incluye tarjetas en totalPagadoMes',()=>{
+  const f=financeFixture();
+  f.pagosEstado={};
+  f.S={s:()=>{}};
+  vm.runInContext([extractFunction('togPaid'),extractFunction('totalPagadoMes')].join('\n'),f);
+  f.cats.push({id:'antel',n:'Antel',base:850});
+  f.togPaid('antel',7,2026);
+  assert.equal(f.pagosEstado['antel_7_2026'],true);
+  assert.equal(f.pagosFijos['antel_7_2026'],850);
+  f.cats.find(c=>c.id==='antel').base=950;
+  assert.equal(f.montoCat(f.cats.find(c=>c.id==='antel'),7,2026),850);
+  f.togPaid('card_mc',7,2026);
+  assert.equal(f.totalPagadoMes(7,2026),850+3400);
+});
