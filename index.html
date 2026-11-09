@@ -1208,6 +1208,10 @@ function buildGymProgressContext(maxChars=2600){
       lines.push(line);
     });
   });
+  // Plan y recuperación arriba (cortos); sesiones y volumen al final: si el texto se corta, se pierden primero.
+  const _coach=gymCoachContextLines(r);
+  lines.splice(2,0,..._coach.slice(0,2));
+  lines.push(..._coach.slice(2));
   const text=lines.join('\n');
   return text.length>maxChars?text.slice(0,maxChars)+'…':text;
 }
@@ -1718,7 +1722,7 @@ function saveSess(rid,did){
 function finishGymSession(rid,did){
   const pct=getDayPct(rid,did),r=routines.find(x=>x.id===rid),d=r?.days.find(x=>x.id===did);if(!r||!d)return;
   const progressSummary=sessionProgressSummary(dayProgressItems(rid,did));
-  gymHist=[{d:new Date().toLocaleDateString('es-ES',{day:'numeric',month:'short'}),rn:r.name,dn:d.label,pct,progress:progressSummary,energy:Number(document.getElementById('sess-energy')?.value)||3,rpe:Number(document.getElementById('sess-rpe')?.value)||8,note:(document.getElementById('sess-note')?.value||'').trim().slice(0,180),ts:Date.now()},...gymHist].slice(0,80);
+  gymHist=[{d:new Date().toLocaleDateString('es-ES',{day:'numeric',month:'short'}),ts:Date.now(),weekId:activeWeekId||null,rn:r.name,dn:d.label,pct,progress:progressSummary,energy:Number(document.getElementById('sess-energy')?.value)||3,rpe:Number(document.getElementById('sess-rpe')?.value)||8,note:(document.getElementById('sess-note')?.value||'').trim().slice(0,180),ts:Date.now()},...gymHist].slice(0,80);
   S.s('ghst2',gymHist);updateWeekLogFromCurrent();tst(`✓ ${d.label} — ${pct}%`+(progressSummary?' · '+progressSummary:''),progressSummary?5500:2300);cOv2();cOv1();updWring();
   if(progressSummary&&S.g('ai_always_speak',false))speak(progressSummary);
 }
@@ -1776,8 +1780,9 @@ function openExInfo(button){
 
 function rGymTrain(){
   if(!activeRid)return`<div class="sec"><div class="empty"><div class="empty-i">📋</div><div class="empty-t">Sin rutina activa</div><div class="empty-s">Activá una rutina en "Rutinas"</div></div></div>`;
+  ensureProgramsForGym();
   const r=routines.find(x=>x.id===activeRid);const wk=programWeekInfo(r);
-  let h=`<div class="sec">${wk?`<div class="wk-now"><span class="wk-n">S${wk.week}</span><div><strong>${esc(wk.focus)}</strong><small>Semana ${wk.week} de ${wk.length} · RIR ${esc(wk.rir)} · Volumen ${esc(wk.volume)}</small></div></div>`:''}<div class="sec-t">Seleccioná el día de hoy</div>`;
+  let h=`<div class="sec">${monthPlanBannerHtml()}${wk?`<div class="wk-now"><span class="wk-n">S${wk.week}</span><div><strong>${esc(wk.focus)}</strong><small>Semana ${wk.week} de ${wk.length} · RIR ${esc(wk.rir)} · Volumen ${esc(wk.volume)}</small></div></div>`:''}<div class="sec-t">Seleccioná el día de hoy</div>`;
   r.days.forEach((d,i)=>{const pct=getDayPct(r.id,d.id);const col=DC[i%DC.length];
     h+=`<button type="button" class="card train-day${pct===100?' done':''}" style="--dc:${col}" onclick="openDay('${r.id}','${d.id}')">
       <span class="train-day-row"><span style="min-width:0;flex:1"><span class="day-tile-top" style="margin-bottom:5px"><span>DÍA ${i+1}</span></span>
@@ -1802,6 +1807,7 @@ function rGymHist(){
 
 let timerP=90,timerS=90,timerOn=false,timerIv=null;
 function rGymWeeks(){
+  ensureProgramsForGym();
   const weeks=[...gymWeekLog].sort((a,b)=>b.weekStart.localeCompare(a.weekStart));
   let h=`<div class="sec">`;
   // Current week summary
@@ -1820,6 +1826,8 @@ function rGymWeeks(){
       <div class="cycle-stat"><b>${wpct}%</b><span>Adherencia</span></div>
       <div class="cycle-stat"><b>${gymProfile?.loadIncrement||2.5} kg</b><span>Incremento</span></div>
     </div>`;
+    const _rb=routines.find(x=>x.id===activeW.routineId);
+    if(_rb)h+=coachBoardHtml(_rb,activeW);
     // Days summary for current week
     const r=routines.find(x=>x.id===activeRid);
     if(r){
@@ -1886,7 +1894,7 @@ function rGymWeeks(){
             <div style="font-size:10px;color:var(--text2)">${plural(Object.keys(w.days).length,'día','días')}</div>
           </div>
         </div>
-        ${wi>0&&pastWeeks[wi-1]?compareWeekRow(pastWeeks[wi-1],w):''}
+        ${(()=>{const older=pastWeeks.slice(wi+1).find(x=>x.routineId===w.routineId);return older?compareWeekRow(older,w):'';})()}
       </div>`;
     });
   } else {
@@ -1956,24 +1964,186 @@ function saveCycleSettings(){
   S.s('gymCycles1',gymCycles);S.s('gymProfile',gymProfile);cOv1();renderGym();tst(`✓ Bloque actualizado (Plan ${pm} meses)`);
 }
 
-function compareWeekRow(prev,curr){
-  let diffs=[];
-  Object.keys(prev.days).forEach(did=>{
-    const pd=prev.days[did];const cd=curr.days[did];
-    if(!pd||!cd)return;
-    pd.exercises.forEach(pe=>{
-      const ce=cd.exercises.find(x=>normStr(x.name)===normStr(pe.name));
-      if(!ce)return;
-      const pW=parseFloat(pe.weight)||0;const cW=parseFloat(ce.weight)||0;
-      if(pW>0&&cW>0&&cW!==pW){
-        const arrow=cW>pW?'↑':'↓';
-        const col=cW>pW?'var(--green)':'var(--red)';
-        diffs.push(`<span style="font-size:10px;color:${col};font-weight:600">${esc(pe.name)}: ${pW}kg → ${cW}kg ${arrow}</span>`);
-      }
-    });
+// ════════ PREPARADOR FÍSICO: comparación semanal, tablero y check-in ════════
+// Todo sale de datos registrados (series con kg, reps y RIR; energía y RPE de cada sesión; sueño).
+// Nunca cambia cargas ni rutinas por su cuenta: informa y sugiere.
+function weekExerciseIndex(week){
+  // Ejercicios de una semana por nombre normalizado (si se repite, gana el que tiene series hechas).
+  const map=new Map();
+  Object.values(week?.days||{}).forEach(d=>(d.exercises||[]).forEach(ex=>{
+    const key=normStr(ex.name||'');if(!key)return;
+    const has=e=>(e?.setLogs||[]).some(s=>s&&s.done);
+    if(!map.has(key)||(!has(map.get(key))&&has(ex)))map.set(key,ex);
+  }));
+  return map;
+}
+function weekBestSet(ex){
+  // Mejor serie hecha. Si la serie 1 fue Bilbo (15+ reps y después series más pesadas), se compara aparte.
+  let logs=(ex?.setLogs||[]).filter(s=>s&&s.done&&Number(s.reps)>0);
+  if(logs.length>1&&Number(logs[0].reps)>=BILBO_MIN_REPS&&logs.slice(1).every(s=>Number(s.weight)>Number(logs[0].weight)))logs=logs.slice(1);
+  const best=bestProgressSet(logs,ex);if(best)return best;
+  const w=Number(ex?.weight)||0;
+  return w>0?{weight:w,reps:'',rir:'',legacy:true}:null; // semanas viejas: solo había un peso suelto
+}
+function weekExerciseDiffs(prevWeek,curWeek){
+  // Por ejercicio (emparejado por nombre, no por posición): mejor serie de la semana anterior → esta.
+  const prevMap=weekExerciseIndex(prevWeek),out=[];
+  const fmtS=s=>progressKg(Number(s.weight)||0)+' kg'+(Number(s.reps)>0?' × '+s.reps:'');
+  weekExerciseIndex(curWeek).forEach((ce,key)=>{
+    const pe=prevMap.get(key);if(!pe)return;
+    const cur=weekBestSet(ce),prev=weekBestSet(pe);if(!cur||!prev)return;
+    if(cur.legacy||prev.legacy){
+      const d=Math.round(((Number(cur.weight)||0)-(Number(prev.weight)||0))*10)/10;
+      out.push({name:ce.name,kind:d>0?'up':d<0?'down':'same',text:fmtS(prev)+' → '+fmtS(cur),dPct:0});
+      return;
+    }
+    const c=compareSetToLast(ce,cur,prev);if(!c)return;
+    // Subir kilos sin salir del rango de reps es progreso aunque la fuerza estimada baje un poco.
+    const _min=parseRepRange(ce.reps).min;
+    const _inRange=c.kind==='same'&&c.dKg>0&&_min>0&&Number(cur.reps)>=_min;
+    if(_inRange)c.kind='up';
+    const _note=_inRange&&c.dPct<=0?' (más peso, dentro del rango)':c.dPct?' ('+(c.dPct>0?'+':'')+progressKg(c.dPct)+'% fuerza est.)':'';
+    out.push({name:ce.name,kind:c.kind==='first'?'same':c.kind,text:fmtS(prev)+' → '+fmtS(cur)+_note,dPct:c.dPct||0});
   });
-  if(!diffs.length)return'';
-  return`<div style="margin-top:8px;padding:8px 10px;background:var(--bg3);border-radius:8px;display:flex;flex-direction:column;gap:3px">${diffs.slice(0,5).join('')}${diffs.length>5?`<span style="font-size:10px;color:var(--text2)">+${diffs.length-5} más</span>`:''}</div>`;
+  return out;
+}
+function weekDiffRowHtml(d){
+  const col=d.kind==='up'?'var(--green)':d.kind==='down'?'var(--red)':'var(--text2)',arrow=d.kind==='up'?'↑':d.kind==='down'?'↓':'→';
+  return `<div style="display:flex;justify-content:space-between;gap:10px;padding:6px 0;border-bottom:1px solid var(--border);font-size:12px">
+    <span style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(d.name)}</span>
+    <span style="color:${col};font-weight:700;white-space:nowrap">${esc(d.text)} ${arrow}</span></div>`;
+}
+function compareWeekRow(prev,curr){
+  const diffs=weekExerciseDiffs(prev,curr).filter(d=>d.kind==='up'||d.kind==='down');
+  if(!diffs.length)return '';
+  const ups=diffs.filter(d=>d.kind==='up').length,downs=diffs.length-ups;
+  return `<div style="margin-top:8px;padding:8px 10px;background:var(--bg3);border-radius:8px;display:flex;flex-direction:column;gap:3px">
+    <span style="font-size:10px;color:var(--text2);font-weight:700">vs semana anterior: ${ups?'<span style="color:var(--green)">'+ups+' ↑</span>':''}${ups&&downs?' · ':''}${downs?'<span style="color:var(--red)">'+downs+' ↓</span>':''}</span>
+    ${diffs.slice(0,4).map(d=>`<span style="font-size:10px;color:${d.kind==='up'?'var(--green)':'var(--red)'};font-weight:600">${esc(d.name)}: ${esc(d.text)} ${d.kind==='up'?'↑':'↓'}</span>`).join('')}
+    ${diffs.length>4?`<span style="font-size:10px;color:var(--text2)">+${diffs.length-4} más</span>`:''}</div>`;
+}
+// ── Recuperación: energía y RPE de las sesiones de la semana + sueño de los últimos 7 días ──
+function gymDateISO(ts){const d=new Date(ts);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+function weekSessions(week,hist=gymHist){
+  if(!week)return [];
+  return (hist||[]).filter(h=>h.weekId?h.weekId===week.id:h.ts?(gymDateISO(h.ts)>=week.weekStart&&gymDateISO(h.ts)<=week.weekEnd):false);
+}
+function sleepHoursLast7(log,now=new Date()){
+  return Array.from({length:7},(_,i)=>{const d=new Date(now.getFullYear(),now.getMonth(),now.getDate()-i,12);return Number((log||{})[gymDateISO(d)]?.hours)||0;}).filter(h=>h>0);
+}
+function recoveryStatus(sessions,sleepHours){
+  const avg=a=>a.length?Math.round(a.reduce((x,y)=>x+y,0)/a.length*10)/10:0;
+  const energy=avg((sessions||[]).map(h=>Number(h.energy)).filter(n=>n>0));
+  const rpe=avg((sessions||[]).map(h=>Number(h.rpe)).filter(n=>n>0));
+  const sleep=avg((sleepHours||[]).filter(n=>n>0));
+  const base={energy,rpe,sleep,sessions:(sessions||[]).length};
+  if(!energy&&!rpe&&!sleep)return {...base,level:'none',icon:'⚪',text:'Sin datos todavía: al cerrar cada sesión anotá energía y esfuerzo (RPE) y registrá el sueño.'};
+  if((energy&&energy<=2)||rpe>=9.5||(sleep&&sleep<6))return {...base,level:'red',icon:'🔴',text:'Fatiga alta o poco sueño: priorizá técnica, repetí cargas y no llegues al fallo.'};
+  if((energy&&energy<3)||rpe>=9||(sleep&&sleep<7))return {...base,level:'yellow',icon:'🟡',text:'Fatiga moderada: cuidá el RIR objetivo y no sumes volumen esta semana.'};
+  return {...base,level:'green',icon:'🟢',text:'Buena recuperación: semana apta para progresar.'};
+}
+// ── Semáforo de sobrecarga por ejercicio de la rutina activa ──
+function exerciseStalled(rid,did,ex){
+  const strength=exerciseLoadHistory(rid,did,ex.name,4).map(h=>{const b=bestProgressSet(h.logs,ex);return b?estimatedStrength(b.weight,b.reps,b.rir):0;}).filter(Boolean);
+  return strength.length>=3&&Math.max(strength[0],strength[1])<=strength[2]*1.01;
+}
+function overloadSummary(r){
+  const res={up:[],hold:[],review:[],data:[],manual:[]};
+  (r?.days||[]).forEach(d=>(d.exercises||[]).forEach((ex,ei)=>{
+    const a=exerciseProgression(r.id,d.id,ei,ex);
+    const stalled=a.kind!=='manual'&&exerciseStalled(r.id,d.id,ex);
+    const kind=stalled&&a.kind!=='up'?'review':(res[a.kind]?a.kind:'hold');
+    res[kind].push({name:ex.name,next:a.next,stalled});
+  }));
+  return res;
+}
+function coachPlanInfo(r){
+  const plan=gymPlan(),thisId=plan[monthKey()],next=new Date();next.setMonth(next.getMonth()+1,1);
+  const nextId=plan[monthKey(next)],p=thisId?programById(thisId):null,np=nextId?programById(nextId):null;
+  const left=nextMonthKeys(planHorizon()).filter(k=>plan[k]).length;
+  return {thisId,nextId,name:p?.name||'',nextName:np?.name||'',running:!!(thisId&&r?.programId===thisId),monthsPlanned:left,loaded:!!_programsData};
+}
+function coachBoardHtml(r,activeW){
+  if(!r||!activeW)return '';
+  const wk=programWeekInfo(r,activeW.id),cycle=getCycleStatus(r.id,activeW.id),plan=coachPlanInfo(r);
+  const rec=recoveryStatus(weekSessions(activeW),sleepHoursLast7(nutData?.sleepLog));
+  const ov=overloadSummary(r);
+  const recCol=rec.level==='red'?'var(--red)':rec.level==='yellow'?'var(--gold)':rec.level==='green'?'var(--green)':'var(--text2)';
+  const chip=(n,label,col)=>`<div class="cycle-stat"><b style="color:${col}">${n}</b><span>${label}</span></div>`;
+  let h=`<div class="card" style="margin-bottom:14px;border-color:var(--blue-b)">
+    <div class="sec-t" style="margin:0 0 10px">📋 Tablero del preparador</div>`;
+  // 1. Plan y semana
+  h+=`<div style="font-size:12px;line-height:1.6;margin-bottom:10px">`;
+  if(plan.thisId)h+=`<div>🗓 <b>Este mes:</b> ${esc(plan.name||'programa del plan')} ${plan.running?'<span style="color:var(--green)">✓ en curso</span>':`<span style="color:var(--gold)">· tu rutina activa es otra</span> <button type="button" class="btn b-sm b-p" style="min-height:36px;margin-left:4px" onclick="startMonthProgram()">Empezar</button>`}</div>`;
+  else h+=`<div style="color:var(--text2)">🗓 Sin programa asignado este mes. <button type="button" class="btn b-sm b-g" style="min-height:36px;margin-left:4px" onclick="openYearPlan()">Armar plan 3/6/12m</button></div>`;
+  if(plan.nextName)h+=`<div style="color:var(--text2)">Próximo mes: ${esc(plan.nextName)}</div>`;
+  h+=wk?`<div>🎯 <b>Semana ${wk.week}/${wk.length}:</b> ${esc(wk.focus||'')} · RIR ${esc(wk.rir||'—')} · volumen ${esc(wk.volume||'—')}</div>`
+       :`<div>🎯 <b>Semana ${cycle.week}/${cycle.length}</b> del bloque ${cycle.block} · ${cycle.phase==='Revisión'?'última del bloque: evaluá fatiga y adherencia':'acumulación: sumá reps dentro del rango con 1–3 RIR'}</div>`;
+  h+=`</div>`;
+  // 2. Recuperación
+  h+=`<div style="padding:10px;border-radius:10px;background:var(--bg3);margin-bottom:10px">
+    <div style="font-size:12px;font-weight:700;color:${recCol}">${rec.icon} ${esc(rec.text)}</div>
+    <div style="font-size:10px;color:var(--text2);margin-top:4px">${rec.sessions?plural(rec.sessions,'sesión','sesiones')+' esta semana':'Sin sesiones cerradas esta semana'}${rec.energy?' · energía '+rec.energy+'/5':''}${rec.rpe?' · RPE '+rec.rpe:''}${rec.sleep?' · sueño '+String(rec.sleep).replace('.',',')+' h/noche (7 días)':''}</div>
+  </div>`;
+  // 3. Semáforo de sobrecarga
+  h+=`<div class="cycle-strip" style="margin-bottom:8px;grid-template-columns:repeat(4,1fr)">${chip(ov.up.length,'Subir','var(--green)')}${chip(ov.hold.length,'+ Reps','var(--blue)')}${chip(ov.review.length,'Revisar','var(--gold)')}${chip(ov.data.length,'Sin datos','var(--text2)')}</div>`;
+  if(ov.up.length)h+=`<div style="font-size:11px;color:var(--green);margin-bottom:4px"><b>Listos para subir:</b> ${ov.up.map(x=>esc(x.name)+(x.next?' → '+progressKg(x.next)+' kg':'')).join(' · ')}</div>`;
+  if(ov.review.length)h+=`<div style="font-size:11px;color:var(--gold);margin-bottom:4px"><b>Revisar:</b> ${ov.review.map(x=>esc(x.name)+(x.stalled?' (3 semanas sin mejora)':'')).join(' · ')}</div>`;
+  if(ov.data.length)h+=`<div style="font-size:10px;color:var(--text3)">Para que la app decida, anotá reps reales y RIR en todas las series.</div>`;
+  if(rec.level==='red'&&ov.up.length)h+=`<div style="font-size:10px;color:var(--red);margin-top:4px">Con esta fatiga, mejor confirmá la subida en la próxima sesión antes de cargar más.</div>`;
+  return h+`</div>`;
+}
+// ── Check-in semanal: se arma ANTES de cerrar (todavía están las series de la semana) ──
+function weeklyCheckinData(r,oldW){
+  const cycle=oldW?getCycleStatus(r.id,oldW.id):null;
+  const prevW=oldW?gymWeekLog.filter(w=>w.routineId===r.id&&w.id!==oldW.id&&w.weekStart<oldW.weekStart).sort((a,b)=>b.weekStart.localeCompare(a.weekStart))[0]:null;
+  const diffs=oldW&&prevW?weekExerciseDiffs(prevW,oldW):[];
+  return {
+    pct:oldW?getWeekPct(oldW.id):0,
+    sessions:weekSessions(oldW),
+    rec:recoveryStatus(weekSessions(oldW),sleepHoursLast7(nutData?.sleepLog)),
+    ups:diffs.filter(d=>d.kind==='up').length,downs:diffs.filter(d=>d.kind==='down').length,same:diffs.filter(d=>d.kind==='same').length,
+    best:diffs.filter(d=>d.kind==='up').sort((a,b)=>b.dPct-a.dPct)[0]||null,
+    overload:overloadSummary(r),
+    blockDone:!!cycle&&cycle.week===cycle.length,block:cycle?.block||1
+  };
+}
+function showWeeklyCheckin(r,data,programChanged){
+  const wk=programWeekInfo(r),cycle=getCycleStatus(r.id,activeWeekId),plan=coachPlanInfo(r);
+  let h=`<div class="mt">✅ Check-in semanal</div>
+  <div class="sec-t">La semana que cerraste</div>
+  <div style="font-size:12px;line-height:1.7;margin-bottom:12px">
+    Adherencia <b>${data.pct}%</b>${data.sessions.length?' · '+plural(data.sessions.length,'sesión','sesiones'):''}${data.rec.energy?' · energía '+data.rec.energy+'/5':''}${data.rec.rpe?' · RPE '+data.rec.rpe:''}<br>
+    ${data.ups||data.downs||data.same?`vs la anterior: <span style="color:var(--green)">${data.ups} ↑</span> · ${data.same} = · <span style="color:var(--red)">${data.downs} ↓</span>${data.best?'<br>Mejor avance: <b>'+esc(data.best.name)+'</b> '+esc(data.best.text):''}`:'Todavía no hay una semana anterior para comparar.'}
+  </div>`;
+  if(data.overload.up.length)h+=`<div class="alert al-suc" style="margin-bottom:10px"><div class="al-i">⬆️</div><div class="al-t"><b>Esta semana probá subir:</b><br>${data.overload.up.map(x=>esc(x.name)+(x.next?' → '+progressKg(x.next)+' kg':'')).join('<br>')}<br><span style="font-size:10px">Solo si la técnica fue estable y sin dolor. Volvé al mínimo del rango.</span></div></div>`;
+  if(data.overload.review.length)h+=`<div class="alert al-warn" style="margin-bottom:10px"><div class="al-i">⚠️</div><div class="al-t"><b>Repetí carga y revisá:</b> ${data.overload.review.map(x=>esc(x.name)).join(', ')}</div></div>`;
+  h+=`<div class="sec-t">La semana que arranca</div><div style="font-size:12px;line-height:1.7;margin-bottom:12px">`;
+  h+=wk?`Semana ${wk.week}/${wk.length}: <b>${esc(wk.focus||'')}</b> · RIR ${esc(wk.rir||'—')} · volumen ${esc(wk.volume||'—')}`:`Semana ${cycle.week}/${cycle.length} del bloque ${cycle.block} · ${cycle.phase}`;
+  if(programChanged)h+=`<br><span style="color:var(--blue)">La rutina tomó las series, reps y RIR que marca el programa para esta semana.</span>`;
+  if(data.rec.level==='red')h+=`<br><span style="color:var(--red)">${esc(data.rec.text)}</span>`;
+  h+=`</div>`;
+  if(data.blockDone){
+    h+=`<div class="alert al-info" style="margin-bottom:12px"><div class="al-i">🏁</div><div class="al-t"><b>Terminaste el bloque ${data.block}.</b> ${plan.thisId&&!plan.running?'Tu plan tiene <b>'+esc(plan.name||'otro programa')+'</b> para este mes.':'Arrancás el bloque '+(data.block+1)+': misma estructura, buscando superar tus marcas.'}</div></div>`;
+    if(plan.thisId&&!plan.running)h+=`<button class="btn b-md b-p" style="width:100%;min-height:44px;margin-bottom:8px" onclick="cOv1();startMonthProgram()">Empezar ${esc(plan.name||'el programa del mes')}</button>`;
+    h+=`<button class="btn b-md b-g" style="width:100%;min-height:44px;margin-bottom:8px" onclick="openCycleSettings()">Configurar el próximo bloque</button>`;
+  }
+  h+=`<button class="btn b-lg b-p" style="min-height:48px" onclick="cOv1()">Listo</button>`;
+  oOv1(h);
+}
+// Contexto extra para la IA: plan 3/6/12m, fatiga reciente y volumen por músculo.
+function gymCoachContextLines(r){
+  const lines=[];
+  if(!r)return lines;
+  const plan=coachPlanInfo(r);
+  lines.push('- Plan '+planHorizon()+' meses: '+(plan.thisId?'este mes toca "'+(plan.name||plan.thisId)+'"'+(plan.running?' (es la rutina activa)':' (la rutina activa es otra)'):'sin programa asignado este mes')+(plan.nextName?'; próximo mes "'+plan.nextName+'"':'')+'; '+plan.monthsPlanned+' meses planificados.');
+  const rec=recoveryStatus(weekSessions(getActiveWeek()),sleepHoursLast7(nutData?.sleepLog));
+  lines.push('- Recuperación esta semana: '+rec.icon+' '+rec.text+(rec.sleep?' Sueño medio 7 días: '+rec.sleep+' h.':' Sin registro de sueño.'));
+  const recent=(gymHist||[]).slice(0,5);
+  if(recent.length)lines.push('- Últimas sesiones (energía/5, RPE/10, nota): '+recent.map(h=>(h.dn||'día')+' '+(h.pct??'')+'%'+(h.energy?' E'+h.energy:'')+(h.rpe?' RPE'+h.rpe:'')+(h.note?' "'+String(h.note).slice(0,60)+'"':'')).join(' | '));
+  const vol=computeWeeklyMuscleVolume(getActiveWeek(),r);
+  if(vol.length)lines.push('- Volumen semanal por músculo (hechas/planificadas): '+vol.map(v=>v.muscle+' '+v.done+'/'+v.planned+' ['+v.status+']').join(', '));
+  return lines;
 }
 
 function openWeekDetail(weekId){
@@ -2017,26 +2187,9 @@ function openWeekDetail(weekId){
     const prev=weeks[idx-1];
     h+=`<div class="card" style="margin-top:14px;border-color:var(--green-b)">
       <div class="sec-t">📈 vs semana anterior (${prev.weekStart})</div>`;
-    let hasDiff=false;
-    Object.keys(prev.days).forEach(did=>{
-      const pd=prev.days[did];const cd=w.days[did];
-      if(!pd||!cd)return;
-      pd.exercises.forEach((pe,i)=>{
-        const ce=cd.exercises[i];
-        if(!ce)return;
-        const pW=parseFloat(pe.weight)||0;const cW=parseFloat(ce.weight)||0;
-        if(pW>0||cW>0){
-          hasDiff=true;
-          const arrow=cW>pW?'↑':cW<pW?'↓':'→';
-          const col=cW>pW?'var(--green)':cW<pW?'var(--red)':'var(--text2)';
-          h+=`<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);font-size:12px">
-            <span>${esc(pe.name)}</span>
-            <span style="color:${col};font-weight:700">${pW}kg → ${cW}kg <span style="color:${col}">${arrow}</span></span>
-          </div>`;
-        }
-      });
-    });
-    if(!hasDiff)h+=`<div style="font-size:12px;color:var(--text2);padding:8px 0">Sin cambios de peso registrados</div>`;
+    const diffs=weekExerciseDiffs(prev,w);
+    h+=diffs.length?diffs.map(weekDiffRowHtml).join(''):`<div style="font-size:12px;color:var(--text2);padding:8px 0">Todavía no hay series con kg y reps para comparar.</div>`;
+    h+=`<div style="font-size:10px;color:var(--text3);margin-top:6px">Se compara la mejor serie de cada ejercicio (kg × reps). La fuerza estimada usa kg, reps y RIR.</div>`;
     h+=`</div>`;
   }
   oOv1(h);
@@ -3537,7 +3690,7 @@ function planHorizon(){const h=Number(S.g('gymPlanHorizon1',12));return [3,6,12]
 function setPlanHorizon(months){const m=Number(months);if(![3,6,12].includes(m))return;S.s('gymPlanHorizon1',m);if(typeof window!=='undefined')window._renderYearPlan?.();if(typeof renderGym==='function')renderGym();}
 function ensureProgramsForGym(){
   if(_programsData||_programsPromise)return;
-  loadPrograms().then(()=>{if(curPage==='gym'&&(curGT===7||curGT===0))renderGym();}).catch(()=>{if(curPage==='gym'&&curGT===7)renderGym();});
+  loadPrograms().then(()=>{if(curPage==='gym'&&[0,1,4,7].includes(curGT))renderGym();}).catch(()=>{if(curPage==='gym'&&curGT===7)renderGym();});
 }
 function progChip(label,active,onclick){return `<button type="button" class="pg-chip${active?' on':''}" aria-pressed="${active}" onclick="${onclick}">${label}</button>`;}
 function programMetaHtml(p){
@@ -3860,13 +4013,15 @@ function updateWeekLogFromCurrent(){
     d.exercises.forEach((ex,ei)=>{
       if(!w.days[d.id].exercises[ei])return;
       const wk=`${activeRid}|${d.id}|${ei}`;
-      w.days[d.id].exercises[ei].weight=weights[wk]||'';
       let completed=0;const logs=[];
       for(let si=0;si<ex.series;si++){
         const perf=getSetPerformance(activeRid,d.id,ei,si);
         if(perf.done)completed++;
         logs.push({weight:perf.weight,reps:perf.reps,rir:perf.rir,done:perf.done,updatedAt:perf.updatedAt||null});
       }
+      // El peso de la semana es el de la mejor serie hecha; si no hay series, el peso suelto anotado.
+      const _best=bestProgressSet(logs.filter((s,i)=>!(i===0&&isBilbo(ex)&&logs.length>1)),ex);
+      w.days[d.id].exercises[ei].weight=_best&&Number(_best.weight)>0?_best.weight:(weights[wk]||'');
       w.days[d.id].exercises[ei].name=ex.name;
       w.days[d.id].exercises[ei].muscle=ex.muscle;
       w.days[d.id].exercises[ei].reps=ex.reps;
@@ -3887,6 +4042,7 @@ function startNewWeek(){
   if(oldW&&!oldW.completed&&oldW.weekStart>todayStr()&&getWeekPct(oldW.id)===0){tst('La próxima semana ya está preparada');return;}
   if(oldW&&!oldW.completed&&getWeekPct(oldW.id)<100&&!confirm(`Esta semana está ${getWeekPct(oldW.id)}% completa. ¿Querés cerrarla y preparar la siguiente?`))return;
   updateWeekLogFromCurrent();
+  const _checkin=oldW?weeklyCheckinData(r,oldW):null;
   if(oldW)oldW.completed=true;
   let ws=getWeekStart(todayStr());
   if(oldW){
@@ -3898,7 +4054,9 @@ function startNewWeek(){
   if(duplicate){activeWeekId=duplicate.id;S.s('activeWeekId',activeWeekId);renderGym();return;}
   sets={};weights={};setPerformance={};
   S.s('sets2',sets);S.s('wts2',weights);S.s('setPerf3',setPerformance);
+  const _before=JSON.stringify((r.days||[]).map(d=>d.exercises.map(e=>[e.series,e.reps,e.rir])));
   prepareProgramWeek(r);
+  const _programChanged=_before!==JSON.stringify((r.days||[]).map(d=>d.exercises.map(e=>[e.series,e.reps,e.rir])));
   const nw={
     id:'w_'+uid(),
     routineId:activeRid,
@@ -3923,8 +4081,9 @@ function startNewWeek(){
   S.s('gymWeekLog',gymWeekLog);
   S.s('activeWeekId',activeWeekId);
   const cycle=getCycleStatus(activeRid,activeWeekId);
-  tst(`Semana ${cycle.week}/${cycle.length} preparada · ${cycle.phase}`);
   renderGym();
+  if(_checkin)showWeeklyCheckin(r,_checkin,_programChanged);
+  else tst(`Semana ${cycle.week}/${cycle.length} preparada · ${cycle.phase}`);
 }
 
 // ═════════════════════════════════════════
@@ -4624,6 +4783,21 @@ function openFinanceAI(){
   setTimeout(()=>{const input=document.getElementById('chat-inp');if(input){input.placeholder='Ej: gasté $1.250 en el Disco ayer';input.focus();}},120);
 }
 
+// Resumen de 🐷 Ahorros para el chat: saldo real, tipo, moneda, meta y vencimiento de plazos fijos.
+function ahorrosContextText(now=new Date()){
+  const list=cats.filter(c=>c.ahorro&&!c.archived);
+  if(!list.length)return 'Ahorros (plata guardada, NO son gastos): ninguno creado.';
+  return 'Ahorros (plata guardada, NO son gastos). Total en pesos '+fmtFull(ahorroAcumTotal('UYU'))+(list.some(c=>ahorroMoneda(c)==='USD')?' + US'+fmtFull(ahorroAcumTotal('USD')):'')+', guardado este mes '+fmtFull(ahorroNetoMes(now.getMonth(),now.getFullYear()))+':\n'+
+    list.map(c=>{
+      const mon=ahorroMoneda(c),tipo=ahorroTipo(c);
+      let line='- {id:"'+c.id+'",nombre:"'+c.n+'",tipo:"'+tipo+'",moneda:"'+mon+'",saldo:'+ahorroAcumCat(c.id,now)+(Number(c.objetivo)>0?',objetivo:'+c.objetivo:'')+(c.fechaObjetivo?',fechaObjetivo:"'+c.fechaObjetivo+'"':'')+(Number(c.aportePlan)>0?',aporteMensualPlan:'+c.aportePlan:'');
+      if(tipo==='plazo_fijo'){
+        const pf=plazoFijoInfo(c,now);
+        line+=(c.banco?',banco:"'+c.banco+'"':'')+(pf.tasa?',tasaAnual:'+pf.tasa:'')+(c.fechaVence?',vence:"'+c.fechaVence+'",diasParaVencer:'+pf.diasFaltan:'')+(pf.interes?',interesEstimado:'+pf.interes:'')+(pf.vencido?',estado:"vencido"':pf.porVencer?',estado:"por vencer"':'');
+      }
+      return line+'}';
+    }).join('\n');
+}
 async function analizarGastos(){
   const key=aiKey();
   if(!key){tst('Configurá la IA primero',3500);return;}
@@ -4640,7 +4814,7 @@ async function analizarGastos(){
   const btn=document.getElementById('btn-analizar');
   if(btn){btn.textContent='⏳ Analizando…';btn.disabled=true;}
   const mLabel=MONTHS[m];
-  let catLines=cats.filter(c=>montoCat(c,m,y)>0||gastos.some(g=>g.c===c.id&&g.m===m&&g.y===y)).map(c=>{
+  let catLines=cats.filter(c=>!c.ahorro&&(montoCat(c,m,y)>0||gastos.some(g=>g.c===c.id&&g.m===m&&g.y===y))).map(c=>{
     const cFijo=montoCat(c,m,y);
     const cVar=sumMoney(gastos.filter(g=>g.c===c.id&&g.m===m&&g.y===y),g=>g.v);
     const cTotal=money(cFijo+cVar);
@@ -4653,7 +4827,8 @@ async function analizarGastos(){
     'Gastos variables: '+fmtFull(vars)+'\n'+
     'Tarjetas: '+fmtFull(cardTotal)+'\n'+
     'Total gastado: '+fmtFull(total)+'\n'+
-    'Desglose por categoría:\n'+catLines;
+    'Guardado en ahorros este mes (plata guardada, no es gasto): '+fmtFull(totalAhorroMes(m,y))+'\n'+
+    'Desglose de gastos por categoría:\n'+catLines;
   const prompt='Sos un asesor financiero personal. Dado el siguiente resumen del mes, dame un diagnóstico breve (2-3 frases) y 3-4 recomendaciones concretas de ahorro.\n'+
     'REGLAS:\n- Español uruguayo, tono directo y útil\n- NO inventes números: usá solo los del resumen\n- Si detectás una oportunidad clara de ahorro, podés sugerir crear una meta con [ACCION]{"op":"crear_meta","nombre":"...","aporte":0,"objetivo":0}[/ACCION]\n'+
     '- Respondé SOLO con el diagnóstico y recomendaciones en texto plano con **negrita** para énfasis, más las [ACCION] si corresponde. Nada más.\n\n'+
@@ -6414,7 +6589,7 @@ async function sendChat(){
     const pagado=isPaid(c.id,m,y);
     return '{id:"'+c.id+'",n:"'+c.n+'",base:'+c.base+',fijo:'+montoCat(c,m,y)+',totalMes:'+f+(cardRef?',tarjeta:"'+cardRef+'"':'')+',pagado:'+pagado+',color:"'+c.c+'"}';
   }).join(',\n');
-  const cards=(S.g('cards1',[])||[]).map(c=>'{id:"'+c.id+'",n:"'+c.n+'",cuota:'+(getCardMonthAmt(c.id)||0)+'}').join(',');
+  const cards=(S.g('cards1',[])||[]).map(c=>'{id:"'+c.id+'",n:"'+(c.name||c.n||'')+'",cuota:'+(getCardMonthAmt(c.id)||0)+'}').join(',');
   const ultimosGastos=gastos.filter(g=>g.y>=y-1).slice(-30).map(g=>'{c:"'+g.c+'",v:'+g.v+',d:"'+(g.desc||'')+'",m:'+g.m+',y:'+g.y+',f:"'+g.f+'"}').join(',');
   const sueldosData=sueldos&&Object.keys(sueldos).length?Object.entries(sueldos).map(([k,v])=>k+':'+v).join(', '):'(sin datos)';
   const profile=gymProfile||{};
@@ -6445,6 +6620,7 @@ async function sendChat(){
   const dataCtx='DATOS DE LA APP (mes actual '+(m+1)+'/'+y+'):\n'+
     'Perfil y nutrición:\n'+profileStr+'\n\n'+
     'Categorías:\n'+catsInfo+'\n\n'+
+    ahorrosContextText()+'\n\n'+
     'Tarjetas:\n['+cards+']\n\n'+
     'Últimos gastos variables:\n['+ultimosGastos+']\n\n'+
     'Sueldos: '+sueldosData+'\n\n'+
@@ -6668,6 +6844,7 @@ function coachPrompt(userMsg, isVoice){
     '- Respuestas breves y conversacionales (2-5 frases). Esto es un chat, no un ensayo.\n'+
     '- Podés sugerir acciones concretas: agendar algo, recordar un dato. Si querés agendar usá [ACCION]{"op":"evento","titulo":"...","fecha":"YYYY-MM-DD","hora":"HH:MM","recordatorio":15}[/ACCION]. ESTO ES MUY IMPORTANTE: Si la persona te cuenta algo duradero (hábitos, metas, gustos, historial), TENÉS QUE GUARDARLO con [ACCION]{"op":"recordar","dato":"...","tag":"general"}[/ACCION] o si no se te olvidará en el futuro.\n'+
     '- ENTRENAMIENTO: seguí la PROGRESIÓN DEL GYM. Si pregunta qué peso usar, respondé con lo que sugiere la app para ese ejercicio y explicá por qué (reps y RIR de la última vez). Celebrá cuando la tendencia de kg sube. En la semana de Revisión (última del bloque) preguntá por fatiga, dolor y sueño antes de proponer seguir, mantener o bajar volumen. Nunca propongas subir carga si la app dice revisar o faltan datos.\n'+
+    '- PREPARADOR FÍSICO: cuando la consulta sea de entrenamiento, rutina, fatiga o progreso, respondé como preparador de fuerza e hipertrofia, sin perder la calidez. Usá estas partes cortas: **Lectura** (solo datos reales de la app), **Decisión** (máximo 1-2 cambios), **Próxima sesión** (cargas, reps y RIR concretos) y **Qué registrar**. Doble progresión estricta con 1-3 RIR; nunca subas carga solo porque una serie figure hecha; si faltan reps o RIR, pedilos. Respetá la serie Bilbo cuando esté marcada. Si la recuperación está en rojo, priorizá técnica y repetir cargas. Ante dolor agudo, mareo o falta de aire, que pare y consulte a un profesional.\n'+
     '- Para registrar un ejercicio de gimnasio: [ACCION]{"op":"registrar_serie","ejercicio":"nombre","serie":3,"peso":30,"reps":10}[/ACCION] o si te dice que lo terminó: [ACCION]{"op":"completar_ejercicio","ejercicio":"nombre"}[/ACCION]\n'+
     'LÍMITE IMPORTANTE DE SEGURIDAD:\n'+
     '- Si la persona expresa angustia profunda, desesperanza, o cualquier señal de querer lastimarse, NO intentes hacer de terapeuta. Respondé con calidez, validá lo que siente, y sugerile con suavidad hablar con un profesional de salud mental o alguien de confianza. En Uruguay puede llamar a la Línea Vida 0800 0767 o al 911 si es urgente. Tomátelo siempre en serio.\n\n'+
@@ -8008,6 +8185,9 @@ ${weightsStr}
 RENDIMIENTO REAL POR SERIE (fuente principal):
 ${performanceStr}
 
+ESTADO DEL PLAN, RECUPERACIÓN, VOLUMEN Y SUGERENCIAS DE LA APP:
+${buildGymProgressContext(3200)}
+
 REGISTRO DE CARDIO:
 ${cardioStr}
 
@@ -8018,17 +8198,22 @@ INSTRUCCIONES DEL REPORTE:
 4. Si falla el mínimo dos exposiciones seguidas, revisá adherencia, sueño, descanso, técnica y volumen antes de bajar carga. No indiques descarga sólo por calendario.
 5. Proponé como máximo dos cambios principales y una métrica concreta para revisar la próxima semana. Respondé en Markdown claro y breve. No uses HTML.
 
-Estructurá el reporte con:
-- Un título principal: "📊 Reporte de Rendimiento & Sobrecarga"
-- Sección 1: Análisis de Fuerza y Sobrecarga Progresiva (con consejos para ejercicios puntuales de sus rutinas si hay datos).
-- Sección 2: Análisis de Cardio (frecuencia, volumen y sugerencia según su objetivo).
-- Sección 3: Plan de Acción Científico para las próximas 3-4 semanas.`;
+6. Respetá el plan de 3/6/12 meses y la semana del programa (foco, RIR y volumen objetivo). Si la recuperación está en rojo, no propongas subir cargas.
+7. Si un grupo muscular está bajo (<6 series) o alto (>20), mencionalo solo si cambia la decisión.
+
+Estructurá el reporte como revisión semanal de preparador físico:
+- Título: "📋 Revisión semanal del preparador"
+- **Lectura**: qué muestran los datos reales (progreso, estancamientos, fatiga, sueño, adherencia).
+- **Decisión**: máximo dos cambios para la semana que viene y por qué.
+- **Próxima sesión**: ejercicios clave con carga, reps y RIR concretos (solo con datos suficientes).
+- **Cardio**: frecuencia y volumen según el objetivo.
+- **Qué registrar**: la métrica concreta que confirma si funcionó.`;
 
   try {
     const raw = await _aiComplete(prompt);
     const cleanReport = raw.replace(/```(?:html|markdown)?/gi, '').replace(/```/g, '').trim();
     oOv1(`<div class="sec" style="max-height:85dvh;overflow-y:auto">
-      <div style="font-family:var(--fd);font-size:18px;font-weight:800;margin-bottom:14px;color:var(--accent2);display:flex;align-items:center;gap:6px">📊 Análisis de Rendimiento</div>
+      <div style="font-family:var(--fd);font-size:18px;font-weight:800;margin-bottom:14px;color:var(--accent2);display:flex;align-items:center;gap:6px">📋 Revisión del preparador</div>
       <div style="font-size:13px;line-height:1.6;color:var(--text1);">${_mdHtml(cleanReport)}</div>
       <button class="btn b-lg b-g" onclick="cOv1()" style="width:100%;margin-top:16px;">Entendido</button>
     </div>`);
@@ -9137,7 +9322,7 @@ async function interpretVoice(txt){
   const nutStr='Nutrición hoy: '+waterGlasses+'/'+waterTargetScore+' vasos de agua'+(nd.lastPlanDate===todayVoice?' · Plan de comidas generado hoy por IA':'');
   const profileStr='Perfil físico: '+(profile.height?'Altura:'+profile.height+'cm, ':'')+(profile.weight?'Peso:'+profile.weight+'kg, ':'')+'Experiencia:'+(profile.experience||0)+'años'+(profile.goal?', Objetivo:'+profile.goal:'')+(profile.dietRestrictions?', Dieta:'+profile.dietRestrictions:'')+' '+nutStr;
   const catsInfo=cats.map(c=>'{id:"'+c.id+'",n:"'+c.n+'",base:'+c.base+',totalMes:'+totalCatMes(c.id,m,y)+',pagado:'+isPaid(c.id,m,y)+'}').join(',\n');
-  const cards=(S.g('cards1',[])||[]).map(c=>'{id:"'+c.id+'",n:"'+c.n+'",cuota:'+(getCardMonthAmt(c.id)||0)+'}').join(',');
+  const cards=(S.g('cards1',[])||[]).map(c=>'{id:"'+c.id+'",n:"'+(c.name||c.n||'')+'",cuota:'+(getCardMonthAmt(c.id)||0)+'}').join(',');
   const ultimosGastos=gastos.filter(g=>g.y>=y-1).slice(-30).map(g=>'{c:"'+g.c+'",v:'+g.v+',d:"'+(g.desc||'')+'",m:'+g.m+',y:'+g.y+'}').join(',');
   const sueldosData=sueldos&&Object.keys(sueldos).length?Object.entries(sueldos).map(([k,v])=>k+':'+v).join(', '):'(sin datos)';
   // Cargas por serie, tendencia, ciclo y sugerencia de la app (antes: lista suelta de pesos sin serie).
@@ -9150,6 +9335,7 @@ async function interpretVoice(txt){
   const dataCtx='DATOS DE LA APP:\n'+
     'Perfil y nutrición: '+profileStr+'\n\n'+
     'Categorías:\n'+catsInfo+'\n\n'+
+    ahorrosContextText()+'\n\n'+
     'Tarjetas:\n['+cards+']\n\n'+
     'Últimos gastos:\n['+ultimosGastos+']\n\n'+
     'Sueldos: '+sueldosData+'\n\n'+

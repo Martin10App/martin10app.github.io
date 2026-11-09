@@ -21,7 +21,7 @@ function extractFunction(name,source=html){
   throw new Error(`Función ${name} incompleta`);
 }
 
-const FUNCTIONS=['gymSetKey','clampGymNumber','getSetPerformance','updateWeekLogFromCurrent','routineDraft','cleanRoutineDays',
+const FUNCTIONS=['gymSetKey','clampGymNumber','getSetPerformance','estimatedStrength','progressTimed','bestProgressSet','isBilbo','updateWeekLogFromCurrent','routineDraft','cleanRoutineDays',
   'exerciseUnits','reorderUnits','copyExercises','cloneRoutine','remapRoutineRecords','applyRoutineEditRecords','getWeekPct'];
 
 const ex=(name,series=2,extra={})=>({name,muscle:'Pecho',series,reps:'8-10',...extra});

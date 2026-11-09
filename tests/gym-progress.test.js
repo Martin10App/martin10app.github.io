@@ -23,7 +23,7 @@ function extractFunction(name,source=html){
 
 const FUNCTIONS=['todayStr','gymSetKey','parseRepRange','clampGymNumber','getSetPerformance','normStr','normalizeGymLookup','gymLookupMatches',
   'resolveGymExerciseTarget','getPreviousExerciseLog','progressionForLogs','exerciseProgression','ensureGymCycle','getCycleStatus',
-  'gymNumberInput','gymSetSummary','exerciseLoadHistory','programWeekInfo','estimatedStrength','progressHasRir','progressKg','progressTimed','bestProgressSet','compareSetToLast','isBilbo','bilboNextWeight','bilboFeedback','exerciseProgressFeedback','buildGymProgressContext','gymDayKey','findGymLogTarget','suggestedSetValues',
+  'gymNumberInput','gymSetSummary','exerciseLoadHistory','programWeekInfo','estimatedStrength','progressHasRir','progressKg','progressTimed','bestProgressSet','compareSetToLast','isBilbo','bilboNextWeight','bilboFeedback','exerciseProgressFeedback','buildGymProgressContext','gymCoachContextLines','coachPlanInfo','gymPlan','monthKey','nextMonthKeys','planHorizon','programById','recoveryStatus','weekSessions','gymDateISO','sleepHoursLast7','getActiveWeek','computeWeeklyMuscleVolume','gymDayKey','findGymLogTarget','suggestedSetValues',
   'cleanupSupersetGroups','normalizeSupersetAssignments','supersetMeta','plural','prepareMovementExercises','normalizeAIRoutinePayload','ejecutarAccion'];
 
 const BILBO_CONST=html.match(/const BILBO_MIN_REPS=[^;]+;/)[0].replace('const','var')+'\n';
@@ -46,7 +46,7 @@ function makeContext({setPerformance={},gymWeekLog=[],activeWeekId='w3'}={}){
   const context={
     routines:routinesFixture(),activeRid:'r1',activeWeekId,gymWeekLog,setPerformance,
     sets:{},weights:{},gymCycles:{},gymProfile:{goal:'hipertrofia',loadIncrement:2.5},
-    uid:()=>String(++n),updateWeekLogFromCurrent:()=>{},db,_exerciseMediaData:null,
+    uid:()=>String(++n),updateWeekLogFromCurrent:()=>{},db,_exerciseMediaData:null,gymHist:[],nutData:{},_programsData:null,
     S:{g:(key,fallback)=>db[key]??fallback,s:(key,value)=>{db[key]=structuredClone(value);return true;}}
   };
   db.rt2=structuredClone(context.routines);
