@@ -25,7 +25,7 @@ const constant=name=>html.match(new RegExp(`const ${name}=[^\\n]*\\n`))[0];
 const FUNCTIONS=['money','sumMoney','parseMoney','fmt','normalizeGymLookup','parseFinanceMonth','categoryTokens','commitmentCategories','cardHasPurchases','shownCommitmentAmount',
   'resolveCommitmentCategory','inferCommitmentAmountAction','resolveFinanceCategory','normalizeFinanceDate','getCardPurchs','pInstAmt','pStartM','pStartY',
   'instMonthYear','getCardMonthAmt','ensureCardCats','isAIActionExecutionError','executeAIActionBlocks','expectsAIAction','inferDirectExpenseAction',
-  'prepareExpenseAction','executeAIActionResponse','ejecutarAccion'];
+  'expenseCategories','prepareExpenseAction','executeAIActionResponse','ejecutarAccion'];
 
 // Categorías comunes con monto mensual, más dos tarjetas de cards1: Visa SIN compras (así tiene Martín
 // las suyas: se usan como monto mensual en pf4) y Master con compras en cuotas.

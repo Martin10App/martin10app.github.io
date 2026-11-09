@@ -646,6 +646,7 @@ textarea.inp{resize:vertical;min-height:64px;line-height:1.45;font-family:inheri
       <button class="tab" id="xt-2" onclick="xTab(2)">Anual</button>
       <button class="tab" id="xt-3" onclick="xTab(3)">Comparar</button>
       <button class="tab" id="xt-4" onclick="xTab(4)">Tarjetas</button>
+      <button class="tab" id="xt-6" onclick="xTab(6)">🐷 Ahorros</button>
       <button class="tab" id="xt-5" onclick="xTab(5)">+ Gasto</button>
       <button class="tab" id="xt-7" onclick="xTab(7)">🛒 Súper</button>
     </div>
@@ -840,6 +841,7 @@ function apiForMuscle(m){
 
 // ── STATE ──
 let routines=[],activeRid=null,sets={},weights={},setPerformance={},gymCycles={},gymHist=[],cardioLog=[];
+let ahorroMovs=[];
 let gymProfile=S.g('gymProfile',{height:0,weight:0,experience:0});
 let nutData=S.g('nutData',{waterLog:{},waterTarget:0,mealPlans:[],lastPlanDate:'',foodLog:{},dietType:'',targetWeight:0,weeklyPlan:null,weeklyPlanDate:''});
 if(!nutData.foodLog)nutData.foodLog={};
@@ -3928,7 +3930,7 @@ function startNewWeek(){
 // ═════════════════════════════════════════
 // GASTOS
 // ═════════════════════════════════════════
-function xTab(i){curXT=i;for(let j=0;j<8;j++)document.getElementById('xt-'+j)?.classList.toggle('on',j===i);renderGastos();}
+function xTab(i){curXT=i;for(let j=0;j<8;j++)document.getElementById('xt-'+j)?.classList.toggle('on',j===i);if(typeof centerTab==='function')centerTab(document.getElementById('xt-'+i));renderGastos();}
 
 function renderGastos(){
   const el=document.getElementById('gastos-b');if(!el)return;
@@ -3940,6 +3942,7 @@ function renderGastos(){
   if(curXT===3)el.innerHTML=rComparar();
   if(curXT===4)el.innerHTML=rTarjetas();
   if(curXT===5)el.innerHTML=rNuevoGasto();
+  if(curXT===6)el.innerHTML=rAhorros();
   if(curXT===7)el.innerHTML=rCompras();
 }
 
@@ -4136,31 +4139,118 @@ function totalCompromisosMes(m,y){
   });
   return t;
 }
-function totalAhorroMes(m,y){
+// ════════ AHORROS (ahr1) ════════
+// Regla: todo lo que dice "ahorro" es plata guardada de verdad.
+// - Plan: lo que pensás guardar (aportePlan de la meta y montos de meses futuros en pf4).
+// - Movimiento (ahr1): plata que guardaste (aporte), sacaste (retiro) o corregiste (ajuste, con signo).
+// El saldo de una meta = saldoInicial + movimientos con fecha hasta hoy. Nunca cuenta el plan.
+const AHORRO_TIPOS={meta:'🎯 Metas',plazo_fijo:'🏦 Plazos fijos',reserva:'💰 Otra plata guardada'};
+function ahorroISO(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+function ahorroTipo(c){return c&&AHORRO_TIPOS[c.tipoAhorro]?c.tipoAhorro:'meta';}
+function ahorroMoneda(c){return c&&c.moneda==='USD'?'USD':'UYU';}
+function ahorroFmt(v,moneda){return (moneda==='USD'?'US':'')+fmtFull(v);}
+function ahorroSigned(mov){
+  const v=money(Number(mov&&mov.v)||0);
+  if(mov.tipo==='retiro')return -Math.abs(v);
+  if(mov.tipo==='ajuste')return v;
+  return Math.abs(v);
+}
+// Migración única: los montos de meses pasados y del actual en pf4 pasan a ser aportes reales.
+// Los meses futuros quedan en pf4 como plan. No borra nada de pf4.
+function migrateAhorrosFromPf4(categoryList,pf,now=new Date()){
+  const movs=[],limite=now.getFullYear()*12+now.getMonth();
+  (categoryList||[]).forEach(c=>{
+    if(!c.ahorro)return;
+    // El modal viejo decía "Saldo inicial / base acumulada": se fija el número que se veía.
+    // Como no se sabe si ese número era un saldo o un monto mensual, se marca para que Martín lo confirme.
+    if(c.saldoInicial===undefined){c.saldoInicial=money(c.base||0);if(c.saldoInicial>0)c.revisarSaldo=true;}
+    const prefix=c.id+'_';
+    Object.keys(pf||{}).forEach(key=>{
+      if(!key.startsWith(prefix))return;
+      const match=key.slice(prefix.length).match(/^(\d+)_(\d+)$/);if(!match)return;
+      const m=Number(match[1]),y=Number(match[2]),v=money(Number(pf[key])||0);
+      if(y*12+m>limite||!v)return;
+      movs.push({id:'mig_'+key,meta:c.id,tipo:v>0?'aporte':'retiro',v:Math.abs(v),fecha:y+'-'+String(m+1).padStart(2,'0')+'-01',m,y,nota:'',origen:'pf4'});
+    });
+  });
+  return movs.sort((a,b)=>a.fecha<b.fecha?-1:a.fecha>b.fecha?1:0);
+}
+function ahorroMovsDe(catId){return (ahorroMovs||[]).filter(mv=>mv.meta===catId);}
+// Suma de movimientos de la meta con fecha hasta hoy.
+function ahorroHistorialCat(catId,now=new Date()){
+  const hoy=ahorroISO(now);
+  return money(ahorroMovsDe(catId).reduce((t,mv)=>mv.fecha<=hoy?t+ahorroSigned(mv):t,0));
+}
+function ahorroAcumCat(catId,now=new Date()){
+  const c=cats.find(x=>x.id===catId);
+  const inicial=c?money(c.saldoInicial!==undefined?c.saldoInicial:c.base||0):0;
+  return money(inicial+ahorroHistorialCat(catId,now));
+}
+// Neto guardado en un mes (aportes − retiros ± ajustes) de las metas en pesos (o de una sola meta).
+function ahorroNetoMes(m,y,catId=null){
+  const ids=new Set(cats.filter(c=>c.ahorro&&(catId?c.id===catId:ahorroMoneda(c)==='UYU')).map(c=>c.id));
+  return money((ahorroMovs||[]).reduce((t,mv)=>ids.has(mv.meta)&&mv.m===m&&mv.y===y?t+ahorroSigned(mv):t,0));
+}
+// Plan de ahorro del mes (pf4/base de las metas en pesos).
+function planAhorroMes(m,y){
   let t=0;
   cats.forEach(c=>{
-    if(!c.ahorro)return;
-    const monto=montoCat(c,m,y);
-    if(monto>0)t=money(t+monto);
+    if(!c.ahorro||c.archived||ahorroMoneda(c)!=='UYU')return;
+    // Monto propio del mes en pf4; si no hay, el aporte planificado de la meta; si no, la base vieja.
+    const own=pagosFijos[k(c.id,m,y)];
+    const mt=own!==undefined?money(own):money(c.aportePlan>0?c.aportePlan:(c.base||0));
+    if(mt>0)t=money(t+mt);
   });
   return t;
 }
-function ahorroAcumCat(catId){
-  let t=0;
-  const c=cats.find(x=>x.id===catId);
-  if(c) t+=money(c.saldoInicial!==undefined?c.saldoInicial:c.base||0);
-  const prefix=catId+'_';
-  Object.keys(pagosFijos).forEach(key=>{
-    if(!key.startsWith(prefix))return;
-    const rest=key.slice(prefix.length);
-    if(/^\d+_\d+$/.test(rest))t=money(t+pagosFijos[key]);
-  });
-  return t;
+// Ahorro del mes para los totales: real hasta el mes actual, plan para los meses que vienen.
+function totalAhorroMes(m,y,now=new Date()){
+  return y*12+m>now.getFullYear()*12+now.getMonth()?planAhorroMes(m,y):ahorroNetoMes(m,y);
 }
-function ahorroAcumTotal(){
-  let t=0;
-  cats.forEach(c=>{if(c.ahorro)t=money(t+ahorroAcumCat(c.id));});
-  return t;
+function ahorroAcumTotal(moneda='UYU'){
+  return money(cats.filter(c=>c.ahorro&&!c.archived&&ahorroMoneda(c)===moneda).reduce((t,c)=>t+ahorroAcumCat(c.id),0));
+}
+// Valida y arma un movimiento. Devuelve {mov} o {error}.
+function buildAhorroMov(data,categoryList=cats,now=new Date()){
+  const meta=(categoryList||[]).find(c=>c.id===data.meta&&c.ahorro);
+  if(!meta)return {error:'Elegí dónde va el ahorro'};
+  const tipo=['aporte','retiro','ajuste'].includes(data.tipo)?data.tipo:'aporte';
+  const v=parseMoney(data.v);
+  if(!Number.isFinite(v)||v>999999999999||(tipo==='ajuste'?v===0:v<=0))return {error:'Ingresá un monto mayor a 0'};
+  const fecha=String(data.fecha||ahorroISO(now));
+  const match=fecha.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if(!match||!normalizeGoalDate(fecha))return {error:'La fecha no es válida'};
+  return {mov:{id:data.id||uid(),meta:meta.id,tipo,v:tipo==='ajuste'?money(v):money(Math.abs(v)),fecha,m:Number(match[2])-1,y:Number(match[1]),nota:String(data.nota||'').trim().slice(0,120)},meta};
+}
+function addAhorroMov(data,now=new Date()){
+  const built=buildAhorroMov(data,cats,now);if(built.error)return built;
+  ahorroMovs=S.g('ahr1',ahorroMovs||[]);
+  const i=ahorroMovs.findIndex(mv=>mv.id===built.mov.id);
+  if(i>=0)ahorroMovs[i]=built.mov;else ahorroMovs.push(built.mov);
+  S.s('ahr1',ahorroMovs);
+  return built;
+}
+function delAhorroMovById(id){
+  ahorroMovs=(S.g('ahr1',ahorroMovs||[])).filter(mv=>mv.id!==id);S.s('ahr1',ahorroMovs);
+}
+// Ajusta el saldo total de una meta con un movimiento "ajuste" por la diferencia. No borra historial.
+function setAhorroSaldo(catId,target,now=new Date()){
+  const v=parseMoney(target);
+  if(!Number.isFinite(v)||v<0||v>999999999999)return {error:'El saldo debe ser un monto válido'};
+  const diff=money(v-ahorroAcumCat(catId,now));
+  if(!diff)return {mov:null};
+  return addAhorroMov({meta:catId,tipo:'ajuste',v:diff,fecha:ahorroISO(now),nota:'Ajuste de saldo'},now);
+}
+// Plazo fijo: días al vencimiento e interés estimado (saldo × tasa × días / 365). Es una estimación.
+function plazoFijoInfo(c,now=new Date()){
+  const saldo=ahorroAcumCat(c.id,now),tasa=Number(c.tasa)||0;
+  const ini=normalizeGoalDate(c.fechaInicio),ven=normalizeGoalDate(c.fechaVence);
+  const day=s=>{const [y,m,d]=s.split('-').map(Number);return Date.UTC(y,m-1,d);};
+  const hoy=day(ahorroISO(now));
+  const diasPlazo=ini&&ven?Math.max(0,Math.round((day(ven)-day(ini))/864e5)):0;
+  const diasFaltan=ven?Math.round((day(ven)-hoy)/864e5):null;
+  const interes=tasa>0&&diasPlazo>0?money(Math.round(saldo*tasa/100*diasPlazo/365)):0;
+  return {saldo,tasa,diasPlazo,diasFaltan,interes,vencido:diasFaltan!==null&&diasFaltan<=0,porVencer:diasFaltan!==null&&diasFaltan>0&&diasFaltan<=7};
 }
 function normalizeGoalDate(value){
   const text=String(value||'').trim();if(!text)return '';
@@ -4309,13 +4399,13 @@ function rMes(){
 
   h+=`<div class="stats s2" style="margin-bottom:10px">
     <div class="st">    <div class="sv" style="color:${color}">${fmt(totalGastos)}</div><div class="sl">Gasto total</div></div>
-    <div class="st"><div class="sv" style="color:${disponible>=0?'var(--green)':'var(--red)'}">${fmt(Math.abs(disponible))}</div><div class="sl">${disponible>=0?'💚 Disponible':'🔴 Déficit'}</div></div>
+    <div class="st"><div class="sv" style="color:${disponible>=0?'var(--blue)':'var(--red)'}">${fmt(Math.abs(disponible))}</div><div class="sl">${disponible>=0?'💙 Te queda':'🔴 Déficit'}</div></div>
   </div>
   <div class="stats s4" style="margin-bottom:14px">
     <div class="st"><div class="sv" style="font-size:14px;color:var(--text1)">${fmt(compromisos)}</div><div class="sl">Fijos</div></div>
     <div class="st"><div class="sv" style="font-size:14px;color:var(--text1)">${fmt(variables)}</div><div class="sl">Variables</div></div>
     <div class="st"><div class="sv" style="font-size:14px;color:var(--purple)">${fmt(cardTotal)}</div><div class="sl">${cardTotal>0?'💳 Tarjetas':'Tarjetas'}</div></div>
-    <div class="st"><div class="sv" style="font-size:14px;color:#A78BFA">${fmt(ahorroMes)}</div><div class="sl">🐷 Ahorro</div></div>
+    <div class="st" style="cursor:pointer" onclick="xTab(6)"><div class="sv" style="font-size:14px;color:var(--green)">${fmt(ahorroMes)}</div><div class="sl">🐷 Ahorré</div></div>
   </div>`;
 
   // ── Proyección fin de mes ──
@@ -4347,42 +4437,50 @@ function rMes(){
     h+=`</div>`;
   }
 
-  const catsAhorro=cats.filter(c=>c.ahorro);
+  const catsAhorro=cats.filter(c=>c.ahorro&&!c.archived);
   if(catsAhorro.length){
-    h+=`<div class="card" style="margin-bottom:14px;border-color:#A78BFA40">
+    h+=`<div class="card" style="margin-bottom:14px;border-color:var(--green-b)">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-        <div style="font-size:10px;color:#A78BFA;letter-spacing:1.5px;font-weight:700;text-transform:uppercase">🎯 Mis objetivos financieros</div>
-        <div style="font-size:13px;font-weight:800;color:#A78BFA">${fmtFull(ahorroAcumTotal())}</div>
+        <div style="font-size:10px;color:var(--green);letter-spacing:1.5px;font-weight:700;text-transform:uppercase">🐷 Mis ahorros</div>
+        <button type="button" onclick="xTab(6)" style="background:none;border:none;cursor:pointer;font-size:13px;font-weight:800;color:var(--green);padding:6px 0;min-height:32px">${fmtFull(ahorroAcumTotal())} ›</button>
       </div>`;
     catsAhorro.forEach(c=>{
       const acum=ahorroAcumCat(c.id);
       const obj=money(c.objetivo||0);
-      const mesAporta=montoCat(c,m,y);
+      const _own=pagosFijos[k(c.id,m,y)],mesAporta=_own!==undefined?money(_own):money(c.aportePlan>0?c.aportePlan:(c.base||0));
       const plan=financialGoalPlan(c);
       if(obj>0){
         const pct=Math.min(Math.round((acum/obj)*100),100);
         const falta=money(Math.max(0,obj-acum));
-        h+=`<div style="margin-bottom:14px;cursor:pointer" onclick="editMetaModal('${c.id}')">
+        h+=`<div style="margin-bottom:14px;cursor:pointer" onclick="openAhorroDetalle('${c.id}')">
           <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:5px">
             <div style="font-size:13px;font-weight:700">${esc(c.n)}</div>
             <div style="font-size:11px;color:var(--text2)">${fmtFull(acum)} / ${fmtFull(obj)}</div>
           </div>
           <div style="height:9px;background:rgba(255,255,255,.06);border-radius:5px;overflow:hidden;margin-bottom:4px">
-            <div style="width:${pct}%;height:100%;background:linear-gradient(90deg,#A78BFA,#7C5CFF);transition:width .6s;border-radius:5px"></div>
+            <div style="width:${pct}%;height:100%;background:var(--green);transition:width .6s;border-radius:5px"></div>
           </div>
           <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--text3)">
             <span>${pct}% ${pct>=100?'🎉 ¡Meta cumplida!':''}</span>
             <span>${pct>=100?'':'Faltan '+fmtFull(falta)}${mesAporta>0?' · '+fmtFull(mesAporta)+'/mes':''}</span>
           </div>
-          ${plan.date&&pct<100?`<div style="margin-top:7px;padding:7px 9px;border-radius:8px;background:${plan.status==='insuficiente'||plan.status==='vencida'?'var(--red-d)':'rgba(167,139,250,.08)'};font-size:10px;color:${plan.status==='insuficiente'||plan.status==='vencida'?'var(--red)':'#A78BFA'}">📅 ${plan.date.split('-').reverse().join('/')} · Necesitás ${fmtFull(plan.required)}/mes${plan.planned?' · Plan: '+fmtFull(plan.planned)+'/mes':''}${plan.status==='insuficiente'?' · Faltan '+fmtFull(plan.required-plan.planned)+'/mes':''}</div>`:''}
+          ${plan.date&&pct<100?`<div style="margin-top:7px;padding:7px 9px;border-radius:8px;background:${plan.status==='insuficiente'||plan.status==='vencida'?'var(--red-d)':'var(--green-d)'};font-size:10px;color:${plan.status==='insuficiente'||plan.status==='vencida'?'var(--red)':'var(--green)'}">📅 ${plan.date.split('-').reverse().join('/')} · Necesitás ${fmtFull(plan.required)}/mes${plan.planned?' · Plan: '+fmtFull(plan.planned)+'/mes':''}${plan.status==='insuficiente'?' · Faltan '+fmtFull(plan.required-plan.planned)+'/mes':''}</div>`:''}
         </div>`;
       } else {
-        h+=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;cursor:pointer" onclick="editMetaModal('${c.id}')">
+        h+=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;cursor:pointer" onclick="openAhorroDetalle('${c.id}')">
           <div><div style="font-size:13px;font-weight:700">${esc(c.n)}</div><div style="font-size:10px;color:var(--text3)">${plan.date?'Fecha: '+plan.date.split('-').reverse().join('/')+' · Falta definir costo':'Tocá para ponerle un objetivo'}</div></div>
-          <div style="font-size:13px;font-weight:800;color:#A78BFA">${fmtFull(acum)}</div>
+          <div style="font-size:13px;font-weight:800;color:var(--green)">${ahorroFmt(acum,ahorroMoneda(c))}</div>
         </div>`;
       }
     });
+    const _hoyM=new Date();
+    if(m===_hoyM.getMonth()&&y===_hoyM.getFullYear()){
+      const _plan=planAhorroMes(m,y),_real=ahorroNetoMes(m,y);
+      h+=`<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;padding-top:10px;border-top:1px solid var(--border);margin-top:4px">
+        <div style="font-size:11px;color:var(--text2)">${_plan>0?'Planeaste '+fmtFull(_plan)+' · ':''}guardaste <b style="color:var(--green)">${fmtFull(_real)}</b> este mes</div>
+        <button type="button" class="btn b-sm b-grn" style="min-height:40px;white-space:nowrap" onclick="openAhorroMov('aporte')">+ Guardar</button>
+      </div>`;
+    }
     h+=`</div>`;
   }
 
@@ -4413,19 +4511,22 @@ function rMes(){
     const pctC=Math.min((compromisos/sueldo)*100,100);
     const pctV=Math.min((variables/sueldo)*100,100-pctC);
     const pctK=Math.min((cardTotal/sueldo)*100,100-pctC-pctV);
-    const resto=100-pctC-pctV-pctK;
+    const pctA=Math.min((ahorroMes/sueldo)*100,100-pctC-pctV-pctK);
+    const resto=100-pctC-pctV-pctK-pctA;
     h+=`<div class="card" style="margin-bottom:14px">
       <div style="font-size:10px;color:var(--text2);letter-spacing:1.5px;font-weight:700;margin-bottom:10px;text-transform:uppercase">Distribución del sueldo</div>
       <div style="display:flex;height:8px;background:rgba(255,255,255,.06);border-radius:4px;overflow:hidden;margin-bottom:10px">
         <div style="width:${pctC}%;background:var(--blue);transition:width .5s"></div>
         <div style="width:${pctV}%;background:var(--gold);transition:width .5s"></div>
         <div style="width:${pctK}%;background:var(--purple);transition:width .5s"></div>
+        <div style="width:${pctA}%;background:var(--green);transition:width .5s"></div>
       </div>
-      <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text2)">
+      <div style="display:flex;flex-wrap:wrap;justify-content:space-between;gap:4px 10px;font-size:11px;color:var(--text2)">
         <span><span style="color:var(--blue)">●</span> Fijos ${Math.round(pctC)}%</span>
         <span><span style="color:var(--gold)">●</span> Variables ${Math.round(pctV)}%</span>
         <span><span style="color:var(--purple)">●</span> Tarjetas ${Math.round(pctK)}%</span>
-        <span><span style="color:var(--green)">●</span> Disp./Ahorro ${Math.round(Math.max(0,resto))}%</span>
+        <span><span style="color:var(--green)">●</span> Ahorro ${Math.round(pctA)}%</span>
+        <span><span style="color:var(--text3)">●</span> Te queda ${Math.round(Math.max(0,resto))}%</span>
       </div>
     </div>`;
   }
@@ -4645,6 +4746,328 @@ function rPagos(){
   return h+'</div>';
 }
 
+// ── TAB 6: 🐷 AHORROS ──
+function ahorroFechaCorta(iso){const p=String(iso||'').split('-');return p.length===3?p[2]+'/'+p[1]+'/'+p[0].slice(2):'';}
+function ahorrosActivos(){return cats.filter(c=>c.ahorro&&!c.archived);}
+function gastosEnAhorros(){const ids=new Set(cats.filter(c=>c.ahorro).map(c=>c.id));return gastos.filter(g=>ids.has(g.c));}
+function rAhorros(){
+  const now=new Date(),m=now.getMonth(),y=now.getFullYear();
+  const activos=ahorrosActivos();
+  const total=ahorroAcumTotal('UYU'),totalUSD=ahorroAcumTotal('USD');
+  const hayUSD=activos.some(c=>ahorroMoneda(c)==='USD');
+  const mesNeto=ahorroNetoMes(m,y);
+  const anioNeto=money(MS.reduce((t,_,i)=>t+ahorroNetoMes(i,y),0));
+  let h=`<div class="sec">`;
+  h+=`<div class="hero" style="border-color:var(--green-b)">
+    <div class="hero-bg" style="background:var(--green)"></div>
+    <div class="hero-l" style="color:var(--green)">🐷 Total ahorrado</div>
+    <div class="hero-v" style="color:var(--green)">${fmtFull(total)}</div>
+    ${hayUSD?`<div class="hero-s" style="color:var(--green);font-weight:700">+ US${fmtFull(totalUSD)} en dólares</div>`:''}
+    <div class="hero-s">${mesNeto>=0?'+':'−'}${fmtFull(Math.abs(mesNeto))} este mes · ${anioNeto>=0?'+':'−'}${fmtFull(Math.abs(anioNeto))} en ${y}</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px;position:relative">
+      <button class="btn b-md b-grn" style="min-height:44px" onclick="openAhorroMov('aporte')">+ Guardar</button>
+      <button class="btn b-md b-g" style="min-height:44px" onclick="openAhorroMov('retiro')">− Sacar</button>
+    </div>
+  </div>`;
+
+  const aRevisar=activos.filter(c=>c.revisarSaldo);
+  if(aRevisar.length){
+    h+=`<div class="alert al-warn" style="margin-bottom:14px"><div class="al-i">🔎</div><div class="al-t"><strong>Confirmá cuánto tenés hoy</strong> en ${aRevisar.map(c=>esc(c.n)).join(', ')}. El saldo salió de su monto mensual y puede no ser el real.<br>
+      ${aRevisar.map(c=>`<button class="btn b-sm b-grn" style="margin:8px 6px 0 0;min-height:40px" onclick="openAhorroAjuste('${c.id}')">Confirmar ${esc(c.n)}</button>`).join('')}</div></div>`;
+  }
+  const malCargados=gastosEnAhorros();
+  if(malCargados.length){
+    h+=`<div class="alert al-warn" style="margin-bottom:14px"><div class="al-i">⚠️</div><div class="al-t">Tenés <strong>${malCargados.length}</strong> ${malCargados.length===1?'monto cargado':'montos cargados'} como gasto en un ahorro (${fmtFull(sumMoney(malCargados,g=>g.v))}). Eso es plata guardada, no gastada.<br>
+      <button class="btn b-sm b-grn" style="margin-top:8px;min-height:40px" onclick="convertGastosAhorro()">Pasarlos a ahorros</button></div></div>`;
+  }
+
+  // Avisos de plazos fijos que vencen en 7 días o ya vencieron
+  activos.filter(c=>ahorroTipo(c)==='plazo_fijo').forEach(c=>{
+    const pf=plazoFijoInfo(c,now);
+    if(pf.vencido||pf.porVencer)h+=`<div class="alert ${pf.vencido?'al-warn':'al-suc'}" style="margin-bottom:12px;cursor:pointer" onclick="openAhorroDetalle('${c.id}')"><div class="al-i">🏦</div><div class="al-t"><strong>${esc(c.n)}</strong> ${pf.vencido?'ya venció':'vence en '+pf.diasFaltan+(pf.diasFaltan===1?' día':' días')} (${ahorroFechaCorta(c.fechaVence)}). Tocá para renovarlo o cobrarlo.</div></div>`;
+  });
+
+  if(!activos.length){
+    h+=`<div class="empty"><div class="empty-i">🐷</div><div class="empty-t">Todavía no tenés ahorros</div><div class="empty-s">Creá una meta (viaje, auto), un plazo fijo o anotá otra plata que tengas guardada.</div></div>`;
+  }
+  Object.keys(AHORRO_TIPOS).forEach(tipo=>{
+    const lista=activos.filter(c=>ahorroTipo(c)===tipo);
+    if(!lista.length)return;
+    const sub=money(lista.filter(c=>ahorroMoneda(c)==='UYU').reduce((t,c)=>t+ahorroAcumCat(c.id),0));
+    const subUSD=money(lista.filter(c=>ahorroMoneda(c)==='USD').reduce((t,c)=>t+ahorroAcumCat(c.id),0));
+    h+=`<div class="sec-t" style="display:flex;justify-content:space-between;align-items:center;margin-top:6px">
+      <span>${AHORRO_TIPOS[tipo]}</span>
+      <span style="color:var(--green);letter-spacing:.5px;text-transform:none;font-size:11px">${fmtFull(sub)}${subUSD?' · US'+fmtFull(subUSD):''}</span></div>`;
+    lista.forEach(c=>{h+=ahorroCardHtml(c,now);});
+  });
+  h+=`<button class="btn b-md b-g" style="width:100%;min-height:44px;margin:4px 0 18px" onclick="openNuevoAhorro()">+ Nuevo ahorro</button>`;
+
+  // Ahorrado por mes (barras del año, solo pesos)
+  const ay=window._ahY||y;
+  const netos=MS.map((_,i)=>ahorroNetoMes(i,ay));
+  const totalAy=money(netos.reduce((a,b)=>a+b,0));
+  const maxAbs=Math.max(1,...netos.map(Math.abs));
+  h+=`<div class="card" style="margin-bottom:14px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+      <button class="mnav-b" onclick="window._ahY=${ay-1};renderGastos()" aria-label="Año anterior">‹</button>
+      <div style="font-size:10px;color:var(--text2);letter-spacing:1.5px;font-weight:700;text-transform:uppercase">Ahorrado por mes · ${ay}</div>
+      <button class="mnav-b" onclick="window._ahY=${ay+1};renderGastos()" aria-label="Año siguiente">›</button>
+    </div>
+    <div style="display:flex;align-items:flex-end;gap:4px;height:96px">
+      ${netos.map((v,i)=>`<div class="bar-col" title="${MONTHS[i]}: ${fmtFull(v)}">
+        <div style="font-size:8px;color:${v<0?'var(--red)':'var(--green)'};font-weight:700;white-space:nowrap">${v?fmt(Math.abs(v)).replace('$',''):''}</div>
+        <div style="width:100%;max-width:20px;height:${Math.max(v?4:2,Math.round(Math.abs(v)/maxAbs*64))}px;border-radius:4px;background:${v<0?'var(--red)':v?'var(--green)':'var(--border)'}"></div>
+        <div style="font-size:9px;color:${i===m&&ay===y?'var(--text0)':'var(--text3)'};font-weight:${i===m&&ay===y?800:500}">${MS[i]}</div>
+      </div>`).join('')}
+    </div>
+    <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text2);margin-top:10px;padding-top:8px;border-top:1px solid var(--border)">
+      <span>Total ${ay}</span><b style="color:${totalAy<0?'var(--red)':'var(--green)'}">${totalAy<0?'−':''}${fmtFull(Math.abs(totalAy))}</b></div>
+    ${hayUSD?`<div style="font-size:10px;color:var(--text3);margin-top:4px">Solo pesos. Los ahorros en dólares se ven en su tarjeta.</div>`:''}
+  </div>`;
+
+  // Últimos movimientos
+  const movs=[...(ahorroMovs||[])].filter(mv=>cats.some(c=>c.id===mv.meta)).sort((a,b)=>a.fecha<b.fecha?1:a.fecha>b.fecha?-1:0);
+  if(movs.length){
+    const ver=window._ahAll?movs:movs.slice(0,10);
+    h+=`<div class="sec-t">Últimos movimientos</div><div class="card" style="padding:4px 14px;margin-bottom:14px">`;
+    ver.forEach(mv=>{h+=ahorroMovRowHtml(mv);});
+    h+=`</div>`;
+    if(movs.length>10)h+=`<button class="btn b-sm b-g" style="width:100%;min-height:40px;margin-bottom:14px" onclick="window._ahAll=!window._ahAll;renderGastos()">${window._ahAll?'Ver menos':'Ver todos ('+movs.length+')'}</button>`;
+  }
+  return h+'</div>';
+}
+function ahorroCardHtml(c,now=new Date()){
+  const mon=ahorroMoneda(c),saldo=ahorroAcumCat(c.id,now),tipo=ahorroTipo(c);
+  let extra='';
+  if(tipo==='plazo_fijo'){
+    const pf=plazoFijoInfo(c,now);
+    extra=`<div style="font-size:10px;color:var(--text2);margin-top:4px">${c.banco?esc(c.banco)+' · ':''}${pf.tasa?pf.tasa+'% anual':'Sin tasa'}${c.fechaVence?' · vence '+ahorroFechaCorta(c.fechaVence):''}</div>
+      ${pf.interes?`<div style="font-size:10px;color:var(--green);margin-top:2px">Interés estimado: +${ahorroFmt(pf.interes,mon)} <span style="color:var(--text3)">(estimado)</span></div>`:''}`;
+  }else if(tipo==='meta'&&money(c.objetivo||0)>0){
+    const obj=money(c.objetivo),pct=Math.max(0,Math.min(100,Math.round(saldo/obj*100)));
+    const plan=financialGoalPlan(c,now);
+    extra=`<div style="height:8px;background:rgba(255,255,255,.06);border-radius:5px;overflow:hidden;margin:8px 0 4px"><div style="width:${pct}%;height:100%;background:var(--green);border-radius:5px"></div></div>
+      <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--text3)"><span>${pct}% de ${ahorroFmt(obj,mon)}${pct>=100?' 🎉':''}</span><span>${pct>=100?'¡Meta cumplida!':'Faltan '+ahorroFmt(plan.remaining,mon)}</span></div>
+      ${plan.required&&pct<100?`<div style="font-size:10px;color:${plan.status==='insuficiente'||plan.status==='vencida'?'var(--red)':'var(--text2)'};margin-top:3px">Para llegar al ${ahorroFechaCorta(plan.date)} necesitás ${ahorroFmt(plan.required,mon)}/mes</div>`:''}`;
+  }else if(c.descripcionObjetivo){
+    extra=`<div style="font-size:10px;color:var(--text3);margin-top:3px">${esc(c.descripcionObjetivo)}</div>`;
+  }
+  return `<div class="card" style="margin-bottom:10px;cursor:pointer;border-color:var(--green-b)" onclick="openAhorroDetalle('${c.id}')">
+    <div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px">
+      <div style="font-size:14px;font-weight:700;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(c.n)}${mon==='USD'?' <span style="font-size:10px;color:var(--text3)">USD</span>':''}</div>
+      <div style="font-size:16px;font-weight:800;color:${saldo<0?'var(--red)':'var(--green)'};font-family:var(--fm);white-space:nowrap">${ahorroFmt(saldo,mon)}</div>
+    </div>${extra}</div>`;
+}
+function ahorroMovRowHtml(mv){
+  const c=cats.find(x=>x.id===mv.meta),mon=ahorroMoneda(c),sv=ahorroSigned(mv);
+  const label=mv.tipo==='retiro'?'Sacaste':mv.tipo==='ajuste'?'Ajuste':'Guardaste';
+  return `<div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border);cursor:pointer;min-height:44px" onclick="openAhorroMov('${mv.tipo}','${mv.meta}','${esc(mv.id)}')">
+    <div style="font-size:10px;color:var(--text3);width:54px;flex-shrink:0">${ahorroFechaCorta(mv.fecha)}</div>
+    <div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(c?c.n:'')}</div>
+      <div style="font-size:10px;color:var(--text3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${label}${mv.nota?' · '+esc(mv.nota):''}</div></div>
+    <div style="font-size:13px;font-weight:800;font-family:var(--fm);color:${sv<0?'var(--text2)':'var(--green)'};white-space:nowrap">${sv<0?'−':'+'}${ahorroFmt(Math.abs(sv),mon)}</div>
+  </div>`;
+}
+// Hoja para guardar / sacar / editar un movimiento.
+function openAhorroMov(tipo='aporte',metaId='',movId=''){
+  const activos=ahorrosActivos();
+  const mov=movId?(ahorroMovs||[]).find(mv=>mv.id===movId):null;
+  if(!activos.length&&!mov){openNuevoAhorro();tst('Primero creá dónde guardás la plata');return;}
+  if(mov){tipo=mov.tipo;metaId=mov.meta;}
+  const sel=metaId||(activos.length===1?activos[0].id:'');
+  const titulo=mov?'Editar movimiento':tipo==='retiro'?'− Sacar de un ahorro':tipo==='ajuste'?'Ajuste de saldo':'+ Guardar plata';
+  const valor=mov?(tipo==='ajuste'?mov.v:Math.abs(mov.v)):'';
+  const opciones=activos.concat(mov&&!activos.some(c=>c.id===mov.meta)?cats.filter(c=>c.id===mov.meta):[]);
+  oOv1(`<div class="mt">${titulo}</div>
+  ${tipo==='ajuste'?`<div style="font-size:11px;color:var(--text2);margin-bottom:10px">Un ajuste corrige el saldo: positivo suma, negativo resta.</div>`:''}
+  <div class="fld"><label>Monto</label><input class="inp" id="ahm-v" type="text" inputmode="decimal" placeholder="0" value="${valor}" style="font-size:24px;font-weight:800;text-align:center;color:${tipo==='retiro'?'var(--text1)':'var(--green)'}"></div>
+  <div class="fld"><label>${tipo==='retiro'?'¿De dónde la sacás?':'¿Dónde la guardás?'}</label><select class="inp" id="ahm-meta">
+    ${sel?'':'<option value="">Elegí…</option>'}${opciones.map(c=>`<option value="${esc(c.id)}"${c.id===sel?' selected':''}>${esc(c.n)}${ahorroMoneda(c)==='USD'?' (USD)':''}</option>`).join('')}
+  </select></div>
+  <div class="inp-r"><div class="fld"><label>Fecha</label><input class="inp" id="ahm-f" type="date" value="${esc(mov?mov.fecha:ahorroISO(new Date()))}"></div>
+  <div class="fld"><label>Nota (opcional)</label><input class="inp" id="ahm-n" maxlength="120" placeholder="${tipo==='retiro'?'Ej: arreglo del auto':'Ej: aguinaldo'}" value="${esc(mov?mov.nota:'')}"></div></div>
+  <input type="hidden" id="ahm-t" value="${esc(tipo)}"><input type="hidden" id="ahm-id" value="${esc(movId)}">
+  <button class="btn b-lg ${tipo==='retiro'?'b-g':'b-grn'}" style="min-height:48px" onclick="saveAhorroMovUI()">${mov?'Guardar cambios':tipo==='retiro'?'Sacar':'Guardar'}</button>
+  ${mov?`<button class="btn b-md b-red" style="width:100%;margin-top:10px;min-height:44px" onclick="delAhorroMovUI('${esc(movId)}')">Borrar movimiento</button>`:''}`);
+  setTimeout(()=>document.getElementById('ahm-v')?.focus(),120);
+}
+function saveAhorroMovUI(){
+  const id=document.getElementById('ahm-id')?.value||undefined;
+  const res=addAhorroMov({id,meta:document.getElementById('ahm-meta')?.value,tipo:document.getElementById('ahm-t')?.value,v:document.getElementById('ahm-v')?.value,fecha:document.getElementById('ahm-f')?.value,nota:document.getElementById('ahm-n')?.value});
+  if(res.error){tst(res.error);return;}
+  const mon=ahorroMoneda(res.meta);
+  cOv1();
+  tst(res.mov.tipo==='retiro'?'Sacaste '+ahorroFmt(res.mov.v,mon)+' · quedan '+ahorroFmt(ahorroAcumCat(res.meta.id),mon):'🐷 '+ahorroFmt(Math.abs(res.mov.v),mon)+' en '+res.meta.n+' · llevás '+ahorroFmt(ahorroAcumCat(res.meta.id),mon),3200);
+  renderGastos();
+}
+function delAhorroMovUI(id){
+  if(!confirm('¿Borrar este movimiento? El saldo se recalcula.'))return;
+  delAhorroMovById(id);cOv1();tst('Movimiento borrado');renderGastos();
+}
+// Gastos que se cargaron por error en una meta de ahorro: pasan a ser aportes.
+function convertGastosAhorro(){
+  const lista=gastosEnAhorros();if(!lista.length)return;
+  if(!confirm(`¿Pasar ${lista.length} ${lista.length===1?'monto':'montos'} (${fmtFull(sumMoney(lista,g=>g.v))}) de gastos a ahorros? Dejan de contar como gasto y suman a tu ahorro.`))return;
+  ahorroMovs=S.g('ahr1',ahorroMovs||[]);
+  lista.forEach(g=>{
+    const d=Number(String(g.f||'01').split('/')[0])||1;
+    const day=Math.min(Math.max(1,d),new Date(g.y,g.m+1,0).getDate());
+    ahorroMovs.push({id:'gst_'+g._id,meta:g.c,tipo:'aporte',v:money(Math.abs(g.v)),fecha:g.y+'-'+String(g.m+1).padStart(2,'0')+'-'+String(day).padStart(2,'0'),m:g.m,y:g.y,nota:String(g.desc||'').slice(0,120),origen:'gst4'});
+  });
+  const ids=new Set(lista.map(g=>g._id));
+  gastos=gastos.filter(g=>!ids.has(g._id));
+  S.s('ahr1',ahorroMovs);S.s('gst4',gastos);
+  tst('✓ Pasados a ahorros');renderGastos();
+}
+function ahorroCamposTipoHtml(c){
+  const tipo=ahorroTipo(c);
+  return `<div class="inp-r"><div class="fld"><label>Tipo</label><select class="inp" id="meta-tipo" onchange="ahorroTipoCambio(this.value)">
+      ${Object.entries({meta:'🎯 Meta',plazo_fijo:'🏦 Plazo fijo',reserva:'💰 Otra plata'}).map(([v,l])=>`<option value="${v}"${v===tipo?' selected':''}>${l}</option>`).join('')}
+    </select></div>
+    <div class="fld"><label>Moneda</label><select class="inp" id="meta-moneda"><option value="UYU"${ahorroMoneda(c)==='UYU'?' selected':''}>Pesos</option><option value="USD"${ahorroMoneda(c)==='USD'?' selected':''}>Dólares</option></select></div></div>
+    <div data-ah-tipo="plazo_fijo" style="${tipo==='plazo_fijo'?'':'display:none'}">
+      <div class="inp-r"><div class="fld"><label>Banco</label><input class="inp" id="meta-banco" maxlength="40" value="${esc(c.banco||'')}" placeholder="BROU, Itaú…"></div>
+      <div class="fld"><label>Tasa anual %</label><input class="inp" id="meta-tasa" type="text" inputmode="decimal" value="${c.tasa||''}" placeholder="0"></div></div>
+      <div class="inp-r"><div class="fld"><label>Desde</label><input class="inp" id="meta-fini" type="date" value="${esc(c.fechaInicio||'')}"></div>
+      <div class="fld"><label>Vence</label><input class="inp" id="meta-fven" type="date" value="${esc(c.fechaVence||'')}"></div></div>
+    </div>`;
+}
+function ahorroTipoCambio(tipo){
+  document.querySelectorAll('[data-ah-tipo]').forEach(el=>{el.style.display=el.dataset.ahTipo.split(' ').includes(tipo)?'':'none';});
+}
+function readAhorroCamposTipo(c){
+  const tipo=document.getElementById('meta-tipo')?.value;
+  c.tipoAhorro=AHORRO_TIPOS[tipo]?tipo:'meta';
+  c.moneda=document.getElementById('meta-moneda')?.value==='USD'?'USD':'UYU';
+  if(c.tipoAhorro==='plazo_fijo'){
+    const tasa=parseMoney(document.getElementById('meta-tasa')?.value||'0');
+    if(!Number.isFinite(tasa)||tasa<0||tasa>100)return 'La tasa no es válida';
+    const ini=normalizeGoalDate(document.getElementById('meta-fini')?.value),ven=normalizeGoalDate(document.getElementById('meta-fven')?.value);
+    if(ini===null||ven===null)return 'Revisá las fechas del plazo fijo';
+    if(ini&&ven&&ven<ini)return 'El vencimiento tiene que ser después del inicio';
+    c.banco=String(document.getElementById('meta-banco')?.value||'').trim().slice(0,40);c.tasa=money(tasa);c.fechaInicio=ini;c.fechaVence=ven;
+  }
+  return '';
+}
+function openNuevoAhorro(tipo='meta'){
+  const draft={tipoAhorro:tipo,moneda:'UYU'};
+  oOv1(`<div class="mt">🐷 Nuevo ahorro</div>
+  <div class="fld"><label>Nombre</label><input class="inp" id="meta-nombre" maxlength="80" placeholder="Viaje, Fondo de emergencia, Plazo fijo BROU…"></div>
+  ${ahorroCamposTipoHtml(draft)}
+  <div class="fld"><label>¿Cuánto tenés ya guardado ahí?</label><input class="inp" id="meta-base" type="text" inputmode="decimal" placeholder="0"></div>
+  <div data-ah-tipo="meta"${tipo==='meta'?'':' style="display:none"'}><div class="inp-r"><div class="fld"><label>Objetivo (opcional)</label><input class="inp" id="meta-obj" type="text" inputmode="decimal" placeholder="0"></div>
+  <div class="fld"><label>Para cuándo</label><input class="inp" id="meta-fecha" type="date"></div></div></div>
+  <div data-ah-tipo="meta reserva"${tipo==='plazo_fijo'?' style="display:none"':''}><div class="fld"><label>Pienso guardar por mes (opcional)</label><input class="inp" id="meta-plan" type="text" inputmode="decimal" placeholder="0"></div></div>
+  <button class="btn b-lg b-grn" style="min-height:48px" onclick="saveNuevoAhorro()">Crear</button>`);
+  setTimeout(()=>document.getElementById('meta-nombre')?.focus(),80);
+}
+function saveNuevoAhorro(){
+  const n=String(document.getElementById('meta-nombre')?.value||'').trim().slice(0,80);
+  if(!n){tst('Ponele un nombre');return;}
+  if(cats.some(c=>c.ahorro&&!c.archived&&normalizeGymLookup(c.n)===normalizeGymLookup(n))){tst('Ya tenés un ahorro con ese nombre');return;}
+  const base=parseMoney(document.getElementById('meta-base')?.value||'0'),obj=parseMoney(document.getElementById('meta-obj')?.value||'0'),plan=parseMoney(document.getElementById('meta-plan')?.value||'0');
+  if(![base,obj,plan].every(v=>Number.isFinite(v)&&v>=0)){tst('Revisá los montos');return;}
+  const fecha=normalizeGoalDate(document.getElementById('meta-fecha')?.value);if(fecha===null){tst('Fecha inválida');return;}
+  const c={id:uid(),n,c:'#00C48C',base:0,ahorro:true,saldoInicial:money(base),objetivo:money(obj),aportePlan:money(plan),fechaObjetivo:fecha||'',descripcionObjetivo:''};
+  const err=readAhorroCamposTipo(c);if(err){tst(err);return;}
+  if(c.tipoAhorro!=='meta'){c.objetivo=0;c.fechaObjetivo='';}
+  if(c.tipoAhorro==='plazo_fijo')c.aportePlan=0;
+  cats.push(c);S.s('cats4',cats);cOv1();tst('🐷 '+n+' creado');
+  if(curXT!==6)xTab(6);else renderGastos();
+}
+function openAhorroDetalle(catId){
+  const c=cats.find(x=>x.id===catId&&x.ahorro);if(!c)return;
+  const mon=ahorroMoneda(c),saldo=ahorroAcumCat(c.id),tipo=ahorroTipo(c);
+  const movs=ahorroMovsDe(c.id).sort((a,b)=>a.fecha<b.fecha?1:a.fecha>b.fecha?-1:0);
+  const pf=tipo==='plazo_fijo'?plazoFijoInfo(c):null;
+  oOv1(`<div class="mt">${esc(c.n)}</div>
+  <div style="font-size:11px;color:var(--text2)">${AHORRO_TIPOS[tipo]}${mon==='USD'?' · Dólares':''}</div>
+  <div style="font-size:30px;font-weight:800;color:${saldo<0?'var(--red)':'var(--green)'};font-family:var(--fm);margin:8px 0 2px">${ahorroFmt(saldo,mon)}</div>
+  <div style="font-size:10px;color:var(--text3);margin-bottom:12px">Saldo inicial ${ahorroFmt(c.saldoInicial||0,mon)} + ${movs.length} ${movs.length===1?'movimiento':'movimientos'}</div>
+  ${pf?`<div class="card" style="margin-bottom:12px;padding:12px">
+    <div style="font-size:11px;color:var(--text2);line-height:1.7">${c.banco?'🏦 '+esc(c.banco)+'<br>':''}${pf.tasa?'Tasa '+pf.tasa+'% anual':'Sin tasa cargada'}${c.fechaInicio?' · desde '+ahorroFechaCorta(c.fechaInicio):''}${c.fechaVence?'<br>Vence '+ahorroFechaCorta(c.fechaVence)+(pf.vencido?' · <b style="color:var(--gold)">vencido</b>':' · faltan '+pf.diasFaltan+' días'):''}
+    ${pf.interes?'<br><span style="color:var(--green)">Interés estimado al vencer: +'+ahorroFmt(pf.interes,mon)+'</span> <span style="color:var(--text3)">(estimado, confirmalo con el banco)</span>':''}</div>
+    ${pf.vencido||pf.porVencer?`<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px">
+      <button class="btn b-sm b-grn" style="min-height:44px" onclick="renovarPlazoFijo('${c.id}')">🔁 Renovar</button>
+      <button class="btn b-sm b-g" style="min-height:44px" onclick="cobrarPlazoFijo('${c.id}')">💵 Cobrar</button></div>`:''}
+  </div>`:''}
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px">
+    <button class="btn b-md b-grn" style="min-height:44px" onclick="openAhorroMov('aporte','${c.id}')">+ Guardar</button>
+    <button class="btn b-md b-g" style="min-height:44px" onclick="openAhorroMov('retiro','${c.id}')">− Sacar</button>
+  </div>
+  ${movs.length?`<div class="sec-t">Movimientos</div><div style="max-height:260px;overflow:auto;margin-bottom:12px">${movs.map(ahorroMovRowHtml).join('')}</div>`:'<div style="font-size:12px;color:var(--text3);margin-bottom:12px">Todavía no hay movimientos.</div>'}
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
+    <button class="btn b-sm b-g" style="min-height:44px" onclick="editMetaModal('${c.id}')">✏️ Datos</button>
+    <button class="btn b-sm b-g" style="min-height:44px" onclick="openAhorroAjuste('${c.id}')">⚖️ Ajustar</button>
+    <button class="btn b-sm b-red" style="min-height:44px" onclick="archivarAhorro('${c.id}')">Archivar</button>
+  </div>`);
+}
+function openAhorroAjuste(catId){
+  const c=cats.find(x=>x.id===catId);if(!c)return;
+  oOv1(`<div class="mt">⚖️ Ajustar saldo</div>
+  <div style="font-size:12px;color:var(--text2);margin-bottom:12px;line-height:1.5">Si el saldo real de <b>${esc(c.n)}</b> es otro (por ejemplo, lo que dice el banco), escribilo acá. Se anota un ajuste por la diferencia y no se borra nada.</div>
+  <div class="fld"><label>Saldo real hoy</label><input class="inp" id="ahj-v" type="text" inputmode="decimal" value="${ahorroAcumCat(c.id)}" style="font-size:22px;font-weight:800;text-align:center;color:var(--green)"></div>
+  <button class="btn b-lg b-grn" style="min-height:48px" onclick="saveAhorroAjuste('${c.id}')">Ajustar</button>`);
+}
+function saveAhorroAjuste(catId){
+  const res=setAhorroSaldo(catId,document.getElementById('ahj-v')?.value);
+  if(res.error){tst(res.error);return;}
+  const c=cats.find(x=>x.id===catId);if(c&&c.revisarSaldo){delete c.revisarSaldo;S.s('cats4',cats);}
+  cOv1();tst(res.mov?'✓ Saldo ajustado':'El saldo ya era ese');renderGastos();
+}
+function archivarAhorro(catId){
+  const c=cats.find(x=>x.id===catId);if(!c)return;
+  const saldo=ahorroAcumCat(c.id);
+  if(!confirm(`¿Archivar "${c.n}"?${saldo?' Su saldo ('+ahorroFmt(saldo,ahorroMoneda(c))+') deja de sumar al total.':''} Los movimientos se conservan.`))return;
+  c.archived=true;c.base=0;S.s('cats4',cats);cOv1();tst('Archivado');renderGastos();
+}
+function renovarPlazoFijo(catId){
+  const c=cats.find(x=>x.id===catId);if(!c)return;
+  const pf=plazoFijoInfo(c);
+  oOv1(`<div class="mt">🔁 Renovar plazo fijo</div>
+  <div class="fld"><label>Interés que te pagaron</label><input class="inp" id="pfr-int" type="text" inputmode="decimal" value="${pf.interes||''}" placeholder="0"></div>
+  <div class="inp-r"><div class="fld"><label>Nueva tasa %</label><input class="inp" id="pfr-tasa" type="text" inputmode="decimal" value="${c.tasa||''}"></div>
+  <div class="fld"><label>Nuevo vencimiento</label><input class="inp" id="pfr-ven" type="date"></div></div>
+  <div style="font-size:10px;color:var(--text3);margin-bottom:10px">El interés se suma como plata guardada y el plazo arranca de nuevo hoy.</div>
+  <button class="btn b-lg b-grn" style="min-height:48px" onclick="saveRenovarPlazo('${c.id}')">Renovar</button>`);
+}
+function saveRenovarPlazo(catId){
+  const c=cats.find(x=>x.id===catId);if(!c)return;
+  const interes=parseMoney(document.getElementById('pfr-int')?.value||'0'),tasa=parseMoney(document.getElementById('pfr-tasa')?.value||'0');
+  const ven=normalizeGoalDate(document.getElementById('pfr-ven')?.value);
+  if(!Number.isFinite(interes)||interes<0||!Number.isFinite(tasa)||tasa<0||tasa>100){tst('Revisá los montos');return;}
+  if(!ven){tst('Poné la nueva fecha de vencimiento');return;}
+  const hoy=ahorroISO(new Date());if(ven<=hoy){tst('El vencimiento tiene que ser después de hoy');return;}
+  if(interes>0){const r=addAhorroMov({meta:c.id,tipo:'aporte',v:interes,nota:'Interés del plazo fijo'});if(r.error){tst(r.error);return;}}
+  c.tasa=money(tasa);c.fechaInicio=hoy;c.fechaVence=ven;S.s('cats4',cats);
+  cOv1();tst('🔁 Plazo fijo renovado');renderGastos();
+}
+function cobrarPlazoFijo(catId){
+  const c=cats.find(x=>x.id===catId);if(!c)return;
+  const otros=ahorrosActivos().filter(x=>x.id!==c.id&&ahorroMoneda(x)===ahorroMoneda(c));
+  const pf=plazoFijoInfo(c);
+  oOv1(`<div class="mt">💵 Cobrar plazo fijo</div>
+  <div class="fld"><label>Interés que te pagaron</label><input class="inp" id="pfc-int" type="text" inputmode="decimal" value="${pf.interes||''}" placeholder="0"></div>
+  <div class="fld"><label>¿Qué hacés con la plata?</label><select class="inp" id="pfc-dest">
+    ${otros.map(x=>`<option value="${esc(x.id)}">Pasarla a ${esc(x.n)}</option>`).join('')}
+    <option value="">La saco (deja de ser ahorro)</option></select></div>
+  <button class="btn b-lg b-grn" style="min-height:48px" onclick="saveCobrarPlazo('${c.id}')">Cobrar</button>`);
+}
+function saveCobrarPlazo(catId){
+  const c=cats.find(x=>x.id===catId);if(!c)return;
+  const interes=parseMoney(document.getElementById('pfc-int')?.value||'0');
+  if(!Number.isFinite(interes)||interes<0){tst('Revisá el interés');return;}
+  const dest=document.getElementById('pfc-dest')?.value||'';
+  if(interes>0)addAhorroMov({meta:c.id,tipo:'aporte',v:interes,nota:'Interés del plazo fijo'});
+  const total=ahorroAcumCat(c.id);
+  if(total>0){
+    addAhorroMov({meta:c.id,tipo:'retiro',v:total,nota:dest?'Pasado a '+(cats.find(x=>x.id===dest)?.n||''):'Cobro del plazo fijo'});
+    if(dest)addAhorroMov({meta:dest,tipo:'aporte',v:total,nota:'Desde '+c.n});
+  }
+  c.archived=true;S.s('cats4',cats);
+  cOv1();tst('💵 Plazo fijo cobrado');renderGastos();
+}
+
 // ── TAB 2: ANUAL — REPORTE COMPLETO ──
 function rAnual(){
   const y=curY;
@@ -4662,12 +5085,16 @@ function rAnual(){
   const totalAnual=data.reduce((s,x)=>s+x.t,0);
   const totalAnualAnt=dataAnt.reduce((s,x)=>s+x.t,0);
   const sueldoAnual=data.reduce((s,x)=>s+x.s,0);
-  const ahorroAnual=sueldoAnual-totalAnual;
+  // "Ahorro" es solo plata guardada: lo de las metas hasta el mes actual (los meses futuros son plan).
+  const _hoyA=new Date(),_limA=_hoyA.getFullYear()*12+_hoyA.getMonth();
+  const ahorradoAnual=money(MS.reduce((s,_,i)=>y*12+i>_limA?s:s+totalAhorroMes(i,y),0));
+  // Lo que sobró del sueldo después de gastar y de guardar.
+  const ahorroAnual=money(sueldoAnual-totalAnual-ahorradoAnual);
   const conDatos=data.filter(x=>x.tieneDatos).length;
 
   // HERO — Balance General
   h+=`<div class="hero">
-    <div class="hero-bg" style="background:${ahorroAnual>=0?'var(--green)':'var(--red)'}"></div>
+    <div class="hero-bg" style="background:${ahorroAnual>=0?'var(--blue)':'var(--red)'}"></div>
     <div class="hero-l">📊 Balance ${y}</div>
     <div class="hero-v" style="color:${totalAnual>0?'var(--text0)':'var(--text2)'}">${fmtFull(totalAnual)}</div>
     <div class="hero-s">Total gastado en ${conDatos} ${conDatos===1?'mes':'meses'}</div>
@@ -4689,8 +5116,8 @@ function rAnual(){
   h+=`<div class="stats s2" style="margin-bottom:14px">
     <div class="st"><div class="sv" style="color:var(--blue);font-size:15px">${fmt(sueldoAnual)}</div><div class="sl">Ingresos ${y}</div></div>
     <div class="st"><div class="sv" style="color:var(--red);font-size:15px">${fmt(totalAnual)}</div><div class="sl">Gastos ${y}</div></div>
-    <div class="st"><div class="sv" style="color:${ahorroAnual>=0?'var(--green)':'var(--red)'};font-size:15px">${fmt(Math.abs(ahorroAnual))}</div><div class="sl">${ahorroAnual>=0?'💚 Ahorro':'🔴 Déficit'}</div></div>
-    <div class="st"><div class="sv" style="color:var(--text1);font-size:15px">${conDatos}/12</div><div class="sl">Meses con datos</div></div>
+    <div class="st"><div class="sv" style="color:var(--green);font-size:15px">${fmt(ahorradoAnual)}</div><div class="sl">🐷 Ahorrado ${y}</div></div>
+    <div class="st"><div class="sv" style="color:${ahorroAnual>=0?'var(--blue)':'var(--red)'};font-size:15px">${fmt(Math.abs(ahorroAnual))}</div><div class="sl">${ahorroAnual>=0?'💙 Te sobró':'🔴 Déficit'}</div></div>
   </div>`;
 
   // CHART — Gasto por mes
@@ -4751,7 +5178,7 @@ function rAnual(){
 
   // POR CATEGORÍA — comparativa año vs año
   h+=`<div class="sec-t">🏷️ Por categoría · ${y} vs ${prevY}</div>`;
-  const catData=cats.map(c=>{
+  const catData=cats.filter(c=>!c.ahorro).map(c=>{
     const tot=totalCatAnio(c.id,y);
     const totAnt=totalCatAnio(c.id,prevY);
     return{...c,tot,totAnt,d:tot-totAnt};
@@ -4815,7 +5242,7 @@ function rAnual(){
       <div style="padding:12px 14px;background:var(--bg3);border-radius:10px;font-size:12px;color:var(--text1);line-height:1.8">
         📊 <strong>Promedio mensual:</strong> ${fmtFull(prom)}<br>
         💸 <strong>Diferencia mejor/peor:</strong> ${fmtFull(peor.t-mejor.t)}<br>
-        ${ahorroAnual>=0?`✅ <strong style="color:var(--green)">Ahorraste ${fmtFull(ahorroAnual)}</strong> en el año`:sueldoAnual>0?`⚠️ <strong style="color:var(--red)">Déficit de ${fmtFull(-ahorroAnual)}</strong>`:'💡 <strong>Cargá tus sueldos</strong> para ver tu balance'}
+        ${ahorradoAnual>0?`🐷 <strong style="color:var(--green)">Guardaste ${fmtFull(ahorradoAnual)}</strong> en ahorros<br>`:''}${ahorroAnual>=0&&sueldoAnual>0?`💙 <strong style="color:var(--blue)">Te sobraron ${fmtFull(ahorroAnual)}</strong> del sueldo en el año`:sueldoAnual>0?`⚠️ <strong style="color:var(--red)">Déficit de ${fmtFull(-ahorroAnual)}</strong>`:'💡 <strong>Cargá tus sueldos</strong> para ver tu balance'}
       </div>
       ${subio.length?`<div style="margin-top:10px;padding:11px 13px;background:var(--red-d);border:1px solid var(--red-b);border-radius:10px">
         <div style="font-size:11px;font-weight:700;color:var(--red);margin-bottom:6px">📈 Categorías que más subieron vs ${prevY}:</div>
@@ -4877,7 +5304,7 @@ function rComparar(){
   </div>`;
 
   h+=`<div class="sec-t">Por categoría · Dónde cambió el gasto</div>`;
-  const compData=cats.map(cat=>{
+  const compData=cats.filter(c=>!c.ahorro).map(cat=>{
     const aP=montoCat(cat,mA,yA);
     const aV=gastos.filter(g=>g.m===mA&&g.y===yA&&g.c===cat.id).reduce((s,g)=>s+g.v,0);
     const bP=montoCat(cat,mB,yB);
@@ -4940,8 +5367,9 @@ function rNuevoGasto(){
   const f=`${String(now.getDate()).padStart(2,'0')}/${String(now.getMonth()+1).padStart(2,'0')}`;
   return`<div class="sec">
   <div class="mt" style="margin-bottom:8px">Nuevo gasto variable</div>
-  <div style="font-size:12px;color:var(--text2);margin-bottom:20px;line-height:1.5">Para registros del día a día (supermercado, nafta, etc). Los compromisos fijos se editan desde "Mes".</div>
-  <div class="fld"><label>Categoría</label><select class="inp" id="gc">${cats.map(c=>`<option value="${esc(c.id)}">${esc(c.n)}</option>`).join('')}</select></div>
+  <div style="font-size:12px;color:var(--text2);margin-bottom:14px;line-height:1.5">Para registros del día a día (supermercado, nafta, etc). Los compromisos fijos se editan desde "Mes".</div>
+  <button type="button" class="btn b-md b-grn" style="width:100%;min-height:44px;margin-bottom:18px" onclick="openAhorroMov('aporte')">🐷 ¿Guardaste plata? Anotala como ahorro</button>
+  <div class="fld"><label>Categoría</label><select class="inp" id="gc">${expenseCategories(cats).map(c=>`<option value="${esc(c.id)}">${esc(c.n)}</option>`).join('')}</select></div>
   <div class="fld"><label>Monto ($)</label><input class="inp" id="gv" type="text" inputmode="decimal" placeholder="0" style="font-family:var(--fm);font-size:22px;font-weight:700;text-align:right"></div>
   <div class="fld"><label>Descripción (opcional)</label><input class="inp" id="gd" placeholder="Supermercado, nafta…"></div>
   <div class="inp-r">
@@ -5202,7 +5630,8 @@ function rConfig(){
     <div class="div"></div>
     <div class="sec-t">Compromisos fijos (montos base)</div>
     <div style="font-size:11px;color:var(--text2);margin-bottom:14px;line-height:1.6">El "monto base" se usa por defecto en meses nuevos. Cada mes puede editarse individualmente desde "Mes" sin afectar a los otros.</div>
-    ${cats.filter(c=>!c.cardRef&&!c.archived).map((c)=>{
+    ${cats.some(c=>c.ahorro&&!c.archived)?`<div style="font-size:11px;color:var(--green);margin-bottom:10px">🐷 Tus ahorros se manejan desde Gastos → <b>🐷 Ahorros</b>.</div>`:''}
+    ${cats.filter(c=>!c.cardRef&&!c.archived&&!c.ahorro).map((c)=>{
       return`<div style="display:flex;align-items:center;gap:10px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--r-sm);padding:11px 13px;margin-bottom:8px">
       <div class="cdot" style="background:${c.c};width:12px;height:12px;flex-shrink:0"></div>
       <div style="flex:1;font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(c.n)}</div>
@@ -5250,7 +5679,7 @@ function rConfig(){
 }
 function catHasHistory(catId){
   const prefix=catId+'_';
-  return Object.keys(pagosFijos||{}).some(k=>k.startsWith(prefix))||Object.keys(pagosEstado||{}).some(k=>k.startsWith(prefix))||(gastos||[]).some(g=>g.c===catId);
+  return Object.keys(pagosFijos||{}).some(k=>k.startsWith(prefix))||Object.keys(pagosEstado||{}).some(k=>k.startsWith(prefix))||(gastos||[]).some(g=>g.c===catId)||(ahorroMovs||[]).some(mv=>mv.meta===catId);
 }
 function delCat(i){
   const c=cats[i];if(!c||c.cardRef){tst('Las tarjetas se eliminan desde Tarjetas');return;}
@@ -5274,10 +5703,12 @@ function confNC(){const n=document.getElementById('nc-n')?.value.trim();const p=
 function editMetaModal(catId){
   const c=cats.find(x=>x.id===catId);if(!c)return;
   const acum=ahorroAcumCat(c.id);
-  oOv1(`<div class="mt">🎯 Objetivo financiero</div>
+  oOv1(`<div class="mt">✏️ Datos del ahorro</div>
   <div style="font-size:13px;font-weight:700;margin-bottom:4px">${esc(c.n)}</div>
-  <div style="font-size:11px;color:var(--text2);margin-bottom:14px">Llevás ahorrado <b style="color:#A78BFA">${fmtFull(acum)}</b></div>
-  <div class="fld"><label>Saldo inicial / base acumulada</label><input class="inp" id="meta-base" type="text" inputmode="decimal" placeholder="0" value="${c.saldoInicial!==undefined?c.saldoInicial:(c.base||'')}"></div>
+  <div style="font-size:11px;color:var(--text2);margin-bottom:14px">Llevás ahorrado <b style="color:var(--green)">${fmtFull(acum)}</b></div>
+  <div class="fld"><label>Nombre</label><input class="inp" id="meta-nombre" maxlength="80" value="${esc(c.n)}"></div>
+  ${ahorroCamposTipoHtml(c)}
+  <div class="fld"><label>Saldo inicial (lo que ya tenías antes de anotar movimientos)</label><input class="inp" id="meta-base" type="text" inputmode="decimal" placeholder="0" value="${c.saldoInicial!==undefined?c.saldoInicial:(c.base||'')}"></div>
   <div class="fld"><label>Objetivo total (ej: auto 500000) — 0 si no tenés meta fija</label><input class="inp" id="meta-obj" type="text" inputmode="decimal" placeholder="0" value="${c.objetivo||''}"></div>
   <div class="inp-r"><div class="fld"><label>Fecha objetivo</label><input class="inp" id="meta-fecha" type="date" value="${esc(c.fechaObjetivo||'')}"></div>
   <div class="fld"><label>Aporte mensual planificado</label><input class="inp" id="meta-plan" type="text" inputmode="decimal" placeholder="0" value="${c.aportePlan||''}"></div></div>
@@ -5289,12 +5720,17 @@ function saveMeta(catId){
   const date=normalizeGoalDate(document.getElementById('meta-fecha')?.value);if(date===null){tst('Fecha objetivo inválida');return;}
   const base=parseMoney(document.getElementById('meta-base')?.value),target=parseMoney(document.getElementById('meta-obj')?.value),planned=parseMoney(document.getElementById('meta-plan')?.value);
   if(base<0||target<0||planned<0){tst('Los montos de la meta no pueden ser negativos');return;}
-  c.saldoInicial=base;c.objetivo=target;c.fechaObjetivo=date;c.aportePlan=planned;c.descripcionObjetivo=String(document.getElementById('meta-desc')?.value||'').trim().slice(0,160);
-  S.s('cats4',cats);cOv1();tst('✓ Meta actualizada');renderGastos();
+  const nombre=String(document.getElementById('meta-nombre')?.value||c.n).trim().slice(0,80);if(!nombre){tst('Ponele un nombre');return;}
+  const err=readAhorroCamposTipo(c);if(err){tst(err);return;}
+  delete c.revisarSaldo;c.n=nombre;c.saldoInicial=base;c.objetivo=target;c.fechaObjetivo=date;c.aportePlan=planned;c.descripcionObjetivo=String(document.getElementById('meta-desc')?.value||'').trim().slice(0,160);
+  S.s('cats4',cats);cOv1();tst('✓ Ahorro actualizado');renderGastos();
 }
 function toggleAhorro(catId){
   const c=cats.find(x=>x.id===catId);if(!c)return;
-  c.ahorro=!c.ahorro;S.s('cats4',cats);tst(c.ahorro?'🐷 Ahora es meta de ahorro':'Volvió a ser gasto');renderGastos();
+  c.ahorro=!c.ahorro;
+  // Una meta nueva arranca en 0: su monto mensual es plan, no plata ya guardada.
+  if(c.ahorro&&c.saldoInicial===undefined)c.saldoInicial=0;
+  S.s('cats4',cats);tst(c.ahorro?'🐷 Ahora es meta de ahorro':'Volvió a ser gasto');renderGastos();
 }
 function resetVar(){if(!confirm('¿Eliminar TODOS los gastos variables?'))return;gastos=[];S.s('gst4',[]);tst('Gastos variables eliminados');renderGastos();}
 function resetPagos(){if(!confirm('¿Limpiar TODOS los pagos marcados (incluyendo historial)?'))return;pagosEstado={};S.s('pe4',{});tst('Pagos limpiados');renderGastos();}
@@ -6022,7 +6458,7 @@ async function sendChat(){
   const memInstr='\n\nMEMORIA / APRENDIZAJE:\n- ESTO ES CRÍTICO: Si en el mensaje hay CUALQUIER info DURADERA de la persona (preferencias, hábitos, restricciones, objetivos, pesos levantados habitualmente, fechas fijas, etc.), TENÉS QUE GUARDARLA vos mismo usando [ACCION]{"op":"recordar","dato":"frase en 3ra persona","tag":"dieta|gym|finanzas|agenda|general","importante":true|false}[/ACCION]. Poné importante:true SOLO para datos permanentes de fondo (alergias, lesiones, objetivos de vida); el resto false.\n- Si te piden olvidar algo: [ACCION]{"op":"olvidar","dato":"texto a borrar"}[/ACCION].\n- NO te olvides de guardar las cosas importantes, o tu memoria fallará.\n- No repitas en memoria algo que ya figura arriba.';
   const ctxHist=chatHist.slice(-20).map(msg=>'['+msg.role+']: '+msg.text).join('\n');
   const voiceGuide = _voiceSent ? '\n\nIMPORTANTE: El usuario te está hablando por voz. Respondé de forma muy corta (máximo 2 o 3 oraciones breves), directa y conversacional en español uruguayo, sin usar viñetas, listas ni formato markdown largo.' : '';
-  const prompt='Sos MARTIN·APP AI: asistente personal con control total de los datos.\n\n'+_hoy+dataCtx+memCtx+memInstr+voiceGuide+'\n\nREGLAS:\n- Respondé en español uruguayo, natural, amigable y con confianza.\n- Revisá los datos con cuidado. Si te preguntan por pesos o registros, verificá exactamente lo que dice el registro antes de responder. No inventes números.\n- Si el usuario pide agregar/modificar datos, usá [ACCION] al final.\n- ACCIONES DISPONIBLES:\n  * [ACCION]{"op":"gasto","cat":"id","v":monto,"desc":"...","f":"d/m"}[/ACCION]\n  * [ACCION]{"op":"pago","cat":"id","m":mes,"y":año}[/ACCION]\n  * [ACCION]{"op":"fijo","cat":"id","m":mes,"y":año,"v":monto}[/ACCION]\n  * [ACCION]{"op":"compra","cardId":"id","v":monto,"desc":"...","cuotas":1}[/ACCION]\n  * [ACCION]{"op":"crear_rutina","name":"Nombre","days":[{"label":"Día1","exercises":[{"name":"Ej1","muscle":"Pecho","series":4,"reps":"10"}]}]}[/ACCION]\n  * [ACCION]{"op":"modificar_ejercicio","dia":"Lunes","nombre_original":"press banca","nombre_nuevo":"press banca con mancuernas","series":4,"reps":"10","musculo":"Pecho"}[/ACCION] (usá esto para cambiar ejercicios existentes de rutinas)\n  * [ACCION]{"op":"registrar_serie","ejercicio":"aperturas","serie":3,"peso":30,"reps":10}[/ACCION] (usá esto para registrar tu peso en una serie específica)\n  * [ACCION]{"op":"completar_ejercicio","ejercicio":"aperturas"}[/ACCION] (usá esto para marcar todas las series de un ejercicio como hechas)\n  * [ACCION]{"op":"evento","titulo":"...","fecha":"YYYY-MM-DD","hora":"HH:MM","recordatorio":15}[/ACCION]\n- NUTRICIÓN: si la persona dice qué comió, registralo con [ACCION]{"op":"comida","nombre":"...","cal":número,"prot":número}[/ACCION] (estimá calorías vos). Para CARDIO: [ACCION]{"op":"cardio","tipo":"correr","min":30,"km":5}[/ACCION]. Para SUEÑO: [ACCION]{"op":"sueno","horas":7.5,"calidad":"buena"}[/ACCION]. Para la LISTA DEL SÚPER: [ACCION]{"op":"comprar","item":"2kg de pollo","cat":"carniceria"}[/ACCION]. Para ELIMINAR algo: [ACCION]{"op":"eliminar","tipo":"gasto|rutina|evento|comida|cardio|super|categoria|memoria","desc":"texto para identificarlo"}[/ACCION].\n- AHORRO MENSUAL: [ACCION]{"op":"ahorro","cat":"id_meta","v":monto}[/ACCION] (para sumar al mes).\n- AHORRO TOTAL: Si la persona dice que tiene un saldo TOTAL acumulado de X (ej. "tengo 2000 ahorrados"): [ACCION]{"op":"set_saldo_ahorro","cat":"id_meta","v":monto}[/ACCION].\n- Crear meta: [ACCION]{"op":"crear_meta","nombre":"Auto","objetivo":500000,"aporte":1500}[/ACCION].\n- TARJETAS POR MES: \"anotá/sumame X de la tarjeta Y\" SUMA al monto de ese mes: op \"ajustar_monto\" con el id de la CATEGORÍA de esa tarjeta y delta=X. Solo \"poné/cambiá a X\" usa \"fijo\" (reemplaza el total). Meses de 0 a 11. Ej \"anotá 1400 de la Visa en abril\" -> [ACCION]{\"op\":\"ajustar_monto\",\"cat\":\"<id categoría Visa>\",\"m\":3,\"y\":<año>,\"delta\":1400}[/ACCION].\n- muscle debe ser uno de: Pecho, Espalda, Hombros, Bíceps, Tríceps, Cuádriceps, Femoral, Gemelos, Abdomen\n- IDs son los que ves arriba. NO inventes IDs.\n- Podés ANALIZAR entrenamientos: y recomendar ajustes.\n- Podés dar consejos de DIETA y NUTRICIÓN según el perfil y objetivo del usuario.\n- Si te piden hacer algo que no sea una acción, respondé normal pero útil.\n- Siempre respondé optimista y motivador como un entrenador personal.\n\nConversación:\n'+ctxHist+'\n\n['+txt+']:';
+  const prompt='Sos MARTIN·APP AI: asistente personal con control total de los datos.\n\n'+_hoy+dataCtx+memCtx+memInstr+voiceGuide+'\n\nREGLAS:\n- Respondé en español uruguayo, natural, amigable y con confianza.\n- Revisá los datos con cuidado. Si te preguntan por pesos o registros, verificá exactamente lo que dice el registro antes de responder. No inventes números.\n- Si el usuario pide agregar/modificar datos, usá [ACCION] al final.\n- ACCIONES DISPONIBLES:\n  * [ACCION]{"op":"gasto","cat":"id","v":monto,"desc":"...","f":"d/m"}[/ACCION]\n  * [ACCION]{"op":"pago","cat":"id","m":mes,"y":año}[/ACCION]\n  * [ACCION]{"op":"fijo","cat":"id","m":mes,"y":año,"v":monto}[/ACCION]\n  * [ACCION]{"op":"compra","cardId":"id","v":monto,"desc":"...","cuotas":1}[/ACCION]\n  * [ACCION]{"op":"crear_rutina","name":"Nombre","days":[{"label":"Día1","exercises":[{"name":"Ej1","muscle":"Pecho","series":4,"reps":"10"}]}]}[/ACCION]\n  * [ACCION]{"op":"modificar_ejercicio","dia":"Lunes","nombre_original":"press banca","nombre_nuevo":"press banca con mancuernas","series":4,"reps":"10","musculo":"Pecho"}[/ACCION] (usá esto para cambiar ejercicios existentes de rutinas)\n  * [ACCION]{"op":"registrar_serie","ejercicio":"aperturas","serie":3,"peso":30,"reps":10}[/ACCION] (usá esto para registrar tu peso en una serie específica)\n  * [ACCION]{"op":"completar_ejercicio","ejercicio":"aperturas"}[/ACCION] (usá esto para marcar todas las series de un ejercicio como hechas)\n  * [ACCION]{"op":"evento","titulo":"...","fecha":"YYYY-MM-DD","hora":"HH:MM","recordatorio":15}[/ACCION]\n- NUTRICIÓN: si la persona dice qué comió, registralo con [ACCION]{"op":"comida","nombre":"...","cal":número,"prot":número}[/ACCION] (estimá calorías vos). Para CARDIO: [ACCION]{"op":"cardio","tipo":"correr","min":30,"km":5}[/ACCION]. Para SUEÑO: [ACCION]{"op":"sueno","horas":7.5,"calidad":"buena"}[/ACCION]. Para la LISTA DEL SÚPER: [ACCION]{"op":"comprar","item":"2kg de pollo","cat":"carniceria"}[/ACCION]. Para ELIMINAR algo: [ACCION]{"op":"eliminar","tipo":"gasto|rutina|evento|comida|cardio|super|categoria|memoria","desc":"texto para identificarlo"}[/ACCION].\n- AHORRO = plata que la persona GUARDÓ (nunca es un gasto). Si guardó plata: [ACCION]{"op":"ahorro","cat":"id_meta","v":monto,"fecha":"YYYY-MM-DD"}[/ACCION]. Si SACÓ plata de un ahorro: [ACCION]{"op":"retiro_ahorro","cat":"id_meta","v":monto}[/ACCION]. Nunca anotes un ahorro como gasto.\n- AHORRO TOTAL: Si la persona dice que tiene un saldo TOTAL acumulado de X (ej. "tengo 2000 ahorrados"): [ACCION]{"op":"set_saldo_ahorro","cat":"id_meta","v":monto}[/ACCION].\n- Crear meta: [ACCION]{"op":"crear_meta","nombre":"Auto","objetivo":500000,"aporte":1500}[/ACCION].\n- TARJETAS POR MES: \"anotá/sumame X de la tarjeta Y\" SUMA al monto de ese mes: op \"ajustar_monto\" con el id de la CATEGORÍA de esa tarjeta y delta=X. Solo \"poné/cambiá a X\" usa \"fijo\" (reemplaza el total). Meses de 0 a 11. Ej \"anotá 1400 de la Visa en abril\" -> [ACCION]{\"op\":\"ajustar_monto\",\"cat\":\"<id categoría Visa>\",\"m\":3,\"y\":<año>,\"delta\":1400}[/ACCION].\n- muscle debe ser uno de: Pecho, Espalda, Hombros, Bíceps, Tríceps, Cuádriceps, Femoral, Gemelos, Abdomen\n- IDs son los que ves arriba. NO inventes IDs.\n- Podés ANALIZAR entrenamientos: y recomendar ajustes.\n- Podés dar consejos de DIETA y NUTRICIÓN según el perfil y objetivo del usuario.\n- Si te piden hacer algo que no sea una acción, respondé normal pero útil.\n- Siempre respondé optimista y motivador como un entrenador personal.\n\nConversación:\n'+ctxHist+'\n\n['+txt+']:';
 
   // ---- Burbuja del asistente que se va llenando en vivo ----
   chatHist.push({role:'assistant',text:'',streaming:true});
@@ -6664,11 +7100,19 @@ function normalizeFinanceDate(acc,now=new Date()){
   if(!Number.isInteger(day)||day<1||day>maxDay)return {error:'El día indicado no existe en ese mes'};
   return {m,y,f:String(day).padStart(2,'0')+'/'+String(m+1).padStart(2,'0')};
 }
+// Categorías donde se puede anotar un gasto: nunca una meta de ahorro (eso es plata guardada,
+// no gastada) ni una categoría archivada.
+function expenseCategories(categoryList){
+  return (categoryList||[]).filter(c=>!c.ahorro&&!c.archived);
+}
 function prepareExpenseAction(acc,categoryList=cats,expenseList=gastos,now=new Date()){
   const v=parseMoney(acc?.v??acc?.monto);
   if(!Number.isFinite(v)||v<=0||v>999999999999)return {error:'El monto del gasto debe ser mayor a 0 y válido'};
   const desc=String(acc?.desc||acc?.detalle||'').trim().slice(0,120);
-  const resolved=resolveFinanceCategory({...acc,desc},categoryList,expenseList);
+  const asked=normalizeGymLookup(acc?.cat||'');
+  const meta=asked?(categoryList||[]).find(c=>c.ahorro&&normalizeGymLookup(c.n)===asked):null;
+  if(meta)return {error:'"'+meta.n+'" es una meta de ahorro: eso es plata guardada, no un gasto. Usá la acción ahorro.'};
+  const resolved=resolveFinanceCategory({...acc,desc},expenseCategories(categoryList),expenseList);
   if(resolved.error)return resolved;
   const date=normalizeFinanceDate(acc,now);if(date.error)return date;
   return {expense:{c:resolved.category.id,v:money(v),desc:desc||resolved.category.n,...date},category:resolved.category,categorySource:resolved.source};
@@ -6710,10 +7154,10 @@ function aiActionContract(){
     '- Al crear o cambiar ejercicios, priorizá nombres exactos del CATÁLOGO CON MOVIMIENTO. Si un ejercicio fuera del catálogo es claramente mejor para el objetivo, limitación o equipamiento, podés usarlo: quedará sin GIF y la app ofrecerá buscar la técnica en YouTube.\n'+
     '- Para una biserie, marcá exactamente dos ejercicios consecutivos con el mismo campo "superset" (por ejemplo "A"). Cada ejercicio conserva sus propias series, reps, kg y RIR. No agrupes dos levantamientos pesados que comprometan la técnica.\n'+
     '- Para agrupar dos ejercicios ya existentes y consecutivos usá marcar_biserie con dia, ejercicio_1 y ejercicio_2. Para separarla usá quitar_biserie con dia y ejercicio.\n'+
-    '- Operaciones válidas: gasto, editar_gasto, ingreso, pago, fijo, ajustar_monto, ahorro, crear_meta, actualizar_meta, set_saldo_ahorro, compra, evento, crear_rutina, modificar_ejercicio, cambiar_ejercicio, marcar_biserie, quitar_biserie, registrar_serie, completar_ejercicio, comida, crear_dieta, cardio, sueno, comprar, recordar, olvidar, eliminar y responder.\n'+
+    '- Operaciones válidas: gasto, editar_gasto, ingreso, pago, fijo, ajustar_monto, ahorro, retiro_ahorro, crear_meta, actualizar_meta, set_saldo_ahorro, compra, evento, crear_rutina, modificar_ejercicio, cambiar_ejercicio, marcar_biserie, quitar_biserie, registrar_serie, completar_ejercicio, comida, crear_dieta, cardio, sueno, comprar, recordar, olvidar, eliminar y responder.\n'+
     '- En pedidos compuestos, resolvé cada parte que tenga datos suficientes y explicá brevemente cualquier parte pendiente.';
 }
-const AI_ALLOWED_ACTIONS=new Set(['gasto','editar_gasto','ingreso','pago','fijo','ajustar_monto','ahorro','crear_meta','actualizar_meta','set_saldo_ahorro','crear_rutina','modificar_ejercicio','cambiar_ejercicio','marcar_biserie','quitar_biserie','registrar_serie','completar_ejercicio','compra','evento','responder','comprar','super','sueno','sueño','dormir','cardio','comida','crear_dieta','recordar','olvidar','eliminar','borrar']);
+const AI_ALLOWED_ACTIONS=new Set(['gasto','editar_gasto','ingreso','pago','fijo','ajustar_monto','ahorro','retiro_ahorro','crear_meta','actualizar_meta','set_saldo_ahorro','crear_rutina','modificar_ejercicio','cambiar_ejercicio','marcar_biserie','quitar_biserie','registrar_serie','completar_ejercicio','compra','evento','responder','comprar','super','sueno','sueño','dormir','cardio','comida','crear_dieta','recordar','olvidar','eliminar','borrar']);
 function isAIActionExecutionError(result){
   const text=String(result||'').trim();
   return /^(falta|faltan|no\s|el .*(debe|no es)|la .*(necesita|no es)|hay varios|los dos|para marcar|ejercicio .* no encontrado|serie invalida|tarjeta no encontrada|necesito|sin comidas|nada para|operacion .* no soportada|ya existe)/i.test(normalizeGymLookup(text));
@@ -7024,23 +7468,25 @@ function ejecutarAccion(acc){
     pf[key]=next;S.s('pf4',pf);pagosFijos=pf;
     return (delta>0?'Sumé ':'Resté ')+fmtFull(Math.abs(delta))+' en "'+cat.n+'" · '+MONTHS[date.m]+' '+date.y+': '+fmtFull(current)+' → '+fmtFull(next)+'. Nuevo total: '+fmtFull(next);
   }
-  if(acc.op==='ahorro'){
-    const amount=parseMoney(acc.v??acc.monto);if(!Number.isFinite(amount)||amount<=0||amount>999999999999)return 'El ahorro debe ser un monto mayor a 0 y válido';
-    const requested=acc.cat?resolveFinanceCategory(acc,cats.filter(c=>c.ahorro),gastos):null;
+  if(acc.op==='ahorro'||acc.op==='retiro_ahorro'){
+    const retiro=acc.op==='retiro_ahorro';
+    const amount=parseMoney(acc.v??acc.monto);if(!Number.isFinite(amount)||amount<=0||amount>999999999999)return (retiro?'El retiro':'El ahorro')+' debe ser un monto mayor a 0 y válido';
+    const activas=cats.filter(c=>c.ahorro&&!c.archived);
+    const requested=acc.cat?resolveFinanceCategory(acc,activas,gastos):null;
     if(requested?.error)return requested.error;
-    const cat=requested?.category||cats.find(c=>c.ahorro);
-    if(!cat)return 'No hay ninguna meta de ahorro. Creá una primero.';
-    const pf=S.g('pf4',{});
+    const cat=requested?.category||(activas.length===1?activas[0]:null);
+    if(!cat)return activas.length?'¿En cuál ahorro? Tenés: '+activas.map(c=>c.n).join(', '):'No hay ningún ahorro creado. Creá uno primero.';
     const date=normalizeFinanceDate(acc);if(date.error)return date.error;
-    const key=cat.id+'_'+date.m+'_'+date.y;
-    pf[key]=money((pf[key]||0)+amount);
-    S.s('pf4',pf);pagosFijos=pf;
-    return '🐷 $'+fmt(amount)+' guardado en "'+cat.n+'". Llevás $'+fmt(ahorroAcumCat(cat.id));
+    const dd=date.f.split('/')[0];
+    const res=addAhorroMov({meta:cat.id,tipo:retiro?'retiro':'aporte',v:amount,fecha:date.y+'-'+String(date.m+1).padStart(2,'0')+'-'+dd,nota:String(acc.desc||acc.nota||'').slice(0,120)});
+    if(res.error)return res.error;
+    const mon=ahorroMoneda(cat);
+    return (retiro?'💸 Sacaste '+ahorroFmt(amount,mon)+' de "':'🐷 '+ahorroFmt(amount,mon)+' guardado en "')+cat.n+'". Llevás '+ahorroFmt(ahorroAcumCat(cat.id),mon);
   }
   if(acc.op==='crear_meta'){
     const nombre=String(acc.nombre||acc.name||'Meta de ahorro').trim().slice(0,80);if(!nombre)return 'La meta necesita un nombre';
     if(cats.some(c=>c.ahorro&&normalizeGymLookup(c.n)===normalizeGymLookup(nombre)))return 'Ya existe la meta "'+nombre+'". Usá actualizar_meta para completarla o cambiarla';
-    const nueva={id:uid(),n:nombre,c:'#A78BFA',base:0,saldoInicial:0,objetivo:0,aportePlan:0,fechaObjetivo:'',descripcionObjetivo:'',ahorro:true};
+    const nueva={id:uid(),n:nombre,c:'#00C48C',base:0,saldoInicial:0,objetivo:0,aportePlan:0,fechaObjetivo:'',descripcionObjetivo:'',ahorro:true,tipoAhorro:AHORRO_TIPOS[acc.tipo_ahorro]?acc.tipo_ahorro:'meta',moneda:acc.moneda==='USD'?'USD':'UYU'};
     const applied=applyFinancialGoalFields(nueva,acc);if(applied.error)return applied.error;
     cats.push(nueva);S.s('cats4',cats);
     const plan=financialGoalPlan(nueva);
@@ -7056,16 +7502,13 @@ function ejecutarAccion(acc){
     return '🎯 Meta "'+meta.n+'" actualizada'+(plan.target?' · Falta '+fmtFull(plan.remaining):' · Falta definir el costo')+(plan.date?' · Fecha '+plan.date:'')+(plan.required?' · Necesitás '+fmtFull(plan.required)+'/mes':'');
   }
   if(acc.op==='set_saldo_ahorro'){
-    const cat=cats.find(c=>c.id===acc.cat&&c.ahorro)||cats.find(c=>c.ahorro);
-    if(!cat)return 'No hay ninguna meta de ahorro. Creá una primero.';
-    const pf=S.g('pf4',{});
-    const prefix=cat.id+'_';
-    Object.keys(pf).forEach(k=>{ if(k.startsWith(prefix)) delete pf[k]; });
-    cat.saldoInicial = parseMoney(acc.v);
-    S.s('cats4', cats);
-    S.s('pf4', pf);
-    pagosFijos=pf;
-    return '🐷 El saldo total de "'+cat.n+'" se ajustó a $'+fmt(cat.saldoInicial)+'.';
+    const pool=cats.filter(c=>c.ahorro&&!c.archived);
+    const cat=pool.find(c=>c.id===acc.cat)||(acc.cat?resolveFinanceCategory({cat:acc.cat},pool,gastos).category:null)||(pool.length===1?pool[0]:null);
+    if(!cat)return pool.length?'¿Qué ahorro querés ajustar? Tenés: '+pool.map(c=>c.n).join(', '):'No hay ningún ahorro creado. Creá uno primero.';
+    // No se borra nada: se anota un movimiento "ajuste" por la diferencia.
+    ahorroMovs=S.g('ahr1',ahorroMovs||[]);
+    const res=setAhorroSaldo(cat.id,acc.v);if(res.error)return res.error;
+    return '🐷 El saldo total de "'+cat.n+'" quedó en '+ahorroFmt(ahorroAcumCat(cat.id),ahorroMoneda(cat))+'. Tu historial por mes quedó intacto.';
   }
   if(acc.op==='crear_rutina'){
     const movementCatalog=_exerciseMediaData;
@@ -8997,6 +9440,9 @@ function loadUserData(){
   // Migración: asegurar que la categoría ahorro tenga ahorro:true (datos viejos)
   const _aCat=cats.find(c=>c.id==='ahorro');
   if(_aCat&&!_aCat.ahorro){_aCat.ahorro=true;S.s('cats4',cats);}
+  // Ahorros: si todavía no hay movimientos (primera vez, o un respaldo viejo), se migran desde pf4.
+  ahorroMovs=S.g('ahr1',null);
+  if(!Array.isArray(ahorroMovs)){ahorroMovs=migrateAhorrosFromPf4(cats,pagosFijos);S.s('ahr1',ahorroMovs);S.s('cats4',cats);}
   cards=S.g('cards1',[]);cpurch=S.g('cpurch1',[]);
   // Migración: compras viejas sin startM/startY → estimar mes de inicio de la 1ª cuota
   let _cpMig=false;
@@ -9692,7 +10138,7 @@ function confirmAIPurchases(){
 // Con Filesystem + Share se escribe el archivo y se abre "Compartir" (WhatsApp, Drive, Gmail, Archivos).
 const BACKUP_MAX_AGE_DAYS=14;
 const BACKUP_DATA_KEYS=['rt2','arid','sets2','wts2','setPerf3','ghst2','gymWeekLog','gymProfile','gymCycles1','activeWeekId','cardio1','nutData',
-  'gst4','pf4','pe4','sld4','cats4','cards1','cpurch1','shop1','evts1','chat1','chatSessions','activeChatId','coachHist1','coachSessions',
+  'gst4','pf4','pe4','sld4','cats4','ahr1','cards1','cpurch1','shop1','evts1','chat1','chatSessions','activeChatId','coachHist1','coachSessions',
   'activeCoachId','coachProfile1','userMem1','last_mem_compile','gemini_key','ai_provider','ai_free','ai_always_speak','seed_v2',
   'permissionPrimerDismissedV1','micPermissionGrantedV1','gymPlan1','lastBackupAt'];
 // Las claves de IA (…_key) no viajan en el respaldo salvo que se pida: el archivo se manda por WhatsApp o Drive.

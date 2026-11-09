@@ -34,12 +34,15 @@ function financeFixture(){
       {_id:2,c:'super',v:799.75,m:6,y:2026,f:'08/07',desc:'Tienda Inglesa'}
     ],
     pagosFijos:{'ute_6_2026':6100,'ahorro_6_2026':2000},
+    // Desde la entrega 2 de Ahorros, lo guardado en meses pasados vive como movimiento en ahr1.
+    ahorroMovs:[{id:'mig_ahorro_6_2026',meta:'ahorro',tipo:'aporte',v:2000,fecha:'2026-07-01',m:6,y:2026}],
     getCardMonthAmt:()=>3400
   };
   vm.createContext(context);
   vm.runInContext([
     extractFunction('money'),extractFunction('sumMoney'),extractFunction('parseMoney'),
     extractFunction('k'),extractFunction('montoCat'),extractFunction('totalCompromisosMes'),
+    extractFunction('ahorroISO'),extractFunction('ahorroSigned'),extractFunction('ahorroMoneda'),extractFunction('ahorroFmt'),extractFunction('ahorroMovsDe'),extractFunction('ahorroNetoMes'),extractFunction('planAhorroMes'),
     extractFunction('totalAhorroMes'),extractFunction('gastosVariablesMes'),
     extractFunction('totalVariablesMes'),extractFunction('totalGastosMes')
   ].join('\n'),context);
@@ -59,14 +62,16 @@ function smartFinanceFixture(){
       {_id:11,c:'super',v:900,desc:'Disco',m:6,y:2026,f:'12/07'},
       {_id:12,c:'nafta',v:2000,desc:'Ancap',m:6,y:2026,f:'13/07'}
     ],
-    pagosFijos:{}
+    pagosFijos:{},ahorroMovs:[],
+    AHORRO_TIPOS:{meta:'Metas',plazo_fijo:'Plazos fijos',reserva:'Otra plata guardada'}
   };
   vm.createContext(context);
   vm.runInContext([
     extractFunction('money'),extractFunction('parseMoney'),extractFunction('normalizeGymLookup'),
     extractFunction('resolveFinanceCategory'),extractFunction('normalizeFinanceDate'),
-    extractFunction('prepareExpenseAction'),extractFunction('resolveExpenseTarget'),
-    extractFunction('ahorroAcumCat'),extractFunction('normalizeGoalDate'),
+    extractFunction('expenseCategories'),extractFunction('prepareExpenseAction'),extractFunction('resolveExpenseTarget'),
+    extractFunction('ahorroISO'),extractFunction('ahorroSigned'),extractFunction('ahorroMoneda'),extractFunction('ahorroFmt'),extractFunction('ahorroMovsDe'),extractFunction('buildAhorroMov'),extractFunction('addAhorroMov'),extractFunction('setAhorroSaldo'),
+    extractFunction('ahorroHistorialCat'),extractFunction('ahorroAcumCat'),extractFunction('normalizeGoalDate'),
     extractFunction('financialGoalPlan'),extractFunction('applyFinancialGoalFields')
   ].join('\n'),context);
   return context;
