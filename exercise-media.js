@@ -1,6 +1,6 @@
 'use strict';
 
-const EXERCISE_MEDIA_CATALOG='exercise-media.json?v=4';
+const EXERCISE_MEDIA_CATALOG='exercise-media.json?v=5';
 const EXERCISE_MEDIA_BASE='https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/main/';
 let _exerciseMediaData=null,_exerciseMediaPromise=null;
 
@@ -22,7 +22,7 @@ async function loadExerciseMediaCatalog(){
   _exerciseMediaPromise=(async()=>{
     const ctrl=new AbortController();const timer=setTimeout(()=>ctrl.abort(),10000);
     try{
-      const url=location.protocol==='file:'?'https://martin10app.github.io/exercise-media.json?v=4':EXERCISE_MEDIA_CATALOG;
+      const url=location.protocol==='file:'?'https://martin10app.github.io/exercise-media.json?v=5':EXERCISE_MEDIA_CATALOG;
       const res=await fetch(url,{cache:'force-cache',signal:ctrl.signal});
       if(!res.ok)throw new Error('HTTP '+res.status);
       const data=await res.json();
@@ -33,24 +33,44 @@ async function loadExerciseMediaCatalog(){
   return _exerciseMediaPromise;
 }
 function isCuratedMovement(item){return !!(item&&(item.curated||!item.muscle));}
+function movementNames(item){return [item.name,...(item.aliases||[])];}
+// Reglas revisadas a mano (nombre en español -> animación exacta). id '' = sin animación.
+function ruleExerciseMovement(name,catalog){
+  const n=normExerciseMediaName(name);if(!n)return undefined;
+  for(const [rx,id] of catalog?.rules||[]){
+    let hit=false;try{hit=new RegExp(rx).test(n);}catch(_e){hit=false;}
+    if(hit)return id?catalog.exercises.find(item=>item.id===id)||null:null;
+  }
+  return undefined;
+}
 function findExerciseMovement(ex,catalog){
-  if(ex.mediaId){const byId=catalog.exercises.find(item=>item.id===ex.mediaId);if(byId)return byId;}
-  // Primero los ejercicios curados a mano (los nombres de las rutinas). El resto del catálogo
-  // sólo gana con una coincidencia muy clara, para no cambiar la animación de rutinas viejas.
   const exact=normExerciseMediaName(ex.name);
-  const exactItem=catalog.exercises.find(item=>[item.name,...(item.aliases||[])].some(n=>normExerciseMediaName(n)===exact));
+  const byId=ex.mediaId?catalog.exercises.find(item=>item.id===ex.mediaId):null;
+  // 1) id guardado que coincide con el nombre (elegido en el selector)
+  if(byId&&movementNames(byId).some(n=>normExerciseMediaName(n)===exact))return byId;
+  // 2) nombre exacto entre los curados a mano
+  const isExact=item=>movementNames(item).some(n=>normExerciseMediaName(n)===exact);
+  const curatedExact=catalog.exercises.find(item=>isCuratedMovement(item)&&isExact(item));
+  if(curatedExact)return curatedExact;
+  // 3) reglas revisadas a mano: corrigen también ids viejos mal asignados
+  const ruled=ruleExerciseMovement(ex.name,catalog);
+  if(ruled!==undefined)return ruled;
+  // 4) nombre exacto en el resto del catálogo (traducido automáticamente)
+  const exactItem=catalog.exercises.find(isExact);
   if(exactItem)return exactItem;
+  if(byId&&!isCuratedMovement(byId))return byId;
+  // 5) parecido: sólo con coincidencia alta, mejor sin animación que con una equivocada
   let best=null,bestScore=0,wide=null,wideScore=0;
   for(const item of catalog.exercises){
     const curated=isCuratedMovement(item);
-    for(const candidate of [item.name,...(item.aliases||[])]){
+    for(const candidate of movementNames(item)){
       const score=exerciseMediaScore(ex.name,candidate);
       if(curated){if(score>bestScore){bestScore=score;best=item;}}
       else if(score>wideScore){wideScore=score;wide=item;}
     }
   }
-  if(bestScore>=58)return best;
-  return wideScore>=80?wide:null;
+  if(bestScore>=72)return best;
+  return wideScore>=86?wide:null;
 }
 function exerciseMovementMuscle(item){
   if(item?.muscle)return item.muscle;
@@ -71,7 +91,7 @@ function exerciseMovementName(item){return String(item?.aliases?.[0]||item?.name
 function canonicalExerciseMovement(ex,catalog){
   const query=String(ex?.name||'').trim();if(!query||!catalog?.exercises)return null;
   const normalized=normExerciseMediaName(query);
-  let movement=catalog.exercises.find(item=>item.id===ex.mediaId||[item.name,...(item.aliases||[])].some(n=>normExerciseMediaName(n)===normalized));
+  let movement=catalog.exercises.find(item=>movementNames(item).some(n=>normExerciseMediaName(n)===normalized));
   if(!movement){
     const candidate=findExerciseMovement(ex,catalog);
     if(candidate){
@@ -151,16 +171,18 @@ async function loadExerciseMovement(ex,slotId){
     const steps=movementStepsEs(movement);
     slot.setAttribute('aria-busy','false');
     slot.innerHTML=`<div class="ex-media-card pro">
-      <div class="ex-media-frame" data-state="loading">
-        <div class="ex-media-shimmer" aria-hidden="true"></div>
-        <img src="${esc(initial)}" alt="Demostración de ${esc(ex.name)}" width="360" height="360" decoding="async" data-gif="${esc(gif)}" data-still="${esc(still)}" data-playing="${reduce?'0':'1'}" data-fallback="0" onload="handleExerciseMediaLoad(this)" onerror="handleExerciseMediaError(this)" onclick="zoomExerciseMovement(this)">
+      <div class="ex-media-bar">
         <span class="ex-media-live"${reduce?' hidden':''}><i></i>En bucle</span>
         <button type="button" class="ex-media-zoom" aria-label="Ver en pantalla completa" onclick="zoomExerciseMovement(this)">${EX_MEDIA_ICONS.zoom}</button>
       </div>
+      <div class="ex-media-frame" data-state="loading">
+        <div class="ex-media-shimmer" aria-hidden="true"></div>
+        <img src="${esc(initial)}" alt="Demostración de ${esc(ex.name)}" width="360" height="360" decoding="async" data-gif="${esc(gif)}" data-still="${esc(still)}" data-playing="${reduce?'0':'1'}" data-fallback="0" onload="handleExerciseMediaLoad(this)" onerror="handleExerciseMediaError(this)" onclick="zoomExerciseMovement(this)">
+      </div>
       <div class="ex-media-meta">
-        ${main?`<span class="ex-media-chip main">● ${esc(main)}</span>`:''}
-        ${sec.map(m=>`<span class="ex-media-chip sec">${esc(m)}</span>`).join('')}
-        ${equipment?`<span class="ex-media-chip eq">${esc(equipment)}</span>`:''}
+        ${main?`<span class="ex-media-chip chip-main">● ${esc(main)}</span>`:''}
+        ${sec.map(m=>`<span class="ex-media-chip chip-sec">${esc(m)}</span>`).join('')}
+        ${equipment?`<span class="ex-media-chip chip-eq">${esc(equipment)}</span>`:''}
         ${!main&&body?`<span class="ex-media-chip">${esc(body)}</span>`:''}
       </div>
       <div class="ex-media-actions">

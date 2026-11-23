@@ -29,6 +29,8 @@ vm.runInContext([
   extractFunction('normExerciseMediaName',mediaJs),
   extractFunction('exerciseMediaScore',mediaJs),
   extractFunction('isCuratedMovement',mediaJs),
+  extractFunction('movementNames',mediaJs),
+  extractFunction('ruleExerciseMovement',mediaJs),
   extractFunction('findExerciseMovement',mediaJs),
   extractFunction('exerciseMovementMuscle',mediaJs),
   extractFunction('exerciseMovementName',mediaJs),

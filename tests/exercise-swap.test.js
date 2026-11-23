@@ -50,6 +50,8 @@ function makeContext(){
     extractFunction('normExerciseMediaName',mediaJs),
     extractFunction('exerciseMediaScore',mediaJs),
     extractFunction('isCuratedMovement',mediaJs),
+  extractFunction('movementNames',mediaJs),
+  extractFunction('ruleExerciseMovement',mediaJs),
     extractFunction('findExerciseMovement',mediaJs),
     extractFunction('exerciseMovementMuscle',mediaJs),
     extractFunction('exerciseMovementName',mediaJs),
@@ -117,18 +119,25 @@ test('el selector filtra por músculo y búsqueda, saca el ejercicio actual y po
   assert.ok(ctx.exPickRanked().every(it=>it.equip==='dumbbell'));
 });
 
-test('las rutinas viejas no cambian de animación con el catálogo ampliado',()=>{
+test('cada nombre de ejercicio muestra la animación correcta (revisadas a mano)',()=>{
   const ctx=makeContext();
-  const programs=JSON.parse(fs.readFileSync(path.join(root,'programas.json'),'utf8')).programs;
-  const names=[...new Set(programs.flatMap(p=>p.days.flatMap(d=>d.exercises.map(e=>e.name))))];
-  const curated=catalog.exercises.filter(e=>e.curated);
-  const curatedCatalog={exercises:curated};
-  for(const name of names){
-    const before=ctx.findExerciseMovement({name},curatedCatalog);
-    if(!before)continue;
-    const after=ctx.findExerciseMovement({name},catalog);
-    // Sólo puede cambiar si ahora existe un movimiento con ese mismo nombre exacto (más preciso).
-    const exact=after&&[after.name,...(after.aliases||[])].some(n=>ctx.normExerciseMediaName(n)===ctx.normExerciseMediaName(name));
-    if(!exact)assert.equal(after?.id,before.id,`${name} cambió de animación`);
-  }
+  const cases={
+    'Hack squat':'0743','Hack Squat (rango cómodo)':'0743','Sentadilla goblet con mancuerna':'1760',
+    'Salto vertical con contramovimiento':'0514','Curl inclinado con mancuernas':'0318','Curl concentrado':'0297',
+    'Extensión de tríceps sobre la cabeza en polea':'0194','Extensión de tríceps en polea con cuerda':'0200',
+    'Remo inclinado con mancuernas':'0327','Remo con pecho apoyado en máquina o banco':'0327',
+    'Remo con mancuerna un brazo':'0292','Remo sentado en polea':'0861','Peso muerto rumano con mancuernas':'1459',
+    'Curl femoral sentado':'0599','Curl femoral tumbado':'0586','Dominadas supinas':'1326','Dominadas lastradas':'0841',
+    'Press inclinado en máquina':'1299','Press en máquina de pecho sentado':'0577','Elevación de talones multipower':'0773',
+    'Elevación lateral desde polea media':'0178','Vuelo de pájaros en máquina':'0602','Plancha':'2135',
+    'Press banca plano con barra':'0025','Sentadilla con barra':'0043','Prensa 45°':'0739'
+  };
+  for(const [name,id] of Object.entries(cases))assert.equal(ctx.findExerciseMovement({name},catalog)?.id,id,name);
+  // un id viejo mal asignado se corrige por nombre
+  assert.equal(ctx.findExerciseMovement({name:'Hack squat',mediaId:'0739'},catalog)?.id,'0743');
+  // lo elegido en el selector se respeta
+  const plank=catalog.exercises.find(e=>e.id==='3665');
+  assert.equal(ctx.findExerciseMovement({name:plank.aliases[0],mediaId:'3665'},catalog)?.id,'3665');
+  // mejor sin animación que una equivocada
+  for(const name of ['Press landmine a un brazo','Cardio suave','Saltos al cajón'])assert.equal(ctx.findExerciseMovement({name},catalog),null,name);
 });

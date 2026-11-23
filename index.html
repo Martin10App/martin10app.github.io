@@ -500,7 +500,7 @@ textarea.inp{resize:vertical;min-height:64px;line-height:1.45;font-family:inheri
 .ex-media-frame img{width:100%;height:100%;object-fit:contain;display:block}
 .ex-media-skeleton{aspect-ratio:1/1;max-height:300px;border-radius:var(--r-sm);background:linear-gradient(100deg,var(--bg3) 25%,var(--bg4) 45%,var(--bg3) 65%);background-size:220% 100%;animation:mediaShimmer 1.35s linear infinite;display:flex;align-items:center;justify-content:center;color:var(--text2);font-size:12px;text-align:center;padding:20px}
 .ex-media-meta{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0 8px}
-.ex-media-chip{font-size:9px;line-height:1;padding:5px 8px;border-radius:7px;background:var(--accent-d);border:1px solid var(--accent-b);color:var(--accent2);font-weight:700;text-transform:uppercase;letter-spacing:.5px}
+.ex-media-chip{display:inline-flex;align-items:center;font-size:9.5px;line-height:1.2;padding:5px 9px;border-radius:7px;background:var(--accent-d);border:1px solid var(--accent-b);color:var(--accent2);font-weight:700;text-transform:uppercase;letter-spacing:.5px}
 .ex-media-actions{display:flex;gap:8px;margin-top:10px}
 .ex-media-actions .btn{min-height:44px;flex:1}
 .ex-media-status{font-size:10px;color:var(--amber);line-height:1.45;margin-top:8px}
@@ -519,18 +519,18 @@ textarea.inp{resize:vertical;min-height:64px;line-height:1.45;font-family:inheri
 .ex-media-card.pro .ex-media-frame[data-state="ready"] img{opacity:1;transform:none}
 .ex-media-shimmer{position:absolute;inset:0;background:linear-gradient(100deg,#eef0f6 25%,#fafbff 45%,#eef0f6 65%);background-size:220% 100%;animation:mediaShimmer 1.35s linear infinite;transition:opacity .3s}
 .ex-media-frame[data-state="ready"] .ex-media-shimmer{opacity:0;pointer-events:none}
-.ex-media-live{position:absolute;left:10px;top:10px;display:inline-flex;align-items:center;gap:6px;padding:5px 9px;border-radius:999px;background:rgba(13,14,19,.78);color:#fff;font-size:9px;font-weight:800;letter-spacing:.8px;text-transform:uppercase;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+.ex-media-live{display:inline-flex;align-items:center;gap:6px;padding:5px 9px;border-radius:999px;background:rgba(13,14,19,.78);color:#fff;font-size:9px;font-weight:800;letter-spacing:.8px;text-transform:uppercase;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
 .ex-media-live i{width:7px;height:7px;border-radius:50%;background:#10D29B;box-shadow:0 0 0 0 rgba(16,210,155,.6);animation:exLive 1.6s ease-out infinite}
 .ex-media-live[hidden]{display:none}
 @keyframes exLive{0%{box-shadow:0 0 0 0 rgba(16,210,155,.6)}100%{box-shadow:0 0 0 9px rgba(16,210,155,0)}}
-.ex-media-zoom{position:absolute;right:8px;top:8px;width:38px;height:38px;border-radius:12px;background:rgba(13,14,19,.72);color:#fff;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+.ex-media-zoom{margin-left:auto;width:36px;height:36px;border-radius:10px;background:var(--bg4);border:1px solid var(--border2);color:var(--text1);display:flex;align-items:center;justify-content:center;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
 .ex-media-zoom svg,.ex-media-actions .btn svg{width:16px;height:16px;fill:currentColor;flex-shrink:0}
 .ex-media-zoom svg{fill:none}
 .ex-media-actions .btn{display:inline-flex;align-items:center;justify-content:center;gap:7px}
 .ex-media-actions .btn:last-child svg{fill:none}
-.ex-media-chip.main{background:rgba(16,210,155,.12);border-color:rgba(16,210,155,.35);color:var(--green)}
-.ex-media-chip.sec{background:var(--bg4);border-color:var(--border2);color:var(--text1)}
-.ex-media-chip.eq{background:rgba(255,179,71,.1);border-color:rgba(255,179,71,.3);color:#FFB347}
+.ex-media-chip.chip-main{background:rgba(16,210,155,.12);border-color:rgba(16,210,155,.35);color:var(--green)}
+.ex-media-chip.chip-sec{background:var(--bg4);border-color:var(--border2);color:var(--text1)}
+.ex-media-chip.chip-eq{background:rgba(255,179,71,.1);border-color:rgba(255,179,71,.3);color:#FFB347}
 .ex-steps-t{font-size:10px;font-weight:800;letter-spacing:1.2px;text-transform:uppercase;color:var(--text2);margin:14px 0 8px}
 .ex-steps{list-style:none;counter-reset:st;margin:0;padding:0;display:grid;gap:8px}
 .ex-steps li{counter-increment:st;position:relative;padding:9px 10px 9px 40px;background:var(--bg1);border:1px solid var(--border);border-radius:12px;font-size:12px;line-height:1.5;color:var(--text1)}
@@ -591,6 +591,35 @@ textarea.inp{resize:vertical;min-height:64px;line-height:1.45;font-family:inheri
 .pick-swap-line b{color:var(--accent2)}
 .pick-confirm small{display:block;font-size:10.5px;color:var(--text2);line-height:1.5}
 .pick-warn{margin-top:8px;font-size:11px;line-height:1.45;color:var(--amber);background:rgba(255,179,71,.08);border:1px solid rgba(255,179,71,.25);border-radius:10px;padding:8px 10px}
+/* Encabezado del ejercicio en el día */
+.exh{display:grid;grid-template-columns:56px minmax(0,1fr) auto;gap:10px;align-items:start}
+.exh .ex-thumb-btn{margin:0}
+.exh-main{min-width:0}
+.exh-name-btn{display:flex;flex-direction:column;align-items:flex-start;gap:5px;padding:2px 0 0;text-align:left;min-height:44px;width:100%}
+.exh-name{font-size:14.5px;font-weight:700;line-height:1.3;color:var(--text0);letter-spacing:0;word-break:normal;overflow-wrap:anywhere}
+.exh-name .superset-chip{margin-right:6px;vertical-align:1px;min-height:20px;padding:2px 7px}
+.exh-name.done{color:var(--text2);text-decoration:line-through}
+.exh .ex-motion-badge{margin-top:0}
+.exh-swap{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;width:58px;min-height:52px;border-radius:12px;background:var(--bg3);border:1px solid var(--border2);color:var(--text1);font-size:9.5px;font-weight:700;letter-spacing:.2px}
+.exh-swap svg{width:18px;height:18px;color:var(--accent2)}
+.exh-swap:active{transform:scale(.96)}
+.exh-meta{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;margin:10px 0 2px}
+.exh-muscle{display:inline-flex;align-items:center;font-size:9.5px;font-weight:700;padding:4px 8px;border-radius:6px;border:1px solid;letter-spacing:.5px;text-transform:uppercase;line-height:1.1}
+.exh-target{font-size:11.5px;color:var(--text2);line-height:1.4}
+.exh-target b{color:var(--text1);font-weight:700}
+[id^="er-"] .set-log-head{margin-top:14px}
+[id^="er-"] .set-log-head span{letter-spacing:.4px;white-space:nowrap}
+.exh-actions{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.exh-actions .ex-undo{margin-top:0}
+.ex-undo.ghost{background:var(--bg3);border-color:var(--border2);color:var(--text1)}
+/* Títulos de ejercicio: tipografía legible (Syne se aprieta en nombres largos) */
+.mt.ex-title{font-family:'Inter',sans-serif;font-size:21px;font-weight:800;letter-spacing:-.2px;line-height:1.25}
+/* Barra sobre la animación: nada tapa el movimiento */
+.ex-media-bar{display:flex;align-items:center;gap:8px;max-width:320px;margin:0 auto 8px}
+.ex-media-card.pro .ex-media-frame{cursor:zoom-in}
+.ex-media-meta{justify-content:center;align-items:center}
+.ex-media-actions{max-width:320px;margin-left:auto;margin-right:auto}
+.pick-txt strong{overflow-wrap:anywhere}
 @media (prefers-reduced-motion:reduce){.ex-media-shimmer,.ex-thumb::after,.pick-thumb::after,.ex-media-live i{animation:none}.ex-media-card.pro .ex-media-frame img,.ex-zoom-box,.ex-media-zoom-layer{transition:none}}
 
 /* Recent switchers and premium classes */
@@ -814,7 +843,7 @@ textarea.inp{resize:vertical;min-height:64px;line-height:1.45;font-family:inheri
   <div class="perm-sheet" onclick="event.stopPropagation()" id="permission-sheet"></div>
 </div>
 
-<script src="exercise-media.js?v=4"></script>
+<script src="exercise-media.js?v=5"></script>
 <script>
 'use strict';
 
@@ -1625,27 +1654,24 @@ function openDay(rid,did){
     const ss=supersetMeta(d,ei);
     if(ss?.first)h+=`<div class="superset-banner"><span class="superset-code">BISERIE ${ss.label}</span><span style="font-size:10.5px;line-height:1.45;color:var(--text2)">Hacé ${ss.label}1 y ${ss.label}2 seguidos; descansá después de completar ambos.</span></div>`;
     h+=`<div id="er-${ei}" class="${ss?'superset-card':''}" style="background:${allDone?'rgba(0,196,140,.04)':'var(--bg2)'};border:1px solid ${allDone?'rgba(0,196,140,.2)':'var(--border)'};border-radius:var(--r-sm);padding:14px;margin-bottom:${ss&&!ss.first?'14':'9'}px;transition:all .3s">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
+      <div class="exh">
         <button class="ex-thumb-btn" aria-label="Ver movimiento de ${esc(ex.name)}" data-rid="${esc(rid)}" data-did="${esc(did)}" data-ei="${ei}" onclick="openExInfo(this)">${exerciseThumbHtml(ex)}</button>
-        <div style="flex:1;min-width:0">
-          <button style="padding:0;text-align:left;min-height:44px" aria-label="Ver movimiento y detalles de ${esc(ex.name)}" data-rid="${esc(rid)}" data-did="${esc(did)}" data-ei="${ei}" onclick="openExInfo(this)">
-            <div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap">${ss?`<span class="superset-chip">${ss.label}${ss.position}</span>`:''}<span style="font-size:14px;font-weight:700;color:${allDone?'var(--text2)':'var(--text0)'};${allDone?'text-decoration:line-through':''}">${esc(ex.name)}</span></div>
+        <div class="exh-main">
+          <button class="exh-name-btn" aria-label="Ver movimiento y detalles de ${esc(ex.name)}" data-rid="${esc(rid)}" data-did="${esc(did)}" data-ei="${ei}" onclick="openExInfo(this)">
+            <span class="exh-name${allDone?' done':''}">${ss?`<span class="superset-chip">${ss.label}${ss.position}</span>`:''}${esc(ex.name)}</span>
             <span class="ex-motion-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m10 8 6 4-6 4z"/></svg>Ver movimiento</span>
           </button>
-          <div style="display:flex;align-items:center;gap:8px;margin-top:6px">
-            <span style="font-size:9px;font-weight:700;color:${mcl};background:${mcl}18;border:1px solid ${mcl}33;padding:2px 7px;border-radius:5px;letter-spacing:.5px;text-transform:uppercase">${esc(ex.muscle)}</span>
-            <span style="font-size:11px;color:var(--text2)">Objetivo ${isBilbo(ex)&&ex.series>1?'B + '+(ex.series-1):ex.series}×${esc(ex.reps)}${ex.unit==='s'?' s':ex.unit==='m'?' m':''} · RIR ${esc(ex.rir||'1–3')}</span>
-          </div>
-          ${isBilbo(ex)?`<div class="bilbo-note"><strong>B · Serie Bilbo:</strong> explosiva, sin rebotar, RIR 1-3 y 15 reps o más. Cada sesión +2,5 kg hasta bajar de 15.</div>`:''}
-          ${!ex.bilbo&&!timed&&looksLikeBilbo(exerciseLoadHistory(rid,did,ex.name,3).map(h=>h.logs))?`<button class="bilbo-ask" type="button" onclick="markBilbo('${rid}','${did}',${ei})">¿Tu serie 1 es Bilbo? Marcala y la comparo aparte</button>`:''}
-          ${ex.rest||ex.note?`<div class="ex-cues">${ex.rest?`<span class="ex-rest">⏱ ${esc(ex.rest)}</span>`:''}${ex.note?`<span class="ex-note">${esc(ex.note)}</span>`:''}</div>`:''}
-          ${ex.swappedFrom?.name?`<button type="button" class="ex-undo" onclick="undoExerciseSwap('${rid}','${did}',${ei})">↺ Volver a ${esc(ex.swappedFrom.name)}</button>`:''}
         </div>
-        <div style="display:flex;gap:5px;margin-left:8px;flex-shrink:0">
-          ${previous?`<button class="btn b-xs b-g" style="min-height:44px" onclick="copyPreviousLoads('${rid}','${did}',${ei})">Usar anterior</button>`:''}
-          <button class="btn b-xs b-g ex-swap-btn" style="min-height:44px" title="Cambiar ejercicio" aria-label="Cambiar ${esc(ex.name)} por otro ejercicio" onclick="openQuickSwapModal('${rid}','${did}',${ei})">⇄ Cambiar</button>
-        </div>
+        <button class="exh-swap" type="button" title="Cambiar ejercicio" aria-label="Cambiar ${esc(ex.name)} por otro ejercicio" onclick="openQuickSwapModal('${rid}','${did}',${ei})"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7h12l-3-3M17 17H5l3 3"/></svg><span>Cambiar</span></button>
       </div>
+      <div class="exh-meta">
+        <span class="exh-muscle" style="color:${mcl};background:${mcl}18;border-color:${mcl}33">${esc(ex.muscle)}</span>
+        <span class="exh-target">Objetivo <b>${isBilbo(ex)&&ex.series>1?'B + '+(ex.series-1):ex.series}×${esc(ex.reps)}${ex.unit==='s'?' s':ex.unit==='m'?' m':''}</b> · RIR ${esc(ex.rir||'1–3')}</span>
+      </div>
+      ${isBilbo(ex)?`<div class="bilbo-note"><strong>B · Serie Bilbo:</strong> explosiva, sin rebotar, RIR 1-3 y 15 reps o más. Cada sesión +2,5 kg hasta bajar de 15.</div>`:''}
+      ${!ex.bilbo&&!timed&&looksLikeBilbo(exerciseLoadHistory(rid,did,ex.name,3).map(h=>h.logs))?`<button class="bilbo-ask" type="button" onclick="markBilbo('${rid}','${did}',${ei})">¿Tu serie 1 es Bilbo? Marcala y la comparo aparte</button>`:''}
+      ${ex.rest||ex.note?`<div class="ex-cues">${ex.rest?`<span class="ex-rest">⏱ ${esc(ex.rest)}</span>`:''}${ex.note?`<span class="ex-note">${esc(ex.note)}</span>`:''}</div>`:''}
+      ${ex.swappedFrom?.name||previous?`<div class="exh-actions">${ex.swappedFrom?.name?`<button type="button" class="ex-undo" onclick="undoExerciseSwap('${rid}','${did}',${ei})">↺ Volver a ${esc(ex.swappedFrom.name)}</button>`:''}${previous?`<button type="button" class="ex-undo ghost" onclick="copyPreviousLoads('${rid}','${did}',${ei})">Usar kilos anteriores</button>`:''}</div>`:''}
       ${previous?`<div style="font-size:10px;color:var(--text2);margin:8px 0">Última vez: ${esc((previous.setLogs||[]).filter(s=>s.done).map(s=>`${s.weight||'—'}kg × ${s.reps||'—'} · RIR ${s.rir===''?'—':s.rir}`).join(' / ')||`${previous.weight||'—'} kg`)}</div>`:''}
       <div class="set-log-head${timed?' timed':''}"><span>Serie</span>${timed?'':'<span>KG</span>'}<span>${repsLabel}</span><span>RIR</span><span>Hecha</span></div>
       <div>
@@ -1761,7 +1787,7 @@ function exPickShell(){
       ${base?`<div class="pick-current">${exerciseThumbHtml(base,'sm')}<div><small>Reemplazás</small><strong>${esc(base.name)}</strong><span>${esc(base.muscle)} · ${base.series}×${esc(base.reps)}${base.rir?' · RIR '+esc(base.rir):''}</span></div></div>`:''}
       <div class="pick-search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input class="inp" id="pick-q" type="search" autocomplete="off" placeholder="Buscá: remo, curl, polea, sentadilla…" value="${esc(st.q)}" oninput="exPickSetQuery(this.value)"></div>
       <div class="pick-chips" role="group" aria-label="Músculo">${muscles.map(m=>`<button type="button" class="pick-chip${st.muscle===m?' on':''}" style="${m!=='all'?`--pc:${MC[m]}`:''}" onclick="exPickSet('muscle','${m}')">${m==='all'?'Todos':esc(m)}</button>`).join('')}</div>
-      ${st.offline?'<div class="pick-offline">Sin conexión: lista básica, sin animaciones.</div>':`<div class="pick-chips eq" role="group" aria-label="Equipamiento">${PICK_EQUIP.map(([k,l])=>`<button type="button" class="pick-chip${st.group===k?' on':''}" onclick="exPickSet('group','${k}')">${l}</button>`).join('')}</div>`}
+      ${st.offline?'<div class="pick-offline">Sin conexión: lista básica, sin animaciones.</div>':`<div class="pick-chips pick-eq" role="group" aria-label="Equipamiento">${PICK_EQUIP.map(([k,l])=>`<button type="button" class="pick-chip${st.group===k?' on':''}" onclick="exPickSet('group','${k}')">${l}</button>`).join('')}</div>`}
     </div>
     <div id="pick-list" class="pick-list"></div>`);
   exPickRender();
@@ -1771,7 +1797,7 @@ function exPickSetQuery(value){const st=window._exPick;if(!st)return;st.q=String
 function exPickSet(field,value){
   const st=window._exPick;if(!st)return;
   st[field]=value;
-  document.querySelectorAll('#m2 .pick-chips'+(field==='group'?'.eq':':not(.eq)')+' .pick-chip').forEach(b=>b.classList.toggle('on',b.getAttribute('onclick')===`exPickSet('${field}','${value}')`));
+  document.querySelectorAll('#m2 .pick-chips'+(field==='group'?'.pick-eq':':not(.pick-eq)')+' .pick-chip').forEach(b=>b.classList.toggle('on',b.getAttribute('onclick')===`exPickSet('${field}','${value}')`));
   exPickRender();
 }
 function exPickRanked(){
@@ -1830,7 +1856,7 @@ function exPickDetail(it){
   const slot='pick-media-'+uid(),mc=MC[it.muscle]||'#aaa',done=exPickDoneSets(st);
   oOv2(`<button type="button" class="pick-back" onclick="exPickShell()">‹ Volver a la lista</button>
     <div style="font-size:9px;font-weight:700;color:${mc};letter-spacing:2px;text-transform:uppercase;margin:6px 0 4px">${esc(it.muscle)}</div>
-    <div class="mt" style="margin-bottom:12px">${esc(it.name)}</div>
+    <div class="mt ex-title" style="margin-bottom:12px">${esc(it.name)}</div>
     ${it.custom?'<div class="alert al-info"><div class="al-t">Ejercicio propio: se guarda con el nombre que escribiste. Si después aparece en el catálogo, la app le asigna la animación sola.</div></div>':`<div id="${slot}" aria-live="polite"><div class="ex-media-skeleton">Cargando movimiento…</div></div>`}
     ${st.mode==='swap'?`<div class="pick-confirm">
         <div class="pick-swap-line"><span>${esc(st.base.name)}</span><b>→</b><span>${esc(it.name)}</span></div>
@@ -1907,7 +1933,7 @@ function toggleSetPerformance(btn,rid,did,ei,si,col){
       if(fb&&item.done&&S.g('ai_always_speak',false))speak(fb.text.replace(/[💪🏆]/gu,'').trim());
     }
     const row=document.getElementById('er-'+ei);
-    if(row){row.style.background=allDn?'rgba(0,196,140,.04)':'var(--bg2)';row.style.borderColor=allDn?'rgba(0,196,140,.2)':'var(--border)';const nm=row.querySelector('div>div');if(nm){nm.style.color=allDn?'var(--text2)':'var(--text0)';nm.style.textDecoration=allDn?'line-through':'';}}}
+    if(row){row.style.background=allDn?'rgba(0,196,140,.04)':'var(--bg2)';row.style.borderColor=allDn?'rgba(0,196,140,.2)':'var(--border)';const nm=row.querySelector('.exh-name');if(nm)nm.classList.toggle('done',allDn);}}
   const pct=getDayPct(rid,did);ring('dr',pct,col,pct+'%',52);updWring();
   const saveBtn=document.getElementById('save-session-btn');if(saveBtn){saveBtn.textContent=pct===100?'✓ Guardar sesión completa':`Guardar progreso · ${pct}%`;saveBtn.classList.toggle('b-p',pct>0);saveBtn.classList.toggle('b-g',pct===0);if(pct>0)saveBtn.style.background=col;else saveBtn.style.background='';}
   const advice=ex?exerciseProgression(rid,did,Number(ei),ex):null,adviceEl=document.getElementById('prog-'+ei);
@@ -1978,7 +2004,7 @@ function openExInfo(button){
   const related=apiForMuscle(ex.muscle);const mc=MC[ex.muscle]||'#aaa';const mediaSlotId='ex-media-'+uid();
   let h=`<div style="margin-bottom:20px">
     <div style="font-size:9px;font-weight:700;color:${mc};letter-spacing:2px;text-transform:uppercase;margin-bottom:6px">${esc(ex.muscle)}</div>
-    <div class="mt" style="margin-bottom:0">${esc(ex.name)}</div></div>
+    <div class="mt ex-title" style="margin-bottom:0">${esc(ex.name)}</div></div>
   <div class="stats s2" style="margin-bottom:14px">
     <div class="st"><div class="sv" style="color:${mc}">${ex.series}</div><div class="sl">Series</div></div>
     <div class="st"><div class="sv" style="color:${mc}">${esc(ex.reps)}</div><div class="sl">Reps</div></div></div>
