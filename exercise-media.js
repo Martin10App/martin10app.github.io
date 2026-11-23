@@ -1,6 +1,6 @@
 'use strict';
 
-const EXERCISE_MEDIA_CATALOG='exercise-media.json?v=3';
+const EXERCISE_MEDIA_CATALOG='exercise-media.json?v=4';
 const EXERCISE_MEDIA_BASE='https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/main/';
 let _exerciseMediaData=null,_exerciseMediaPromise=null;
 
@@ -22,28 +22,38 @@ async function loadExerciseMediaCatalog(){
   _exerciseMediaPromise=(async()=>{
     const ctrl=new AbortController();const timer=setTimeout(()=>ctrl.abort(),10000);
     try{
-      const url=location.protocol==='file:'?'https://martin10app.github.io/exercise-media.json?v=2':EXERCISE_MEDIA_CATALOG;
+      const url=location.protocol==='file:'?'https://martin10app.github.io/exercise-media.json?v=4':EXERCISE_MEDIA_CATALOG;
       const res=await fetch(url,{cache:'force-cache',signal:ctrl.signal});
       if(!res.ok)throw new Error('HTTP '+res.status);
       const data=await res.json();
-      if(!data||!Array.isArray(data.exercises)||data.exercises.length>500)throw new Error('Catalogo invalido');
+      if(!data||!Array.isArray(data.exercises)||data.exercises.length>3000)throw new Error('Catalogo invalido');
       _exerciseMediaData=data;return data;
     }finally{clearTimeout(timer);_exerciseMediaPromise=null;}
   })();
   return _exerciseMediaPromise;
 }
+function isCuratedMovement(item){return !!(item&&(item.curated||!item.muscle));}
 function findExerciseMovement(ex,catalog){
   if(ex.mediaId){const byId=catalog.exercises.find(item=>item.id===ex.mediaId);if(byId)return byId;}
-  let best=null,bestScore=0;
+  // Primero los ejercicios curados a mano (los nombres de las rutinas). El resto del catálogo
+  // sólo gana con una coincidencia muy clara, para no cambiar la animación de rutinas viejas.
+  const exact=normExerciseMediaName(ex.name);
+  const exactItem=catalog.exercises.find(item=>[item.name,...(item.aliases||[])].some(n=>normExerciseMediaName(n)===exact));
+  if(exactItem)return exactItem;
+  let best=null,bestScore=0,wide=null,wideScore=0;
   for(const item of catalog.exercises){
+    const curated=isCuratedMovement(item);
     for(const candidate of [item.name,...(item.aliases||[])]){
       const score=exerciseMediaScore(ex.name,candidate);
-      if(score>bestScore){bestScore=score;best=item;}
+      if(curated){if(score>bestScore){bestScore=score;best=item;}}
+      else if(score>wideScore){wideScore=score;wide=item;}
     }
   }
-  return bestScore>=58?best:null;
+  if(bestScore>=58)return best;
+  return wideScore>=80?wide:null;
 }
 function exerciseMovementMuscle(item){
+  if(item?.muscle)return item.muscle;
   const target=normExerciseMediaName(item?.target);
   if(/pectoral|chest/.test(target))return 'Pecho';
   if(/lat|back|trap|spine/.test(target))return 'Espalda';
@@ -74,7 +84,8 @@ function canonicalExerciseMovement(ex,catalog){
 }
 function exerciseMovementCatalogForAI(catalog,place='gym'){
   if(!catalog?.exercises)return '';
-  const allowed=catalog.exercises.filter(item=>{
+  // A la IA sólo le pasamos los curados: el catálogo completo no entra en el prompt.
+  const allowed=catalog.exercises.filter(isCuratedMovement).filter(item=>{
     const eq=normExerciseMediaName(item.equipment);
     if(place==='casa_sin')return eq==='body weight';
     if(place==='casa_basico')return ['body weight','dumbbell','weighted','resistance band'].includes(eq);
@@ -88,7 +99,7 @@ function exerciseMediaUrl(path){
 }
 function exerciseMediaLabel(value,type){
   const body={chest:'Pecho',back:'Espalda',shoulders:'Hombros','upper arms':'Brazos','upper legs':'Piernas','lower legs':'Pantorrillas',waist:'Abdomen',cardio:'Cardio'};
-  const equipment={barbell:'Barra',dumbbell:'Mancuernas',cable:'Polea','body weight':'Peso corporal','leverage machine':'M\u00e1quina',smith:'Smith',weighted:'Con peso',roller:'Rueda'};
+  const equipment={barbell:'Barra',dumbbell:'Mancuernas',cable:'Polea','body weight':'Peso corporal','leverage machine':'M\u00e1quina',smith:'Smith','smith machine':'Smith','ez barbell':'Barra Z',kettlebell:'Kettlebell',band:'Banda','resistance band':'Banda',weighted:'Con peso',assisted:'Asistida','sled machine':'M\u00e1quina','trap bar':'Barra hexagonal','olympic barbell':'Barra',rope:'Cuerda',roller:'Rueda'};
   return (type==='body'?body[value]:equipment[value])||value||'';
 }
 function renderExerciseMediaError(slot,message){
@@ -108,11 +119,22 @@ function handleExerciseMediaError(image){
   }
   if(slot)renderExerciseMediaError(slot,'No se pudo cargar la animaci\u00f3n ni la imagen fija');
 }
-function handleExerciseMediaLoad(image){
-  if(image.dataset.fallback==='1')return;
-  const status=image.closest('.ex-media-card')?.querySelector('.ex-media-status');
-  if(status)status.hidden=true;
+function movementStepsEs(movement){
+  if(Array.isArray(movement?.steps_es)&&movement.steps_es.length)return movement.steps_es.slice(0,8);
+  const txt=String(movement?.instructions_es||'').trim();
+  if(!txt)return [];
+  return txt.split(/(?<=\.)\s+/).map(x=>x.trim()).filter(Boolean).slice(0,8);
 }
+function movementMuscleChips(movement){
+  const main=movement?.target_es||'';
+  const sec=Array.isArray(movement?.secondary_es)?movement.secondary_es:[];
+  return {main,sec};
+}
+const EX_MEDIA_ICONS={
+  pause:'<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>',
+  play:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5l12 7-12 7z"/></svg>',
+  zoom:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>'
+};
 async function loadExerciseMovement(ex,slotId){
   const slot=document.getElementById(slotId);if(!slot)return;
   slot.setAttribute('aria-busy','true');
@@ -125,21 +147,78 @@ async function loadExerciseMovement(ex,slotId){
     const reduce=!!(window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches);
     const initial=reduce?still:gif;
     const body=exerciseMediaLabel(movement.body_part,'body'),equipment=exerciseMediaLabel(movement.equipment,'equipment');
+    const {main,sec}=movementMuscleChips(movement);
+    const steps=movementStepsEs(movement);
     slot.setAttribute('aria-busy','false');
-    slot.innerHTML=`<div class="ex-media-card">
-      <div class="ex-media-frame"><img src="${esc(initial)}" alt="Demostraci\u00f3n de ${esc(ex.name)}" width="300" height="300" decoding="async" data-gif="${esc(gif)}" data-still="${esc(still)}" data-playing="${reduce?'0':'1'}" data-fallback="0" onload="handleExerciseMediaLoad(this)" onerror="handleExerciseMediaError(this)"></div>
-      <div class="ex-media-meta"><span class="ex-media-chip">${esc(body)}</span><span class="ex-media-chip">${esc(equipment)}</span></div>
-      ${movement.instructions_es?`<div style="font-size:12px;line-height:1.6;color:var(--text1)">${esc(movement.instructions_es)}</div>`:''}
-      <div class="ex-media-actions"><button class="btn b-md b-p" onclick="toggleExerciseMovement(this)">${reduce?'Reproducir movimiento':'Pausar movimiento'}</button><button class="btn b-md b-g" onclick="window.open('https://github.com/hasaneyldrm/exercises-dataset','_blank','noopener')">Fuente</button></div>
+    slot.innerHTML=`<div class="ex-media-card pro">
+      <div class="ex-media-frame" data-state="loading">
+        <div class="ex-media-shimmer" aria-hidden="true"></div>
+        <img src="${esc(initial)}" alt="Demostración de ${esc(ex.name)}" width="360" height="360" decoding="async" data-gif="${esc(gif)}" data-still="${esc(still)}" data-playing="${reduce?'0':'1'}" data-fallback="0" onload="handleExerciseMediaLoad(this)" onerror="handleExerciseMediaError(this)" onclick="zoomExerciseMovement(this)">
+        <span class="ex-media-live"${reduce?' hidden':''}><i></i>En bucle</span>
+        <button type="button" class="ex-media-zoom" aria-label="Ver en pantalla completa" onclick="zoomExerciseMovement(this)">${EX_MEDIA_ICONS.zoom}</button>
+      </div>
+      <div class="ex-media-meta">
+        ${main?`<span class="ex-media-chip main">● ${esc(main)}</span>`:''}
+        ${sec.map(m=>`<span class="ex-media-chip sec">${esc(m)}</span>`).join('')}
+        ${equipment?`<span class="ex-media-chip eq">${esc(equipment)}</span>`:''}
+        ${!main&&body?`<span class="ex-media-chip">${esc(body)}</span>`:''}
+      </div>
+      <div class="ex-media-actions">
+        <button class="btn b-md b-p" onclick="toggleExerciseMovement(this)">${reduce?EX_MEDIA_ICONS.play+' Reproducir movimiento':EX_MEDIA_ICONS.pause+' Pausar movimiento'}</button>
+        <button class="btn b-md b-g" onclick="zoomExerciseMovement(this)">${EX_MEDIA_ICONS.zoom} Grande</button>
+      </div>
       <div class="ex-media-status" role="status" hidden></div>
-      <div style="font-size:9px;color:var(--text3);line-height:1.4;margin-top:9px">Demostraci\u00f3n educativa. Verific\u00e1 la t\u00e9cnica con un profesional.</div>
+      ${steps.length?`<div class="ex-steps-t">Cómo hacerlo</div><ol class="ex-steps">${steps.map(s=>`<li>${esc(s)}</li>`).join('')}</ol>`:''}
+      <div class="ex-media-foot">Demostración educativa · <a href="https://github.com/hasaneyldrm/exercises-dataset" target="_blank" rel="noopener">fuente</a>. Verificá la técnica con un profesional.</div>
     </div>`;
   }catch(err){renderExerciseMediaError(slot,err&&err.name==='AbortError'?'La carga demoro demasiado':'No se pudo cargar el catalogo');}
 }
+function handleExerciseMediaLoad(image){
+  const frame=image.closest('.ex-media-frame');if(frame)frame.dataset.state='ready';
+  if(image.dataset.fallback==='1')return;
+  const status=image.closest('.ex-media-card')?.querySelector('.ex-media-status');
+  if(status)status.hidden=true;
+}
 function toggleExerciseMovement(button){
-  const image=button.closest('.ex-media-card')?.querySelector('img');if(!image)return;
+  const card=button.closest('.ex-media-card'),image=card?.querySelector('.ex-media-frame img');if(!image)return;
   const playing=image.dataset.playing==='1';
   image.dataset.playing=playing?'0':'1';image.dataset.fallback='0';image.src=playing?image.dataset.still:image.dataset.gif;
-  const status=image.closest('.ex-media-card')?.querySelector('.ex-media-status');if(status)status.hidden=true;
-  button.textContent=playing?'Reproducir movimiento':'Pausar movimiento';
+  const status=card.querySelector('.ex-media-status');if(status)status.hidden=true;
+  const live=card.querySelector('.ex-media-live');if(live)live.hidden=playing;
+  button.innerHTML=playing?EX_MEDIA_ICONS.play+' Reproducir movimiento':EX_MEDIA_ICONS.pause+' Pausar movimiento';
+}
+function zoomExerciseMovement(el){
+  const card=el.closest('.ex-media-card'),image=card?.querySelector('.ex-media-frame img');if(!image)return;
+  document.getElementById('ex-media-zoom-layer')?.remove();
+  const layer=document.createElement('div');
+  layer.id='ex-media-zoom-layer';layer.className='ex-media-zoom-layer';
+  layer.setAttribute('role','dialog');layer.setAttribute('aria-label','Movimiento en pantalla completa');
+  const src=image.dataset.playing==='1'?image.dataset.gif:image.src;
+  layer.innerHTML=`<div class="ex-zoom-box"><img src="${esc(src)}" alt="${esc(image.alt)}"></div><div class="ex-zoom-hint">Tocá para cerrar</div>`;
+  const close=()=>{layer.classList.remove('on');setTimeout(()=>layer.remove(),220);document.removeEventListener('keydown',onKey);};
+  const onKey=e=>{if(e.key==='Escape')close();};
+  layer.addEventListener('click',close);document.addEventListener('keydown',onKey);
+  document.body.appendChild(layer);requestAnimationFrame(()=>layer.classList.add('on'));
+}
+
+// Miniaturas: imagen fija del movimiento al lado del nombre del ejercicio.
+function exerciseThumbHtml(ex,extraClass=''){
+  return `<span class="ex-thumb ${extraClass}" data-thumb-id="${esc(ex?.mediaId||'')}" data-thumb-name="${esc(ex?.name||'')}" aria-hidden="true"></span>`;
+}
+async function hydrateExerciseThumbs(root){
+  const scope=root||document;
+  const els=[...scope.querySelectorAll('.ex-thumb:not([data-ready])')];if(!els.length)return;
+  els.forEach(el=>{el.dataset.ready='wait';});
+  let catalog=null;
+  try{catalog=await loadExerciseMediaCatalog();}catch(_e){els.forEach(el=>{el.dataset.ready='0';el.classList.add('none');});return;}
+  for(const el of els){
+    if(!el.isConnected)continue;
+    el.dataset.ready='1';
+    const movement=el.dataset.thumbId?catalog.exercises.find(i=>i.id===el.dataset.thumbId):findExerciseMovement({name:el.dataset.thumbName},catalog);
+    const still=movement?exerciseMediaUrl(movement.image):'';
+    if(!still){el.classList.add('none');continue;}
+    const img=new Image();img.alt='';img.loading='lazy';img.decoding='async';
+    img.onload=()=>el.classList.add('ok');img.onerror=()=>{el.classList.add('none');img.remove();};
+    img.src=still;el.appendChild(img);
+  }
 }

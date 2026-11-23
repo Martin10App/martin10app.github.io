@@ -28,6 +28,7 @@ vm.createContext(context);
 vm.runInContext([
   extractFunction('normExerciseMediaName',mediaJs),
   extractFunction('exerciseMediaScore',mediaJs),
+  extractFunction('isCuratedMovement',mediaJs),
   extractFunction('findExerciseMovement',mediaJs),
   extractFunction('exerciseMovementMuscle',mediaJs),
   extractFunction('exerciseMovementName',mediaJs),
@@ -185,10 +186,12 @@ test('la publicación declara voz nativa y una descarga APK HTTPS propia',()=>{
 
 test('el catálogo completo queda disponible para IA y selector manual',()=>{
   const catalog=JSON.parse(fs.readFileSync(path.join(__dirname,'..','exercise-media.json'),'utf8'));
-  assert.equal(catalog.exercises.length,59);
-  assert.ok(catalog.exercises.every(ex=>ex.id&&ex.gif_url));
-  assert.match(html,/window\._movementExercisePicker=groups/);
-  assert.match(html,/mediaId:ex\.mediaId\|\|undefined/);
+  assert.ok(catalog.exercises.length>=900,'catálogo ampliado');
+  assert.equal(catalog.exercises.filter(ex=>ex.curated).length,59,'los 59 curados se conservan');
+  assert.ok(catalog.exercises.every(ex=>ex.id&&ex.gif_url&&ex.image));
+  assert.equal(new Set(catalog.exercises.map(ex=>ex.id)).size,catalog.exercises.length,'ids únicos');
+  assert.match(html,/function browseAPI\(dayId\)\{return openExercisePicker\(\{mode:'add',dayId\}\);\}/);
+  assert.match(html,/mediaId:it\.id\|\|undefined/);
   assert.match(html,/CATÁLOGO PREFERIDO/);
   assert.match(html,/buscar la técnica en YouTube/);
 });
